@@ -39,6 +39,10 @@ export default function SiswaDashboard() {
     if (tokenInput.length < 5) {
       return toast.error('Token tidak valid. Masukkan token resmi pengawas (Min 5 angka/huruf).');
     }
+
+    if (examToStart.token && tokenInput.toUpperCase() !== examToStart.token.toUpperCase()) {
+      return toast.error('Token SALAH! Silakan minta token yang valid ke Pengawas/Admin.');
+    }
     
     toast.success('Token Benar! Menyiapkan soal untuk Anda...');
     const ujianIdToStart = examToStart.id;

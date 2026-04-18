@@ -58,6 +58,7 @@ export default function AdminUjian() {
         kelasId,
         duration: parseInt(duration),
         status,
+        token: Math.random().toString(36).substring(2, 8).toUpperCase(), // Generate random 6-char token
         updatedAt: serverTimestamp()
       };
 
@@ -218,6 +219,10 @@ export default function AdminUjian() {
                   <p>Paket: <span className="font-medium text-slate-700">{paket?.title || '-'}</span></p>
                   <p>Kelas: <span className="font-medium text-slate-700">{kelas?.name || '-'}</span></p>
                   <p>Durasi: <span className="font-medium text-slate-700">{u.duration} Menit</span></p>
+                  <div className="mt-2 bg-slate-100 p-2 rounded-md border text-center">
+                    <p className="text-xs uppercase font-bold text-slate-400 mb-0.5">Token Ujian</p>
+                    <p className="text-xl font-black tracking-[0.2em] text-blue-600">{u.token || '------'}</p>
+                  </div>
                 </div>
 
                 <div className="flex justify-between items-center mt-auto border-t pt-3">
