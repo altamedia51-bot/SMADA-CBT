@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, onSnapshot, addDoc, doc, getDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, doc, getDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -130,14 +130,153 @@ export default function GuruSoalDetail() {
     }
   };
 
-  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ... Implementasi excel sebelumnya ...
-    toast.error('Import Excel sementara hanya untuk soal tipe Pilihan Ganda (PG). Untuk AKM gunakan form manual.');
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !paketId) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const data = evt.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet) as any[];
+
+        if (rows.length === 0) return toast.error('File Excel kosong atau format tidak sesuai');
+
+        const batch = writeBatch(db);
+        let count = 0;
+
+        rows.forEach((row) => {
+          // Mapping fields (Case insensitive / flexible)
+          const content = row.Pertanyaan || row.pertanyaan || row.Question || row.question;
+          const optA = row['Opsi A'] || row.A;
+          const optB = row['Opsi B'] || row.B;
+          const optC = row['Opsi C'] || row.C;
+          const optD = row['Opsi D'] || row.D;
+          const optE = row['Opsi E'] || row.E;
+          const jawab = row.Jawaban || row.jawaban || row.Answer || row.answer || row.Kunci || row.kunci;
+
+          if (content && optA && optB && jawab) {
+            const options = [optA, optB, optC, optD, optE].filter(Boolean).map(o => o.toString());
+            const keyChar = jawab.toString().toUpperCase().trim();
+            const keyIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(keyChar);
+            const correctAnswer = options[keyIdx] || options[0];
+
+            const docRef = doc(collection(db, `paket_soal/${paketId}/soal`));
+            batch.set(docRef, {
+              paketId,
+              type: 'pg',
+              stimulus: '',
+              content: content.toString(),
+              options,
+              correctAnswer,
+              createdAt: serverTimestamp()
+            });
+            count++;
+          }
+        });
+
+        if (count > 0) {
+          await batch.commit();
+          toast.success(`Berhasil mengimpor ${count} soal PG dari Excel!`);
+        } else {
+          toast.error('Tidak ada data soal yang valid ditemukan di Excel. Pastikan kolom Pertanyaan, Opsi A, Opsi B, dan Jawaban tersedia.');
+        }
+      } catch (err: any) {
+        toast.error('Gagal membaca Excel: ' + err.message);
+      }
+    };
+    reader.readAsBinaryString(file);
+    if (excelInputRef.current) excelInputRef.current.value = '';
   };
   
-  const handleImportWord = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ... Implementasi word sebelumnya ...
-    toast.error('Import Word sementara hanya untuk soal tipe Pilihan Ganda (PG). Untuk AKM gunakan form manual.');
+  const handleImportWord = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !paketId) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const arrayBuffer = evt.target?.result as ArrayBuffer;
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        const text = result.value;
+
+        // Simple Regex Based Parser for standard CBT format:
+        // [Number]. [Question]
+        // A. [Opt]
+        // B. [Opt]
+        // ...
+        // Jawab: A
+        
+        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        const importedSoal: any[] = [];
+        let currentSoal: any = null;
+
+        lines.forEach(line => {
+          // Check for start of question (e.g. "1. " or "10) ")
+          const qMatch = line.match(/^(\d+)[.)]\s+(.*)/);
+          if (qMatch) {
+            if (currentSoal && currentSoal.content && currentSoal.options.length >= 2) {
+              importedSoal.push(currentSoal);
+            }
+            currentSoal = { content: qMatch[2], options: [], correctAnswer: '' };
+            return;
+          }
+
+          // Check for options (e.g. "A. Option content")
+          const optMatch = line.match(/^([A-E])[.)]\s+(.*)/);
+          if (optMatch && currentSoal) {
+            currentSoal.options.push(optMatch[2]);
+            return;
+          }
+
+          // Check for key (e.g. "Jawab: A" or "Kunci: A" or "Ans: A")
+          const keyMatch = line.match(/^(Jawab|Kunci|Ans|Answer|Jawaban):\s*([A-E])/i);
+          if (keyMatch && currentSoal) {
+            const keyChar = keyMatch[2].toUpperCase();
+            const keyIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(keyChar);
+            currentSoal.correctAnswer = currentSoal.options[keyIdx] || '';
+            return;
+          }
+
+          // If it's just text and we have a current question, append to content
+          if (currentSoal && !currentSoal.correctAnswer && currentSoal.options.length === 0) {
+            currentSoal.content += ' ' + line;
+          }
+        });
+
+        // Push last one
+        if (currentSoal && currentSoal.content && currentSoal.options.length >= 2) {
+          importedSoal.push(currentSoal);
+        }
+
+        if (importedSoal.length === 0) {
+          return toast.error('Format Word tidak dikenali. Pastikan format: 1. Soal? A. Opsi... Jawab: A');
+        }
+
+        const batch = writeBatch(db);
+        importedSoal.forEach(s => {
+          const docRef = doc(collection(db, `paket_soal/${paketId}/soal`));
+          batch.set(docRef, {
+            ...s,
+            paketId,
+            type: 'pg',
+            stimulus: '',
+            createdAt: serverTimestamp()
+          });
+        });
+
+        await batch.commit();
+        toast.success(`Berhasil mengimpor ${importedSoal.length} soal dari Word!`);
+
+      } catch (err: any) {
+        toast.error('Gagal membaca Word: ' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    if (wordInputRef.current) wordInputRef.current.value = '';
   };
 
   const getBadgeFormat = (type: string) => {
@@ -278,14 +417,14 @@ export default function GuruSoalDetail() {
             <Card className="p-6">
                 <h3 className="font-semibold mb-2">Notice</h3>
                 <p className="text-sm text-muted-foreground">Fungsionalitas Excel saat ini dioptimalkan untuk soal tipe Pilihan Ganda Biasa seperti instruksi awal. Untuk input AKM (PGK, Essay, Stimulus) direkomendasikan menggunakan Manual Builder untuk memastikan struktur data ke Cloud terjaga.</p>
-                <div className="mt-4"><Input type="file" onChange={handleImportExcel} accept=".xlsx" /></div>
+                <div className="mt-4"><Input ref={excelInputRef} type="file" onChange={handleImportExcel} accept=".xlsx" /></div>
             </Card>
           </TabsContent>
           <TabsContent value="word">
             <Card className="p-6">
                 <h3 className="font-semibold mb-2">Notice</h3>
                 <p className="text-sm text-muted-foreground">Fungsionalitas Word saat ini dioptimalkan untuk mengekstrak Pilihan Ganda. Untuk soal bernarasi AKM, gunakan tab Manual AKM.</p>
-                <div className="mt-4"><Input type="file" onChange={handleImportWord} accept=".docx" /></div>
+                <div className="mt-4"><Input ref={wordInputRef} type="file" onChange={handleImportWord} accept=".docx" /></div>
             </Card>
           </TabsContent>
         </Tabs>
