@@ -108,6 +108,7 @@ export default function AdminMasterData() {
         const rows = results.data as any[];
         let successCount = 0;
         let failCount = 0;
+        let errorMessages = new Set<string>();
 
         for (const row of rows) {
           const rawUsername = row.username || row.nis || row.nip;
@@ -135,48 +136,45 @@ export default function AdminMasterData() {
             
             if (!res.ok) {
               if (data.error?.message === 'EMAIL_EXISTS') {
-                // If exists, skip (or update in future)
-                failCount++;
+                errorMessages.add('Email/Username sudah dipakai');
+              } else if (data.error?.message === 'OPERATION_NOT_ALLOWED') {
+                errorMessages.add('Auth Email/Password belum aktif di Firebase Console!');
               } else {
-                failCount++;
-                console.error("Firebase Auth REST Error:", data.error);
+                errorMessages.add(data.error?.message || 'Gagal registrasi API');
               }
+              failCount++;
               continue;
             }
 
             const uid = data.localId;
 
-            // Save to users collection
-            await updateDoc(doc(db, 'users', uid), { 
+            // Save to users collection using setDoc with merge
+            const { setDoc } = await import('firebase/firestore');
+            await setDoc(doc(db, 'users', uid), {
               uid, 
               email, 
               displayName: name, 
               role,
               isActive: true,
               createdAt: serverTimestamp() 
-            }).catch(async () => {
-              // Create if doc doesn't exist
-              const { setDoc } = await import('firebase/firestore');
-              await setDoc(doc(db, 'users', uid), {
-                uid, 
-                email, 
-                displayName: name, 
-                role,
-                isActive: true,
-                createdAt: serverTimestamp() 
-              });
-            });
+            }, { merge: true });
 
             successCount++;
-          } catch (err) {
+          } catch (err: any) {
             console.error('Import error for row:', row, err);
+            errorMessages.add('Gagal simpan ke DB (Cek Rules!)');
             failCount++;
           }
         }
 
         setIsImporting(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
-        toast.success(`Import selesai! ${successCount} berhasil ditambahkan, ${failCount} gagal/dilewati.`);
+        
+        if (failCount > 0) {
+          toast.error(`Selesai: ${successCount} sukses, ${failCount} gagal. Info: ${Array.from(errorMessages).join(', ')}`, { duration: 6000 });
+        } else {
+          toast.success(`Import selesai! ${successCount} berhasil ditambahkan.`);
+        }
       },
       error: (error) => {
         setIsImporting(false);
