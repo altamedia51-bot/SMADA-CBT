@@ -61,21 +61,27 @@ export default function UjianSession() {
             let sTime: any;
             if (!jawabanSnap.exists()) {
               sTime = new Date();
-              await setDoc(jawabanRef, {
-                ujianId,
-                paketId: dataUjian.paketId,
-                siswaId: profile.uid,
-                siswaName: profile.displayName,
-                siswaKelas: (profile as any).kelasId || 'Unknown',
-                answers: {},
-                marked: [],
-                violations: 0,
-                isSubmitted: false,
-                startTime: serverTimestamp(),
-                updatedAt: serverTimestamp()
-              });
-              setJawabanDocId(docId);
-              setTimeLeft(dataUjian.duration * 60); // In seconds
+              try {
+                await setDoc(jawabanRef, {
+                  ujianId,
+                  paketId: dataUjian.paketId,
+                  siswaId: profile.uid,
+                  siswaName: profile.displayName,
+                  siswaKelas: (profile as any).kelasId || 'Unknown',
+                  answers: {},
+                  marked: [],
+                  violations: 0,
+                  isSubmitted: false,
+                  startTime: serverTimestamp(),
+                  updatedAt: serverTimestamp()
+                });
+                setJawabanDocId(docId);
+                setTimeLeft(dataUjian.duration * 60); // In seconds
+              } catch(err: any) {
+                console.error("FIREBASE SETDOC ERROR:", err);
+                toast.error("Gagal menyiapkan lembar ujian: " + err.message);
+                return;
+              }
             } else {
               const jData = jawabanSnap.data();
               if (jData.isSubmitted) {

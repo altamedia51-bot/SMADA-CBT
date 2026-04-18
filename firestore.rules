@@ -106,9 +106,11 @@ service cloud.firestore {
     }
 
     function isValidJawabanSiswa(data) {
-      return data.keys().hasAll(['ujianId', 'siswaId'])
+      return data.keys().hasAll(['ujianId', 'paketId', 'siswaId', 'siswaName', 'siswaKelas', 'answers', 'marked', 'violations', 'isSubmitted', 'startTime', 'updatedAt'])
         && data.ujianId is string
-        && data.siswaId == request.auth.uid;
+        && data.paketId is string
+        && data.siswaId == request.auth.uid // Must be the student
+        && data.isSubmitted is bool;
     }
 
     // --- RULES --- //
@@ -240,6 +242,8 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (existing().siswaId == request.auth.uid || isAdmin() || isGuru());
       allow list: if isAdmin() || isGuru(); // Optional: allow listing by teacher/admin
       allow create: if isAuthenticated() && isValidJawabanSiswa(incoming());
+      
+      // Removed strict update check temporarily so any field can be updated (e.g., answers, marked, isSubmitted)
       allow update: if isAuthenticated() && (isAdmin() || isGuru() || existing().siswaId == request.auth.uid);
       allow delete: if isAdmin();
     }
