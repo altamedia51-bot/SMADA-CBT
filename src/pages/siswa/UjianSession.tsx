@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, Clock, ChevronLeft, ChevronRight, Flag, Loader2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp, setDoc, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuthStore } from '../../store/auth.store';
 import { toast } from 'sonner';
@@ -30,6 +30,7 @@ export default function UjianSession() {
 
     const initExam = async () => {
       try {
+        setLoading(true);
         // 1. Fetch Ujian
         const ujianSnap = await getDoc(doc(db, 'ujian', ujianId));
         if (!ujianSnap.exists()) {
@@ -44,70 +45,72 @@ export default function UjianSession() {
         }
         setUjianData(dataUjian);
 
-        // 2. Fetch Soal (diambil the whole collection for this paket)
-        // Ideally we fetch from `paket_soal/{paketId}/soal`
+        // 2. Fetch Soal
         const soalQuery = collection(db, `paket_soal/${dataUjian.paketId}/soal`);
-        // we'll just listen to it or get docs. Let's getDocs
-        import('firebase/firestore').then(async ({ getDocs }) => {
-            const soalSnap = await getDocs(soalQuery);
-            const loadedSoal = soalSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-            setSoalList(loadedSoal);
+        const soalSnap = await getDocs(soalQuery);
+        const loadedSoal = soalSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        if (loadedSoal.length === 0) {
+           console.warn("Paket soal kosong");
+        }
+        setSoalList(loadedSoal);
 
-            // 3. Initiate Jawaban Siswa Document if not exists
-            const docId = `${ujianId}_${profile.uid}`;
-            const jawabanRef = doc(db, 'jawaban_siswa', docId);
-            const jawabanSnap = await getDoc(jawabanRef);
+        // 3. Initiate Jawaban Siswa Document if not exists
+        const docId = `${ujianId}_${profile.uid}`;
+        const jawabanRef = doc(db, 'jawaban_siswa', docId);
+        const jawabanSnap = await getDoc(jawabanRef);
 
-            let sTime: any;
-            if (!jawabanSnap.exists()) {
-              sTime = new Date();
-              try {
-                await setDoc(jawabanRef, {
-                  ujianId,
-                  paketId: dataUjian.paketId,
-                  siswaId: profile.uid,
-                  siswaName: profile.displayName,
-                  siswaKelas: (profile as any).kelasId || 'Unknown',
-                  answers: {},
-                  marked: [],
-                  violations: 0,
-                  isSubmitted: false,
-                  startTime: serverTimestamp(),
-                  updatedAt: serverTimestamp()
-                });
-                setJawabanDocId(docId);
-                setTimeLeft(dataUjian.duration * 60); // In seconds
-              } catch(err: any) {
-                console.error("FIREBASE SETDOC ERROR:", err);
-                toast.error("Gagal menyiapkan lembar ujian: " + err.message);
-                return;
-              }
+        if (!jawabanSnap.exists()) {
+          try {
+            await setDoc(jawabanRef, {
+              ujianId,
+              paketId: dataUjian.paketId,
+              siswaId: profile.uid,
+              siswaName: profile.displayName,
+              siswaKelas: (profile as any).kelasId || 'Unknown',
+              answers: {},
+              marked: [],
+              violations: 0,
+              isSubmitted: false,
+              startTime: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            });
+            setJawabanDocId(docId);
+            setTimeLeft(dataUjian.duration * 60); 
+          } catch(err: any) {
+            console.error("FIREBASE SETDOC ERROR:", err);
+            // This usually happens because of Security Rules
+            if (err.message?.includes('permission')) {
+               toast.error("Izin Ditolak: Gagal membuat lembar jawaban. Pastikan status Guru/Siswa benar.");
             } else {
-              const jData = jawabanSnap.data();
-              if (jData.isSubmitted) {
-                toast.error('Kamu sudah mengumpulkan ujian ini!');
-                return navigate('/siswa');
-              }
-              setJawabanDocId(docId);
-              setAnswers(jData.answers || {});
-              setMarked(jData.marked || []);
-              setViolations(jData.violations || 0);
-
-              // Calculate time left based on startTime
-              if (jData.startTime) {
-                const startSec = jData.startTime.seconds;
-                const nowSec = Math.floor(Date.now() / 1000);
-                const passed = nowSec - startSec;
-                const tLeft = (dataUjian.duration * 60) - passed;
-                setTimeLeft(tLeft > 0 ? tLeft : 0);
-              } else {
-                setTimeLeft(dataUjian.duration * 60);
-              }
+               toast.error("Gagal menyiapkan lembar ujian: " + err.message);
             }
-            setLoading(false);
-        });
+            return navigate('/siswa');
+          }
+        } else {
+          const jData = jawabanSnap.data();
+          if (jData.isSubmitted) {
+            toast.error('Kamu sudah mengumpulkan ujian ini!');
+            return navigate('/siswa');
+          }
+          setJawabanDocId(docId);
+          setAnswers(jData.answers || {});
+          setMarked(jData.marked || []);
+          setViolations(jData.violations || 0);
 
+          if (jData.startTime) {
+            const startSec = jData.startTime.seconds;
+            const nowSec = Math.floor(Date.now() / 1000);
+            const passed = nowSec - startSec;
+            const tLeft = (dataUjian.duration * 60) - passed;
+            setTimeLeft(tLeft > 0 ? tLeft : 0);
+          } else {
+            setTimeLeft(dataUjian.duration * 60);
+          }
+        }
+        setLoading(false);
       } catch (err: any) {
+        console.error("INIT EXAM ERROR:", err);
         toast.error('Gagal memuat ujian', { description: err.message });
         navigate('/siswa');
       }

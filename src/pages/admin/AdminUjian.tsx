@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, PlayCircle, StopCircle, Calendar } from 'lucide-react';
+import { Plus, Trash2, Edit2, PlayCircle, StopCircle, Calendar, Hash } from 'lucide-react';
 
 export default function AdminUjian() {
   const [ujianList, setUjianList] = useState<any[]>([]);
   const [paketList, setPaketList] = useState<any[]>([]);
   const [kelasList, setKelasList] = useState<any[]>([]);
+  const [soalCounts, setSoalCounts] = useState<Record<string, number>>({});
   
   const [title, setTitle] = useState('');
   const [paketId, setPaketId] = useState('');
@@ -30,8 +31,21 @@ export default function AdminUjian() {
 
     // Fetch Paket Soal
     const qPaket = query(collection(db, 'paket_soal'));
-    const unsubPaket = onSnapshot(qPaket, snap => {
-      setPaketList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    const unsubPaket = onSnapshot(qPaket, async (snap) => {
+      const pList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setPaketList(pList);
+      
+      // Fetch question counts for each paket
+      const counts: Record<string, number> = {};
+      for (const p of pList) {
+        try {
+          const sSnap = await getDocs(collection(db, `paket_soal/${p.id}/soal`));
+          counts[p.id] = sSnap.size;
+        } catch (e) {
+          counts[p.id] = 0;
+        }
+      }
+      setSoalCounts(counts);
     });
 
     // Fetch Kelas
@@ -217,6 +231,15 @@ export default function AdminUjian() {
                 <h4 className="font-bold text-lg mb-1 pr-4">{u.title}</h4>
                 <div className="text-sm text-muted-foreground space-y-1 mb-4 flex-1">
                   <p>Paket: <span className="font-medium text-slate-700">{paket?.title || '-'}</span></p>
+                  <p className="flex items-center gap-1.5">
+                    Jumlah Soal: 
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold ${
+                      (soalCounts[u.paketId] || 0) > 0 ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      <Hash className="w-3 h-3 mr-0.5" />
+                      {soalCounts[u.paketId] || 0} Item
+                    </span>
+                  </p>
                   <p>Kelas: <span className="font-medium text-slate-700">{kelas?.name || '-'}</span></p>
                   <p>Durasi: <span className="font-medium text-slate-700">{u.duration} Menit</span></p>
                   <div className="mt-2 bg-slate-100 p-2 rounded-md border text-center">
