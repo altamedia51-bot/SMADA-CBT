@@ -1,0 +1,249 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- PRIMITIVES --- //
+    function isAuthenticated() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    // Basic admin check - in this app, admins are in the 'users' collection with role 'admin'
+    // To prevent cycle, admin is read by get().
+    function isAdmin() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Role checks explicitly hitting the users table
+    function isGuru() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'guru';
+    }
+
+    function isSiswa() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'siswa';
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // --- ENTITY VALIDATORS --- //
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'isActive', 'createdAt'])
+        && data.uid == request.auth.uid // Cannot spoof other uid
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 255
+        && data.role in ['admin', 'guru', 'siswa']
+        && data.isActive is bool
+        && data.createdAt is timestamp;
+    }
+
+    function isValidSiswa(data) {
+      return data.keys().hasAll(['userId', 'nis', 'kelasId', 'jenjang'])
+        && data.userId is string && data.userId.size() <= 128
+        && data.nis is string && data.nis.size() <= 50
+        && data.kelasId is string && data.kelasId.size() <= 128
+        && data.jenjang in ['SD', 'SMP', 'SMA', 'SMK'];
+    }
+
+    function isValidGuru(data) {
+      return data.keys().hasAll(['userId', 'nip', 'mapelIds'])
+        && data.userId is string && data.userId.size() <= 128
+        && data.nip is string && data.nip.size() <= 50
+        && data.mapelIds is list && data.mapelIds.size() <= 50;
+    }
+
+    function isValidKelas(data) {
+      return data.keys().hasAll(['name', 'jenjang', 'tingkat'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.jenjang in ['SD', 'SMP', 'SMA', 'SMK']
+        && data.tingkat is number && data.tingkat >= 1 && data.tingkat <= 12;
+    }
+
+    function isValidMapel(data) {
+      return data.keys().hasAll(['name', 'jenjang'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.jenjang in ['SD', 'SMP', 'SMA', 'SMK'];
+    }
+
+    function isValidPaketSoal(data) {
+      return data.keys().hasAll(['title', 'mapelId', 'guruId', 'jenjang', 'createdAt'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.mapelId is string && data.mapelId.size() <= 128
+        && data.guruId == request.auth.uid // Must be the current user (guru)
+        && data.jenjang in ['SD', 'SMP', 'SMA', 'SMK']
+        && data.createdAt is timestamp;
+    }
+
+    function isValidSoal(data) {
+      return data.keys().hasAll(['paketId', 'type', 'content'])
+        && data.paketId is string && data.paketId.size() <= 128
+        && data.type in ['pg', 'essay', 'benar_salah', 'isian', 'pg_kompleks']
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 10000;
+    }
+
+    function isValidUjian(data) {
+      return data.keys().hasAll(['title', 'paketId'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.paketId is string && data.paketId.size() <= 128;
+    }
+
+    function isValidHasilUjian(data) {
+      return data.keys().hasAll(['ujianId', 'siswaId', 'waktuMulai', 'status', 'pelanggaranCount'])
+        && data.ujianId is string && data.ujianId.size() <= 128
+        && data.siswaId == request.auth.uid // Must be current user
+        && data.waktuMulai is timestamp
+        && data.status in ['ongoing', 'completed', 'suspended']
+        && data.pelanggaranCount is number && data.pelanggaranCount >= 0;
+    }
+
+    function isValidPelanggaran(data) {
+      return data.keys().hasAll(['hasilId', 'type', 'timestamp'])
+        && data.hasilId is string && data.hasilId.size() <= 128
+        && data.type in ['pindah_tab', 'alt_tab', 'copy_paste']
+        && data.timestamp is timestamp;
+    }
+
+    function isValidJawabanSiswa(data) {
+      return data.keys().hasAll(['ujianId', 'siswaId'])
+        && data.ujianId is string
+        && data.siswaId == request.auth.uid;
+    }
+
+    // --- RULES --- //
+
+    // 1. Users
+    match /users/{userId} {
+      // Admins read all. Users can read themselves.
+      allow get: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      
+      // Initially anyone auth can create their own doc OR admin creates
+      // but role can only be requested if admin or defaulting.
+      allow create: if isAuthenticated() && isValidId(userId) && userId == request.auth.uid && isValidUser(incoming()) && (incoming().role == 'siswa' || isAdmin());
+      
+      allow update: if isAuthenticated() && isValidId(userId) && isValidUser(incoming()) && (
+        isAdmin() || 
+        // User updating themselves (cannot change role or uid)
+        (userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'isActive']) && incoming().uid == existing().uid)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 2. Siswa (Student Details)
+    match /siswa/{siswaId} {
+      allow get: if isAuthenticated() && (existing().userId == request.auth.uid || isAdmin() || isGuru());
+      // For list, explicit ownership check or admin/guru mapping
+      allow list: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin() || isGuru());
+      
+      allow create: if isAuthenticated() && isValidId(siswaId) && isValidSiswa(incoming()) && (isAdmin() || incoming().userId == request.auth.uid);
+      allow update: if isAuthenticated() && isValidId(siswaId) && isValidSiswa(incoming()) && (
+        isAdmin() ||
+        (existing().userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['kelasId', 'jurusanId', 'jenjang']) && incoming().userId == existing().userId)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 3. Guru (Teacher Details)
+    match /guru/{guruId} {
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated();
+      allow create: if isAdmin() && isValidId(guruId) && isValidGuru(incoming());
+      allow update: if isAuthenticated() && isValidId(guruId) && isValidGuru(incoming()) && (
+        isAdmin() ||
+        (existing().userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['mapelIds']) && incoming().userId == existing().userId)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 4. Kelas
+    match /kelas/{kelasId} {
+      allow read: if isAuthenticated(); // Needed for dropdowns
+      allow create: if isAdmin() && isValidId(kelasId) && isValidKelas(incoming());
+      allow update: if isAdmin() && isValidId(kelasId) && isValidKelas(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // 5. Mapel
+    match /mapel/{mapelId} {
+      allow read: if isAuthenticated(); // Needed for dropdowns
+      allow create: if isAdmin() && isValidId(mapelId) && isValidMapel(incoming());
+      allow update: if isAdmin() && isValidId(mapelId) && isValidMapel(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // 6. Paket Soal
+    match /paket_soal/{paketId} {
+      // Guru who authored or admin can read. Siswa can read if it's assigned, but get() helps. We use strict check on siswa side.
+      allow get: if isAuthenticated(); 
+      allow list: if isAdmin() || (isGuru() && resource.data.guruId == request.auth.uid);
+      
+      allow create: if (isAdmin() || isGuru()) && isValidId(paketId) && isValidPaketSoal(incoming());
+      allow update: if (isAdmin() || isGuru()) && isValidId(paketId) && isValidPaketSoal(incoming()) && (
+        isAdmin() ||
+        (existing().guruId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'mapelId', 'kelasIds', 'jenjang']) && incoming().guruId == existing().guruId)
+      );
+      allow delete: if isAdmin() || (isGuru() && existing().guruId == request.auth.uid);
+    }
+
+    // 7. Soal (Subcollection or flat is fine, blueprint specified flat /paket_soal/{paketId}/soal/{soalId})
+    match /paket_soal/{paketId}/soal/{soalId} {
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated(); // Typically restricted by query but siswa needs them during exam
+      
+      allow create: if (isAdmin() || isGuru()) && isValidId(paketId) && isValidId(soalId) && isValidSoal(incoming()) && (
+        isAdmin() || get(/databases/$(database)/documents/paket_soal/$(paketId)).data.guruId == request.auth.uid
+      );
+      allow update: if (isAdmin() || isGuru()) && isValidId(paketId) && isValidId(soalId) && isValidSoal(incoming()) && (
+        isAdmin() || get(/databases/$(database)/documents/paket_soal/$(paketId)).data.guruId == request.auth.uid
+      );
+      allow delete: if isAdmin() || (isGuru() && get(/databases/$(database)/documents/paket_soal/$(paketId)).data.guruId == request.auth.uid);
+    }
+
+    // 8. Ujian
+    match /ujian/{ujianId} {
+      allow read: if isAuthenticated(); // All auth can read (active exams)
+      
+      allow create: if (isAdmin() || isGuru()) && isValidId(ujianId) && isValidUjian(incoming());
+      allow update: if (isAdmin() || isGuru()) && isValidId(ujianId) && isValidUjian(incoming());
+      allow delete: if isAdmin() || isGuru();
+    }
+
+    // 9. Hasil Ujian (Student attempt state)
+    match /hasil_ujian/{hasilId} {
+      allow get: if isAuthenticated() && (existing().siswaId == request.auth.uid || isAdmin() || isGuru());
+      allow list: if isAuthenticated() && (resource.data.siswaId == request.auth.uid || isAdmin() || isGuru());
+      
+      allow create: if isValidId(hasilId) && isValidHasilUjian(incoming());
+      allow update: if isAuthenticated() && isValidId(hasilId) && isValidHasilUjian(incoming()) && (
+        isAdmin() || isGuru() ||
+        (existing().siswaId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['waktuSelesai', 'score', 'status', 'pelanggaranCount']) && existing().status != 'completed' && existing().status != 'suspended')
+      );
+      allow delete: if isAdmin();
+    }
+
+    // 10. Pelanggaran (Cheat events)
+    match /hasil_ujian/{hasilId}/pelanggaran/{pelanggaranId} {
+      allow get: if isAdmin() || isGuru() || (isAuthenticated() && get(/databases/$(database)/documents/hasil_ujian/$(hasilId)).data.siswaId == request.auth.uid);
+      allow list: if isAdmin() || isGuru() || (isAuthenticated() && get(/databases/$(database)/documents/hasil_ujian/$(hasilId)).data.siswaId == request.auth.uid);
+      
+      allow create: if isAuthenticated() && isValidId(hasilId) && isValidId(pelanggaranId) && isValidPelanggaran(incoming()) && (
+        get(/databases/$(database)/documents/hasil_ujian/$(hasilId)).data.siswaId == request.auth.uid // student creates their own cheat event
+      );
+      allow update: if false; // immutable
+      allow delete: if isAdmin();
+    }
+
+    // 11. Jawaban Siswa
+    match /jawaban_siswa/{docId} {
+      allow read: if isAuthenticated() && (existing().siswaId == request.auth.uid || isAdmin() || isGuru());
+      allow list: if isAdmin() || isGuru(); // Optional: allow listing by teacher/admin
+      allow create: if isAuthenticated() && isValidJawabanSiswa(incoming());
+      allow update: if isAuthenticated() && (isAdmin() || isGuru() || existing().siswaId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+  }
+}

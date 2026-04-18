@@ -1,0 +1,178 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a system user (admin, guru, siswa)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "enum": ["admin", "guru", "siswa"] },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "isActive", "createdAt"]
+    },
+    "Siswa": {
+      "title": "Siswa",
+      "description": "Student details",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "nis": { "type": "string" },
+        "nisn": { "type": "string" },
+        "kelasId": { "type": "string" },
+        "jurusanId": { "type": "string" },
+        "jenjang": { "enum": ["SD", "SMP", "SMA", "SMK"] }
+      },
+      "required": ["userId", "nis", "kelasId", "jenjang"]
+    },
+    "Guru": {
+      "title": "Guru",
+      "description": "Teacher details",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "nip": { "type": "string" },
+        "mapelIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["userId"]
+    },
+    "Kelas": {
+      "title": "Kelas",
+      "description": "Class/Room",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "jenjang": { "enum": ["SD", "SMP", "SMA", "SMK"] },
+        "tingkat": { "type": "number" },
+        "jurusanId": { "type": "string" }
+      },
+      "required": ["name", "jenjang", "tingkat"]
+    },
+    "Mapel": {
+      "title": "Mapel",
+      "description": "Mata Pelajaran (Subject)",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "jenjang": { "enum": ["SD", "SMP", "SMA", "SMK"] }
+      },
+      "required": ["name", "jenjang"]
+    },
+    "PaketSoal": {
+      "title": "Paket Soal",
+      "description": "Question package",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "mapelId": { "type": "string" },
+        "guruId": { "type": "string" },
+        "kelasIds": { "type": "array", "items": { "type": "string" } },
+        "jenjang": { "enum": ["SD", "SMP", "SMA", "SMK"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "mapelId", "guruId", "jenjang"]
+    },
+    "Soal": {
+      "title": "Soal",
+      "description": "Individual question",
+      "type": "object",
+      "properties": {
+        "paketId": { "type": "string" },
+        "type": { "enum": ["pg", "essay", "benar_salah", "isian", "pg_kompleks"] },
+        "content": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "correctAnswer": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "mediaType": { "enum": ["image", "audio", "none"] }
+      },
+      "required": ["paketId", "type", "content"]
+    },
+    "Ujian": {
+      "title": "Ujian",
+      "description": "Exam session",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "paketId": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "durationMinutes": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "kelasIds": { "type": "array", "items": { "type": "string" } },
+        "randomizeSoal": { "type": "boolean" },
+        "randomizeJawaban": { "type": "boolean" }
+      },
+      "required": ["title", "paketId", "startTime", "durationMinutes", "isActive"]
+    },
+    "HasilUjian": {
+      "title": "Hasil Ujian",
+      "description": "Student's exam result",
+      "type": "object",
+      "properties": {
+        "ujianId": { "type": "string" },
+        "siswaId": { "type": "string" },
+        "waktuMulai": { "type": "string", "format": "date-time" },
+        "waktuSelesai": { "type": "string", "format": "date-time" },
+        "score": { "type": "number" },
+        "status": { "enum": ["ongoing", "completed", "suspended"] },
+        "pelanggaranCount": { "type": "number" }
+      },
+      "required": ["ujianId", "siswaId", "waktuMulai", "status", "pelanggaranCount"]
+    },
+    "Pelanggaran": {
+      "title": "Pelanggaran",
+      "description": "Cheat code/violation record",
+      "type": "object",
+      "properties": {
+        "hasilId": { "type": "string" },
+        "type": { "enum": ["pindah_tab", "alt_tab", "copy_paste"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["hasilId", "type", "timestamp"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "System users"
+    },
+    "siswa/{siswaId}": {
+      "schema": { "$ref": "#/entities/Siswa" },
+      "description": "Student profiles"
+    },
+    "guru/{guruId}": {
+      "schema": { "$ref": "#/entities/Guru" },
+      "description": "Teacher profiles"
+    },
+    "kelas/{kelasId}": {
+      "schema": { "$ref": "#/entities/Kelas" },
+      "description": "Classes"
+    },
+    "mapel/{mapelId}": {
+      "schema": { "$ref": "#/entities/Mapel" },
+      "description": "Subjects"
+    },
+    "paket_soal/{paketId}": {
+      "schema": { "$ref": "#/entities/PaketSoal" },
+      "description": "Question packages"
+    },
+    "paket_soal/{paketId}/soal/{soalId}": {
+      "schema": { "$ref": "#/entities/Soal" },
+      "description": "Questions inside a package"
+    },
+    "ujian/{ujianId}": {
+      "schema": { "$ref": "#/entities/Ujian" },
+      "description": "Exam sessions"
+    },
+    "hasil_ujian/{hasilId}": {
+      "schema": { "$ref": "#/entities/HasilUjian" },
+      "description": "Exam results per student"
+    },
+    "hasil_ujian/{hasilId}/pelanggaran/{pelanggaranId}": {
+      "schema": { "$ref": "#/entities/Pelanggaran" },
+      "description": "Violations during exam"
+    }
+  }
+}
