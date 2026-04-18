@@ -14,6 +14,7 @@ export default function GuruLayout() {
   const navItems = [
     { label: 'Dashboard', path: '/guru' },
     { label: 'Paket Soal', path: '/guru/paket-soal' },
+    { label: 'Hasil Ujian', path: '/guru/hasil' },
   ];
 
   return (

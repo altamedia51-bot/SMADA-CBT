@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuthStore } from '../../store/auth.store';
@@ -11,6 +12,7 @@ import { Input } from '@/components/ui/input';
 
 export default function AdminDashboard() {
   const { profile } = useAuthStore();
+  const navigate = useNavigate();
   
   const [ujianList, setUjianList] = useState<any[]>([]);
   const [selectedUjian, setSelectedUjian] = useState<string>('');
@@ -210,7 +212,7 @@ export default function AdminDashboard() {
             <div className="flex-1 space-y-2 mt-4 text-sm">
                 <div className="flex items-center gap-2 opacity-90"><span className="w-1.5 h-1.5 rounded-full bg-white"/> Manajemen Bank Soal</div>
                 <div className="flex items-center gap-2 opacity-90"><span className="w-1.5 h-1.5 rounded-full bg-white"/> Tambah Peserta Ujian</div>
-                <div className="flex items-center gap-2 opacity-90"><span className="w-1.5 h-1.5 rounded-full bg-white"/> Laporan Hasil Akhir</div>
+                <div className="flex items-center gap-2 opacity-90 cursor-pointer hover:underline" onClick={() => navigate('/admin/hasil')}><span className="w-1.5 h-1.5 rounded-full bg-white"/> Laporan Hasil Akhir</div>
             </div>
           </div>
           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />

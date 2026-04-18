@@ -6,6 +6,7 @@ import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminMasterData from './pages/admin/AdminMasterData';
 import AdminUjian from './pages/admin/AdminUjian';
+import AdminHasil from './pages/admin/AdminHasil';
 import GuruLayout from './layouts/GuruLayout';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import GuruPaketSoal from './pages/guru/GuruPaketSoal';
@@ -27,6 +28,7 @@ export default function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="master-data" element={<AdminMasterData />} />
             <Route path="ujian" element={<AdminUjian />} />
+            <Route path="hasil" element={<AdminHasil />} />
           </Route>
         </Route>
 
@@ -36,6 +38,7 @@ export default function App() {
             <Route index element={<GuruDashboard />} />
             <Route path="paket-soal" element={<GuruPaketSoal />} />
             <Route path="paket-soal/:paketId" element={<GuruSoalDetail />} />
+            <Route path="hasil" element={<AdminHasil />} />
           </Route>
         </Route>
 
