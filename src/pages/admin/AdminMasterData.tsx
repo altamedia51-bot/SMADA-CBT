@@ -47,7 +47,8 @@ export default function AdminMasterData() {
   const [guruForm, setGuruForm] = useState({
     nama: '',
     nip: '',
-    password: ''
+    password: '',
+    nomorWa: ''
   });
 
   // Visibility states
@@ -61,6 +62,7 @@ export default function AdminMasterData() {
   const [newKelasName, setNewKelasName] = useState('');
   const [jenjangKelas, setJenjangKelas] = useState('SMA');
   const [tingkatKelas, setTingkatKelas] = useState(10);
+  const [waliKelas, setWaliKelas] = useState('');
   
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -252,9 +254,11 @@ export default function AdminMasterData() {
       await addDoc(collection(db, 'kelas'), {
         name: newKelasName,
         jenjang: jenjangKelas,
-        tingkat: parseInt(tingkatKelas as any)
+        tingkat: parseInt(tingkatKelas as any),
+        waliKelas: waliKelas
       });
       setNewKelasName('');
+      setWaliKelas('');
       toast('Berhasil!', { description: `Kelas ${newKelasName} berhasil ditambah.` });
     } catch (err: any) {
       toast.error('Gagal menambahkan data: ' + err.message);
@@ -384,6 +388,7 @@ export default function AdminMasterData() {
         await updateDoc(doc(db, 'users', editingGuru.id), {
           displayName: guruForm.nama,
           nip: guruForm.nip,
+          nomorWa: guruForm.nomorWa,
           updatedAt: serverTimestamp()
         });
         toast.success(`Data guru ${guruForm.nama} diperbarui.`);
@@ -400,12 +405,12 @@ export default function AdminMasterData() {
         const uid = data.localId;
         const { setDoc } = await import('firebase/firestore');
         await setDoc(doc(db, 'users', uid), {
-          uid, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, isActive: true, createdAt: serverTimestamp()
+          uid, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, isActive: true, createdAt: serverTimestamp()
         }, { merge: true });
         toast.success(`Guru ${guruForm.nama} ditambahkan.`);
       }
       setEditingGuru(null);
-      setGuruForm({ nama: '', nip: '', password: '' });
+      setGuruForm({ nama: '', nip: '', password: '', nomorWa: '' });
     } catch (err: any) {
       toast.error('Eror: ' + err.message);
     }
@@ -787,6 +792,11 @@ export default function AdminMasterData() {
                   value={guruForm.nip}
                   onChange={e => setGuruForm({...guruForm, nip: e.target.value})}
                 />
+                <Input 
+                  placeholder="NOMOR WHATSAPP (CONTOH: 081234567890)" 
+                  value={guruForm.nomorWa}
+                  onChange={e => setGuruForm({...guruForm, nomorWa: e.target.value})}
+                />
                 {!editingGuru ? (
                   <Input 
                      type="password"
@@ -808,12 +818,12 @@ export default function AdminMasterData() {
                     </p>
                   </div>
                 )}
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full md:col-span-2">
                   <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold h-10">
                     Simpan Data Guru
                   </Button>
                   {editingGuru && (
-                    <Button type="button" variant="outline" onClick={() => { setEditingGuru(null); setGuruForm({nama:'', nip:'', password:''}); }} className="h-10">
+                    <Button type="button" variant="outline" onClick={() => { setEditingGuru(null); setGuruForm({nama:'', nip:'', password:'', nomorWa: ''}); }} className="h-10">
                       Batal
                     </Button>
                   )}
@@ -827,19 +837,21 @@ export default function AdminMasterData() {
                 <TableRow className="bg-slate-50">
                   <TableHead>Nama Guru</TableHead>
                   <TableHead>NIP / Username</TableHead>
+                  <TableHead>No. WA</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.filter(u => u.role === 'guru').length === 0 ? (
-                  <TableRow><TableCell colSpan={3} className="text-center py-10 text-slate-400">Belum ada data guru.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center py-10 text-slate-400">Belum ada data guru.</TableCell></TableRow>
                 ) : (
                   users.filter(u => u.role === 'guru').map(g => (
                     <TableRow key={g.id}>
                       <TableCell className="font-bold text-slate-700">{g.displayName}</TableCell>
                       <TableCell className="font-mono text-xs">{g.nip || g.email.split('@')[0]}</TableCell>
+                      <TableCell className="text-slate-600">{g.nomorWa || '-'}</TableCell>
                       <TableCell className="flex justify-end gap-1">
-                         <Button variant="ghost" size="sm" onClick={() => { setEditingGuru(g); setGuruForm({nama:g.displayName, nip:g.nip||'', password:''}); }} className="text-blue-500">
+                         <Button variant="ghost" size="sm" onClick={() => { setEditingGuru(g); setGuruForm({nama:g.displayName, nip:g.nip||'', password:'', nomorWa: g.nomorWa || ''}); }} className="text-blue-500">
                            <Pencil className="w-4 h-4" />
                          </Button>
                          <Button variant="ghost" size="sm" onClick={() => hapusData('users', g.id)} className="text-rose-500">
@@ -983,6 +995,18 @@ export default function AdminMasterData() {
                   className="h-11 border-slate-200 text-center font-bold"
                 />
               </div>
+              <div className="grid gap-1.5 w-48">
+                <label className="text-xs font-bold text-slate-500 ml-1">WALI KELAS (OPSIONAL)</label>
+                <Select value={waliKelas === '' ? 'none' : waliKelas} onValueChange={v => setWaliKelas(v === 'none' ? '' : v)}>
+                  <SelectTrigger className="h-11 border-slate-200"><SelectValue placeholder="Pilih Guru..." /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">--TIDAK ADA--</SelectItem>
+                    {users.filter(u => u.role === 'guru').map(g => (
+                      <SelectItem key={g.id} value={g.id}>{g.displayName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button type="submit" className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all">
                 Simpan
               </Button>
@@ -998,6 +1022,7 @@ export default function AdminMasterData() {
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE / JENJANG</th>
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA KELAS</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">WALI KELAS & WA</th>
                      <th className="py-5 px-6 text-center text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">JUMLAH SISWA</th>
                      <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
                    </tr>
@@ -1005,11 +1030,12 @@ export default function AdminMasterData() {
                  <tbody className="divide-y divide-slate-50">
                     {kelas.length === 0 ? (
                        <tr>
-                         <td colSpan={5} className="py-12 text-center text-slate-400 font-medium">Belum ada data.</td>
+                         <td colSpan={6} className="py-12 text-center text-slate-400 font-medium">Belum ada data.</td>
                        </tr>
                     ) : (
                       kelas.sort((a,b) => a.name.localeCompare(b.name)).map((k, i) => {
                         const studentCount = users.filter(u => u.role === 'siswa' && u.kelas === k.name).length;
+                        const wali = users.find(u => u.id === k.waliKelas);
                         return (
                         <tr key={k.id} className="hover:bg-slate-50/50 transition-colors group">
                            <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
@@ -1018,6 +1044,16 @@ export default function AdminMasterData() {
                            </td>
                            <td className="py-5 px-6 text-sm font-bold text-slate-800">
                               {k.name}
+                           </td>
+                           <td className="py-5 px-6 text-sm text-slate-600">
+                              {wali ? (
+                                <div>
+                                  <div className="font-bold text-slate-700">{wali.displayName}</div>
+                                  {wali.nomorWa && <div className="text-xs text-blue-500 mt-0.5">{wali.nomorWa}</div>}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 italic text-xs">Belum diatur</span>
+                              )}
                            </td>
                            <td className="py-5 px-6 text-sm font-bold text-slate-600 text-center">
                               {studentCount}
