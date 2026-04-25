@@ -77,10 +77,31 @@ export default function AdminHasil() {
             const studentAns = answers[soal.id];
             if (!studentAns) {
               unanswered++;
-            } else if (studentAns === soal.answer) {
-              correct++;
             } else {
-              wrong++;
+              let isCorrect = false;
+              if (soal.type === 'pg') {
+                const isValidAlphabet = /^[A-E]$/i.test(studentAns);
+                if (isValidAlphabet) {
+                  const ansIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(studentAns.toUpperCase());
+                  const studentTextAns = soal.options?.[ansIdx];
+                  if (studentTextAns === soal.correctAnswer || studentAns.toUpperCase() === soal.correctAnswer || studentAns.toUpperCase() === soal.answer) {
+                    isCorrect = true;
+                  }
+                } else if (studentAns === soal.correctAnswer || studentAns === soal.answer) {
+                  isCorrect = true;
+                }
+              } else if (soal.type === 'isian') {
+                const correctText = (soal.correctAnswer || soal.answer || '').toString().toLowerCase().trim();
+                if (studentAns.toString().toLowerCase().trim() === correctText) {
+                  isCorrect = true;
+                }
+              }
+
+              if (isCorrect) {
+                correct++;
+              } else {
+                wrong++;
+              }
             }
           });
 
