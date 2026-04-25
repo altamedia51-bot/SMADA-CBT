@@ -976,8 +976,8 @@ export default function AdminMasterData() {
               <Plus className="w-5 h-5" />
               <span>{editingKelas ? 'Edit Data Kelas' : 'Form Kelas Baru'}</span>
             </div>
-            <form onSubmit={tanganiTambahKelas} className="p-6 flex flex-wrap gap-4 items-end bg-white">
-              <div className="grid gap-1.5 flex-1 min-w-[240px]">
+            <form onSubmit={tanganiTambahKelas} className="p-6 grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-white">
+              <div className="md:col-span-4 grid gap-1.5">
                 <label className="text-xs font-bold text-slate-500 ml-1">NAMA KELAS LENGKAP</label>
                 <Input 
                   value={newKelasName} 
@@ -986,7 +986,7 @@ export default function AdminMasterData() {
                   className="h-11 border-slate-200"
                 />
               </div>
-              <div className="grid gap-1.5 w-32">
+              <div className="md:col-span-2 grid gap-1.5">
                 <label className="text-xs font-bold text-slate-500 ml-1">JENJANG</label>
                 <Select value={jenjangKelas} onValueChange={setJenjangKelas}>
                   <SelectTrigger className="h-11 border-slate-200"><SelectValue /></SelectTrigger>
@@ -998,7 +998,7 @@ export default function AdminMasterData() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-1.5 w-24">
+              <div className="md:col-span-2 grid gap-1.5">
                 <label className="text-xs font-bold text-slate-500 ml-1">TINGKAT</label>
                 <Input 
                   type="number" 
@@ -1008,7 +1008,7 @@ export default function AdminMasterData() {
                   className="h-11 border-slate-200 text-center font-bold"
                 />
               </div>
-              <div className="grid gap-1.5 w-48">
+              <div className="md:col-span-4 grid gap-1.5">
                 <label className="text-xs font-bold text-slate-500 ml-1">WALI KELAS (OPSIONAL)</label>
                 <Select value={waliKelas === '' ? 'none' : waliKelas} onValueChange={v => setWaliKelas(v === 'none' ? '' : v)}>
                   <SelectTrigger className="h-11 border-slate-200"><SelectValue placeholder="Pilih Guru..." /></SelectTrigger>
@@ -1020,10 +1020,7 @@ export default function AdminMasterData() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex gap-2">
-                <Button type="submit" className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all">
-                  Simpan
-                </Button>
+              <div className="md:col-span-12 flex gap-2 justify-end mt-2">
                 {editingKelas && (
                   <Button type="button" variant="outline" className="h-11 font-bold" onClick={() => {
                     setEditingKelas(null);
@@ -1036,6 +1033,9 @@ export default function AdminMasterData() {
                     Batal
                   </Button>
                 )}
+                <Button type="submit" className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all">
+                  Simpan
+                </Button>
               </div>
             </form>
           </Card>
@@ -1076,7 +1076,16 @@ export default function AdminMasterData() {
                               {wali ? (
                                 <div>
                                   <div className="font-bold text-slate-700">{wali.displayName}</div>
-                                  {wali.nomorWa && <div className="text-xs text-blue-500 mt-0.5">{wali.nomorWa}</div>}
+                                  {wali.nomorWa && (
+                                    <a 
+                                      href={`https://wa.me/${wali.nomorWa.replace(/\D/g, '').replace(/^0/, '62')}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-blue-500 hover:text-blue-700 mt-0.5 inline-block font-medium"
+                                    >
+                                      {wali.nomorWa}
+                                    </a>
+                                  )}
                                 </div>
                               ) : (
                                 <span className="text-slate-400 italic text-xs">Belum diatur</span>
