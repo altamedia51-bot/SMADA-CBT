@@ -317,7 +317,7 @@ export default function UjianSession() {
               )}
 
               {/* Teks Soal */}
-              <div className="mb-8 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: activeSoalData?.question || '' }} />
+              <div className="mb-8 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: activeSoalData?.content || activeSoalData?.question || '' }} />
 
               {/* Opsi / Field Jawaban */}
               {activeSoalData?.type === 'pg' && activeSoalData.options && (
