@@ -483,14 +483,26 @@ export default function GuruSoalDetail() {
           {/* ... Excel & Word Tab Content Omitted for brevity ... */}
           <TabsContent value="excel">
             <Card className="p-6">
-                <h3 className="font-semibold mb-2">Notice</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold">Notice</h3>
+                  <Button variant="outline" size="sm" onClick={downloadExcelTemplate}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Download Template
+                  </Button>
+                </div>
                 <p className="text-sm text-muted-foreground">Fungsionalitas Excel saat ini dioptimalkan untuk soal tipe Pilihan Ganda Biasa seperti instruksi awal. Untuk input AKM (PGK, Essay, Stimulus) direkomendasikan menggunakan Manual Builder untuk memastikan struktur data ke Cloud terjaga.</p>
                 <div className="mt-4"><Input ref={excelInputRef} type="file" onChange={handleImportExcel} accept=".xlsx" /></div>
             </Card>
           </TabsContent>
           <TabsContent value="word">
             <Card className="p-6">
-                <h3 className="font-semibold mb-2">Notice</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold">Notice</h3>
+                  <Button variant="outline" size="sm" onClick={downloadWordTemplate}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Panduan Format
+                  </Button>
+                </div>
                 <p className="text-sm text-muted-foreground">Fungsionalitas Word saat ini dioptimalkan untuk mengekstrak Pilihan Ganda. Untuk soal bernarasi AKM, gunakan tab Manual AKM.</p>
                 <div className="mt-4"><Input ref={wordInputRef} type="file" onChange={handleImportWord} accept=".docx" /></div>
             </Card>
