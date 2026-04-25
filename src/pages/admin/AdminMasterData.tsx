@@ -1049,7 +1049,8 @@ export default function AdminMasterData() {
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE / JENJANG</th>
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA KELAS</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">WALI KELAS & WA</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">WALI KELAS</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">WHATSAPP</th>
                      <th className="py-5 px-6 text-center text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">JUMLAH SISWA</th>
                      <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
                    </tr>
@@ -1057,7 +1058,7 @@ export default function AdminMasterData() {
                  <tbody className="divide-y divide-slate-50">
                     {kelas.length === 0 ? (
                        <tr>
-                         <td colSpan={6} className="py-12 text-center text-slate-400 font-medium">Belum ada data.</td>
+                         <td colSpan={7} className="py-12 text-center text-slate-400 font-medium">Belum ada data.</td>
                        </tr>
                     ) : (
                       kelas.sort((a,b) => a.name.localeCompare(b.name)).map((k, i) => {
@@ -1074,21 +1075,23 @@ export default function AdminMasterData() {
                            </td>
                            <td className="py-5 px-6 text-sm text-slate-600">
                               {wali ? (
-                                <div className="flex items-center gap-2">
                                   <div className="font-bold text-slate-700">{wali.displayName}</div>
-                                  {wali.nomorWa && (
-                                    <a 
-                                      href={`https://wa.me/${wali.nomorWa.replace(/\D/g, '').replace(/^0/, '62')}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-xs text-green-600 bg-green-50 hover:bg-green-100 flex items-center px-2 py-0.5 rounded transition-colors font-medium border border-green-200"
-                                    >
-                                      Chat WA: {wali.nomorWa}
-                                    </a>
-                                  )}
-                                </div>
                               ) : (
                                 <span className="text-slate-400 italic text-xs">Belum diatur</span>
+                              )}
+                           </td>
+                           <td className="py-5 px-6 text-sm text-slate-600">
+                              {wali && wali.nomorWa ? (
+                                <a 
+                                  href={`https://wa.me/${wali.nomorWa.replace(/\D/g, '').replace(/^0/, '62')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-green-600 bg-green-50 hover:bg-green-100 flex items-center justify-center px-2 py-1 rounded transition-colors font-medium border border-green-200"
+                                >
+                                  {wali.nomorWa}
+                                </a>
+                              ) : (
+                                <span className="text-slate-300">-</span>
                               )}
                            </td>
                            <td className="py-5 px-6 text-sm font-bold text-slate-600 text-center">
