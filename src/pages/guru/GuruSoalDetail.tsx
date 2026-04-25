@@ -376,7 +376,7 @@ export default function GuruSoalDetail() {
                 <h3 className="font-semibold text-lg flex items-center gap-2">
                    <FileType className="text-primary w-5 h-5"/> Builder Soal (Standar & AKM)
                 </h3>
-                <div className="w-48">
+                <div className="w-[280px]">
                   <Select value={soalType} onValueChange={setSoalType}>
                     <SelectTrigger><SelectValue/></SelectTrigger>
                     <SelectContent>
