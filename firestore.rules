@@ -23,11 +23,13 @@ service cloud.firestore {
 
     // 1. Users
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      // Allow public read for student listing (needed for login page dropdown)
+      allow read: if isAuthenticated() || resource.data.role == 'siswa';
       allow write: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
     }
 
-    // 2. Siswa
+    // 2. Siswa (Deprecated or mapping to users? The previous setup had /siswa/ but also /users/. 
+    // Looking at the code, it uses /users/ for everything.)
     match /siswa/{siswaId} {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (isAdmin() || isGuru());
@@ -41,7 +43,8 @@ service cloud.firestore {
 
     // 4. Kelas
     match /kelas/{kelasId} {
-      allow read: if isAuthenticated(); 
+      // Allow public read for login screen class selection
+      allow read: if true; 
       allow write: if isAdmin();
     }
 
