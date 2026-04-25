@@ -63,6 +63,7 @@ export default function AdminMasterData() {
   const [jenjangKelas, setJenjangKelas] = useState('SMA');
   const [tingkatKelas, setTingkatKelas] = useState(10);
   const [waliKelas, setWaliKelas] = useState('');
+  const [editingKelas, setEditingKelas] = useState<any>(null);
   
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -251,17 +252,29 @@ export default function AdminMasterData() {
     e.preventDefault();
     if (!newKelasName) return;
     try {
-      await addDoc(collection(db, 'kelas'), {
-        name: newKelasName,
-        jenjang: jenjangKelas,
-        tingkat: parseInt(tingkatKelas as any),
-        waliKelas: waliKelas
-      });
+      if (editingKelas) {
+        await updateDoc(doc(db, 'kelas', editingKelas.id), {
+          name: newKelasName,
+          jenjang: jenjangKelas,
+          tingkat: parseInt(tingkatKelas as any),
+          waliKelas: waliKelas
+        });
+        toast.success(`Data kelas ${newKelasName} berhasil diperbarui.`);
+        setEditingKelas(null);
+      } else {
+        await addDoc(collection(db, 'kelas'), {
+          name: newKelasName,
+          jenjang: jenjangKelas,
+          tingkat: parseInt(tingkatKelas as any),
+          waliKelas: waliKelas
+        });
+        toast('Berhasil!', { description: `Kelas ${newKelasName} berhasil ditambah.` });
+      }
       setNewKelasName('');
       setWaliKelas('');
-      toast('Berhasil!', { description: `Kelas ${newKelasName} berhasil ditambah.` });
+      setShowFormKelas(false);
     } catch (err: any) {
-      toast.error('Gagal menambahkan data: ' + err.message);
+      toast.error('Gagal menyimpan data: ' + err.message);
     }
   };
 
@@ -961,7 +974,7 @@ export default function AdminMasterData() {
           <Card className="p-0 border border-indigo-100 overflow-hidden shadow-sm">
             <div className="bg-indigo-50/50 p-4 border-b flex items-center gap-2 text-indigo-700 font-bold">
               <Plus className="w-5 h-5" />
-              <span>Form Kelas Baru</span>
+              <span>{editingKelas ? 'Edit Data Kelas' : 'Form Kelas Baru'}</span>
             </div>
             <form onSubmit={tanganiTambahKelas} className="p-6 flex flex-wrap gap-4 items-end bg-white">
               <div className="grid gap-1.5 flex-1 min-w-[240px]">
@@ -1007,9 +1020,23 @@ export default function AdminMasterData() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all">
-                Simpan
-              </Button>
+              <div className="flex gap-2">
+                <Button type="submit" className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all">
+                  Simpan
+                </Button>
+                {editingKelas && (
+                  <Button type="button" variant="outline" className="h-11 font-bold" onClick={() => {
+                    setEditingKelas(null);
+                    setNewKelasName('');
+                    setJenjangKelas('SMA');
+                    setTingkatKelas(10);
+                    setWaliKelas('');
+                    setShowFormKelas(false);
+                  }}>
+                    Batal
+                  </Button>
+                )}
+              </div>
             </form>
           </Card>
           )}
@@ -1060,7 +1087,14 @@ export default function AdminMasterData() {
                            </td>
                            <td className="py-5 px-6 text-right">
                               <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button className="text-blue-500 hover:text-blue-700 transition-colors">
+                                <button onClick={() => {
+                                  setEditingKelas(k);
+                                  setNewKelasName(k.name);
+                                  setJenjangKelas(k.jenjang || 'SMA');
+                                  setTingkatKelas(k.tingkat || 10);
+                                  setWaliKelas(k.waliKelas || '');
+                                  setShowFormKelas(true);
+                                }} className="text-blue-500 hover:text-blue-700 transition-colors">
                                   <Pencil className="w-4 h-4" />
                                 </button>
                                 <button onClick={() => hapusData('kelas', k.id)} className="text-rose-400 hover:text-rose-600 transition-colors">
