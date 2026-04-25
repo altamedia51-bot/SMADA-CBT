@@ -463,7 +463,7 @@ export default function AdminMasterData() {
                 onChange={e => setSiswaForm({...siswaForm, nis: e.target.value})}
               />
               
-              {!editingSiswa && (
+              {!editingSiswa ? (
                 <Input 
                   type="password"
                   placeholder="PASSWORD (OPSIONAL, DEFAULT: siswa123)" 
@@ -471,6 +471,19 @@ export default function AdminMasterData() {
                   value={siswaForm.password}
                   onChange={e => setSiswaForm({...siswaForm, password: e.target.value})}
                 />
+              ) : (
+                <div className="space-y-1">
+                  <Input 
+                    type="password"
+                    placeholder="PASSWORD TIDAK DAPAT DIUBAH VIA APLIKASI" 
+                    className="h-11 bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
+                    disabled
+                  />
+                  <p className="text-[11px] text-amber-600 font-medium px-1 flex gap-1 items-start">
+                    <span className="text-amber-500 font-bold">*</span> 
+                    Demi keamanan Firebase, password akun tidak bisa diubah langsung. Jika siswa lupa password, hapus data ini dan buat ulang dengan NIS berbeda.
+                  </p>
+                </div>
               )}
 
               <div className="flex gap-3 pt-2">
@@ -574,13 +587,26 @@ export default function AdminMasterData() {
                   value={guruForm.nip}
                   onChange={e => setGuruForm({...guruForm, nip: e.target.value})}
                 />
-                {!editingGuru && (
+                {!editingGuru ? (
                   <Input 
                      type="password"
-                     placeholder="PASSWORD LOGIN" 
+                     placeholder="PASSWORD LOGIN (OPSIONAL, DEFAULT: guru123)" 
                      value={guruForm.password}
                      onChange={e => setGuruForm({...guruForm, password: e.target.value})}
                   />
+                ) : (
+                   <div className="space-y-1">
+                    <Input 
+                      type="password"
+                      placeholder="PASSWORD TIDAK DAPAT DIUBAH VIA APLIKASI" 
+                      className="bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
+                      disabled
+                    />
+                    <p className="text-[11px] text-amber-600 font-medium px-1 flex gap-1 items-start">
+                      <span className="text-amber-500 font-bold">*</span> 
+                      Reset password harus dengan hapus data & buat ulang.
+                    </p>
+                  </div>
                 )}
                 <div className="flex gap-2">
                   <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold h-10">
