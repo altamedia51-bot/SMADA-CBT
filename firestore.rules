@@ -54,6 +54,26 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /ruang/{ruangId} {
+      allow read: if true; 
+      allow write: if isAdmin();
+    }
+
+    match /sesi/{sesiId} {
+      allow read: if true; 
+      allow write: if isAdmin();
+    }
+
+    match /agama/{agamaId} {
+      allow read: if true; 
+      allow write: if isAdmin();
+    }
+
+    match /jenis_ujian/{jenisId} {
+      allow read: if true; 
+      allow write: if isAdmin();
+    }
+
     // 6. Paket Soal
     match /paket_soal/{paketId} {
       allow read: if isAuthenticated(); 

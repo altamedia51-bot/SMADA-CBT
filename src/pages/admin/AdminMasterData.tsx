@@ -48,6 +48,12 @@ export default function AdminMasterData() {
     password: ''
   });
 
+  // Visibility states
+  const [showFormKelas, setShowFormKelas] = useState(false);
+  const [showFormRuang, setShowFormRuang] = useState(false);
+  const [showFormSesi, setShowFormSesi] = useState(false);
+  const [showFormJenis, setShowFormJenis] = useState(false);
+
   const [newMapelPrefix, setNewMapelPrefix] = useState('');
   const [jenjangMapel, setJenjangMapel] = useState('SMA');
   const [newKelasName, setNewKelasName] = useState('');
@@ -929,13 +935,14 @@ export default function AdminMasterData() {
               <Button type="button" onClick={() => fileInputRefKelas.current?.click()} disabled={isImporting} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-emerald-500/20">
                  {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-3.5 h-3.5 mr-2" />} IMPORT
               </Button>
-              <Button type="button" onClick={() => document.getElementById('form-kelas')?.classList.toggle('hidden')} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-indigo-600/20">
+              <Button type="button" onClick={() => setShowFormKelas(!showFormKelas)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-indigo-600/20">
                  <Plus className="w-3.5 h-3.5 mr-2" /> TAMBAH DATA
               </Button>
             </div>
           </div>
 
-          <Card id="form-kelas" className="p-0 border border-indigo-100 overflow-hidden shadow-sm hidden">
+          {showFormKelas && (
+          <Card className="p-0 border border-indigo-100 overflow-hidden shadow-sm">
             <div className="bg-indigo-50/50 p-4 border-b flex items-center gap-2 text-indigo-700 font-bold">
               <Plus className="w-5 h-5" />
               <span>Form Kelas Baru</span>
@@ -977,6 +984,7 @@ export default function AdminMasterData() {
               </Button>
             </form>
           </Card>
+          )}
 
           <Card className="bg-white border-0 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden py-2 px-4">
              <div className="overflow-x-auto min-h-[400px]">
@@ -1054,13 +1062,14 @@ export default function AdminMasterData() {
               <Button type="button" onClick={() => toast("Fitur Import akan segera hadir")} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-emerald-500/20">
                  <Upload className="w-3.5 h-3.5 mr-2" /> IMPORT
               </Button>
-              <Button type="button" onClick={() => document.getElementById('form-ruang')?.classList.toggle('hidden')} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-600/20">
+              <Button type="button" onClick={() => setShowFormRuang(!showFormRuang)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-600/20">
                  <Plus className="w-3.5 h-3.5 mr-2" /> TAMBAH DATA
               </Button>
             </div>
           </div>
 
-          <Card id="form-ruang" className="p-0 border border-blue-100 overflow-hidden shadow-sm hidden">
+          {showFormRuang && (
+          <Card className="p-0 border border-blue-100 overflow-hidden shadow-sm">
             <form onSubmit={tanganiTambahRuang} className="p-6 flex flex-wrap gap-4 items-end bg-white">
               <div className="grid gap-1.5 w-40">
                 <label className="text-xs font-bold text-slate-500 uppercase">KODE</label>
@@ -1073,6 +1082,7 @@ export default function AdminMasterData() {
               <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
             </form>
           </Card>
+          )}
 
           <Card className="bg-white border-0 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden py-2 px-4">
              <div className="overflow-x-auto min-h-[300px]">
@@ -1127,13 +1137,14 @@ export default function AdminMasterData() {
               <Button type="button" onClick={() => toast("Fitur Import akan segera hadir")} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-emerald-500/20">
                  <Upload className="w-3.5 h-3.5 mr-2" /> IMPORT
               </Button>
-              <Button type="button" onClick={() => document.getElementById('form-sesi')?.classList.toggle('hidden')} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-600/20">
+              <Button type="button" onClick={() => setShowFormSesi(!showFormSesi)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-600/20">
                  <Plus className="w-3.5 h-3.5 mr-2" /> TAMBAH DATA
               </Button>
             </div>
           </div>
 
-          <Card id="form-sesi" className="p-0 border border-blue-100 overflow-hidden shadow-sm hidden">
+          {showFormSesi && (
+          <Card className="p-0 border border-blue-100 overflow-hidden shadow-sm">
             <form onSubmit={tanganiTambahSesi} className="p-6 flex flex-wrap gap-4 items-end bg-white">
               <div className="grid gap-1.5 w-40">
                 <label className="text-xs font-bold text-slate-500 uppercase">KODE</label>
@@ -1146,6 +1157,7 @@ export default function AdminMasterData() {
               <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
             </form>
           </Card>
+          )}
 
           <Card className="bg-white border-0 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden py-2 px-4">
              <div className="overflow-x-auto min-h-[300px]">
@@ -1200,13 +1212,14 @@ export default function AdminMasterData() {
               <Button type="button" onClick={() => toast("Fitur Import akan segera hadir")} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-emerald-500/20">
                  <Upload className="w-3.5 h-3.5 mr-2" /> IMPORT
               </Button>
-              <Button type="button" onClick={() => document.getElementById('form-jenis')?.classList.toggle('hidden')} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-600/20">
+              <Button type="button" onClick={() => setShowFormJenis(!showFormJenis)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-600/20">
                  <Plus className="w-3.5 h-3.5 mr-2" /> TAMBAH DATA
               </Button>
             </div>
           </div>
 
-          <Card id="form-jenis" className="p-0 border border-blue-100 overflow-hidden shadow-sm hidden">
+          {showFormJenis && (
+          <Card className="p-0 border border-blue-100 overflow-hidden shadow-sm">
             <form onSubmit={tanganiTambahJenisUjian} className="p-6 flex flex-wrap gap-4 items-end bg-white">
               <div className="grid gap-1.5 w-40">
                 <label className="text-xs font-bold text-slate-500 uppercase">KODE</label>
@@ -1219,6 +1232,7 @@ export default function AdminMasterData() {
               <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
             </form>
           </Card>
+          )}
 
           <Card className="bg-white border-0 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden py-2 px-4">
              <div className="overflow-x-auto min-h-[300px]">
