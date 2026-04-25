@@ -47,8 +47,8 @@ export default function AdminLayout() {
       {/* Sidebar - Dark theme like the image */}
       <aside className="w-[260px] bg-[#0E1726] text-slate-300 flex flex-col hidden md:flex shrink-0 border-r border-[#1a2942]">
         <div className="h-20 flex items-center px-6 border-b border-[#1a2942]">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">
-            MG
+          <div className="w-8 h-8 bg-blue-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30 text-xs">
+            SMA
           </div>
           <span className="font-extrabold text-xl tracking-tight ml-3 text-white">CBT System</span>
         </div>
@@ -152,7 +152,7 @@ export default function AdminLayout() {
          {/* Mobile Header */}
          <div className="md:hidden h-16 bg-[#0E1726] text-white flex items-center px-4 justify-between shrink-0">
             <div className="font-bold flex items-center gap-2">
-               <div className="w-8 h-8 bg-blue-500 rounded-lg shrink-0 flex items-center justify-center font-bold">MG</div>
+               <div className="w-8 h-8 bg-blue-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-xs">SMA</div>
                CBT System
             </div>
             <button onClick={() => auth.signOut()}>
@@ -163,8 +163,8 @@ export default function AdminLayout() {
          <div className="flex-1 overflow-auto bg-slate-50 relative">
            <Outlet />
            
-           <div className="p-6 text-center text-xs text-slate-400 font-medium tracking-widest uppercase">
-              © 2026 DEVELOPED BY AL-SUKOREJOI | VERSI APP 1.0.0
+           <div className="p-6 text-center text-xs text-slate-400 font-medium tracking-widest uppercase mb-4">
+              © 2026 DEVELOPED BY SMADA | VERSI APP 1.1.0
            </div>
          </div>
       </div>
