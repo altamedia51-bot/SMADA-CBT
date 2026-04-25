@@ -1074,16 +1074,16 @@ export default function AdminMasterData() {
                            </td>
                            <td className="py-5 px-6 text-sm text-slate-600">
                               {wali ? (
-                                <div>
+                                <div className="flex items-center gap-2">
                                   <div className="font-bold text-slate-700">{wali.displayName}</div>
                                   {wali.nomorWa && (
                                     <a 
                                       href={`https://wa.me/${wali.nomorWa.replace(/\D/g, '').replace(/^0/, '62')}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-xs text-blue-500 hover:text-blue-700 mt-0.5 inline-block font-medium"
+                                      className="text-xs text-green-600 bg-green-50 hover:bg-green-100 flex items-center px-2 py-0.5 rounded transition-colors font-medium border border-green-200"
                                     >
-                                      {wali.nomorWa}
+                                      Chat WA: {wali.nomorWa}
                                     </a>
                                   )}
                                 </div>
