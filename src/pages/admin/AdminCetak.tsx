@@ -25,6 +25,12 @@ export default function AdminCetak() {
   const [selectedUjianId, setSelectedUjianId] = useState('');
   const [selectedPaketId, setSelectedPaketId] = useState('');
   const [jumlahSoalLjk, setJumlahSoalLjk] = useState(50);
+
+  // New states for custom Soal Ujian print info
+  const [tahunPelajaran, setTahunPelajaran] = useState('2024-2025');
+  const [hariTanggal, setHariTanggal] = useState('');
+  const [kelasProgram, setKelasProgram] = useState('');
+  const [waktuUjian, setWaktuUjian] = useState('90 Menit');
   
   const [printMode, setPrintMode] = useState<'none'|'kartu'|'hadir'|'berita'|'soal'|'ljk'>('none');
   const [printData, setPrintData] = useState<any>(null);
@@ -67,7 +73,15 @@ export default function AdminCetak() {
        const soal = snap.docs.map(d => d.data());
        if (soal.length === 0) { toast.error("Paket soal belum memiliki soal"); return; }
        
-       setPrintData({ judul: paket.title, mapel: paket.mapelId, soal });
+       setPrintData({ 
+         judul: paket.title, 
+         mapel: paket.mapelId, 
+         soal,
+         tahunPelajaran,
+         hariTanggal,
+         kelasProgram,
+         waktuUjian
+       });
        setIsSoalModalOpen(false);
        setPrintMode('soal');
     } catch (err: any) { toast.error("Gagal: " + err.message); }
@@ -289,7 +303,7 @@ export default function AdminCetak() {
                      <div className="border-[1.5px] border-black p-4 text-center rounded-sm">
                          <h2 className="font-bold text-[var(--primary)] uppercase tracking-[0.2em] text-lg lg:text-xl">{config.kop1 || 'PANITIA UJIAN SEKOLAH'}</h2>
                          <h1 className="text-2xl lg:text-3xl font-black text-emerald-600 uppercase tracking-wider mt-1">{config.sekolah}</h1>
-                         <p className="italic font-bold font-sans mt-2 tracking-wide">Tahun Pelajaran 2024-2025</p>
+                         <p className="italic font-bold font-sans mt-2 tracking-wide">Tahun Pelajaran {printData?.tahunPelajaran || '........'}</p>
                      </div>
                   </div>
                   
@@ -302,17 +316,17 @@ export default function AdminCetak() {
                         </div>
                         <div className="flex gap-2 w-1/2 justify-start">
                            <div className="w-32">Hari, tanggal</div>
-                           <div>: .......................................</div>
+                           <div>: {printData?.hariTanggal || '.......................................'}</div>
                         </div>
                      </div>
                      <div className="flex justify-between py-1.5 font-bold px-2 border-b-[3px] border-black">
                         <div className="flex gap-2 w-1/2">
                            <div className="w-32">Kelas / Program</div>
-                           <div>: .......................................</div>
+                           <div>: {printData?.kelasProgram || '.......................................'}</div>
                         </div>
                         <div className="flex gap-2 w-1/2 justify-start">
                            <div className="w-32">Waktu</div>
-                           <div>: .......................................</div>
+                           <div>: {printData?.waktuUjian || '.......................................'}</div>
                         </div>
                      </div>
                   </div>
@@ -481,7 +495,47 @@ export default function AdminCetak() {
         <DialogContent><DialogHeader><DialogTitle>Cetak Berita Acara Ujian</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedUjianId} onValueChange={setSelectedUjianId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Jadwal Ujian" /></SelectTrigger><SelectContent>{ujianList.map(u => (<SelectItem key={u.id} value={u.id}>{u.title}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateBerita}>Buat Berita Acara</Button></div></DialogContent>
       </Dialog>
       <Dialog open={isSoalModalOpen} onOpenChange={setIsSoalModalOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Cetak Soal Ujian</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedPaketId} onValueChange={setSelectedPaketId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Paket Soal" /></SelectTrigger><SelectContent>{paketList.map(p => (<SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateSoal}>Generate Lembar Soal</Button></div></DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader><DialogTitle>Cetak Soal Ujian</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <label className="text-xs font-bold text-slate-500 mb-1 block">Pilih Paket Soal</label>
+              <Select value={selectedPaketId} onValueChange={setSelectedPaketId}>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Pilih Paket Soal" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paketList.map(p => (<SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 mb-1 block">Tahun Pelajaran</label>
+                <Input value={tahunPelajaran} onChange={e=>setTahunPelajaran(e.target.value)} placeholder="Contoh: 2024-2025" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 mb-1 block">Waktu Ujian</label>
+                <Input value={waktuUjian} onChange={e=>setWaktuUjian(e.target.value)} placeholder="Contoh: 90 Menit" />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 mb-1 block">Hari, Tanggal</label>
+              <Input value={hariTanggal} onChange={e=>setHariTanggal(e.target.value)} placeholder="Contoh: Senin, 12 Mei 2025" />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 mb-1 block">Kelas / Program</label>
+              <Input value={kelasProgram} onChange={e=>setKelasProgram(e.target.value)} placeholder="Contoh: X MIPA 1 / ALL" />
+            </div>
+
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-bold shadow-lg shadow-blue-500/20 mt-2" onClick={handleGenerateSoal}>
+              Generate Lembar Soal
+            </Button>
+          </div>
+        </DialogContent>
       </Dialog>
       
       <Dialog open={isLjkModalOpen} onOpenChange={setIsLjkModalOpen}>
