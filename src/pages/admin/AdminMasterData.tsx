@@ -275,6 +275,7 @@ export default function AdminMasterData() {
         const rows = results.data as any[];
         let successCount = 0;
         let failCount = 0;
+        let lastError = "";
 
         for (const row of rows) {
           // Robust key searching
@@ -302,6 +303,7 @@ export default function AdminMasterData() {
           
           if (!name || !classRoom || !rawNis) {
             console.warn("Skipping row due to missing data:", { name, classRoom, rawNis });
+            lastError = `Ada baris dengan data tidak lengkap. Cek kolom Nama dan Kelas.`;
             failCount++;
             continue;
           }
@@ -349,17 +351,23 @@ export default function AdminMasterData() {
               }
             } else {
               console.error("Auth creation failed:", data.error?.message);
+              lastError = data.error?.message || 'Auth API failed';
               failCount++;
             }
-          } catch (err) {
+          } catch (err: any) {
             console.error("Import error for row:", name, err);
+            lastError = err.message || 'Firestore API failed';
             failCount++;
           }
         }
 
         setIsImporting(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
-        toast.success(`Import Siswa selesai: ${successCount} berhasil, ${failCount} gagal.`);
+        if (failCount > 0) {
+          toast.error(`Import Siswa selesai: ${successCount} berhasil, ${failCount} gagal. Pesan error: ${lastError}`, { duration: 10000 });
+        } else {
+          toast.success(`Import Siswa selesai: ${successCount} berhasil.`);
+        }
       }
     });
   };
