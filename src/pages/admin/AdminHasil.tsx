@@ -175,7 +175,7 @@ export default function AdminHasil() {
     if (!window.confirm("Apakah Anda yakin ingin mereset sesi siswa ini? Seluruh jawaban dan riwayat pengerjaan akan dihapus permanen.")) return;
 
     try {
-      await deleteDoc(doc(db, 'ujian_sessions', sessionId));
+      await deleteDoc(doc(db, 'jawaban_siswa', sessionId));
       setPesertaResults(prev => prev.filter(p => p.id !== sessionId));
       toast.success("Sesi ujian peserta berhasil direset.");
     } catch (error) {
