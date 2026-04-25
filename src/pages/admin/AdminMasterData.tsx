@@ -125,24 +125,14 @@ export default function AdminMasterData() {
         });
         const data = await res.json();
         
-        if (!res.ok) throw new Error(data.error?.message || 'Gagal registrasi Auth');
+        if (!res.ok && data.error?.message !== 'EMAIL_EXISTS') throw new Error(data.error?.message || 'Gagal registrasi Auth');
         
-        const uid = data.localId;
-        await updateDoc(doc(db, 'users', uid), {
-          uid,
-          email,
-          displayName: siswaForm.nama,
-          role: 'siswa',
-          kelas: siswaForm.kelas,
-          nis: siswaForm.nis,
-          isActive: true,
-          createdAt: serverTimestamp()
-        });
-        // Note: updateDoc works here because the first Turn created a user doc on Auth create? 
-        // Actually best to use setDoc with merge if doc might not exist yet.
+        const uid = res.ok ? data.localId : null;
+        const docId = uid || `recovered_${siswaForm.nis}`;
+        
         const { setDoc } = await import('firebase/firestore');
-        await setDoc(doc(db, 'users', uid), {
-          uid,
+        await setDoc(doc(db, 'users', docId), {
+          uid: uid, // will be null if EMAIL_EXISTS, recovered on login
           email,
           displayName: siswaForm.nama,
           role: 'siswa',
@@ -152,7 +142,10 @@ export default function AdminMasterData() {
           createdAt: serverTimestamp()
         }, { merge: true });
         
-        toast.success(`Siswa ${siswaForm.nama} berhasil ditambahkan.`);
+        const message = res.ok 
+          ? `Siswa ${siswaForm.nama} berhasil ditambahkan.` 
+          : `Siswa ${siswaForm.nama} dipulihkan dari database keamanan.`;
+        toast.success(message);
       }
       
       resetSiswaForm();
@@ -304,21 +297,12 @@ export default function AdminMasterData() {
             });
 
             const data = await res.json();
-            const uid = res.ok ? data.localId : (data.error?.message === 'EMAIL_EXISTS' ? null : null);
-            
-            // If email exists, we might still want to update their info (class/name) 
-            // but for safety in bulk import we skip or find user. 
-            // Let's assume we create or update existing if possible via email lookup or just use UID if we had it.
-            // Simplified: if res.ok, we have new UID. If EMAIL_EXISTS, we need to find existing UID by email or just skip.
             
             if (res.ok || data.error?.message === 'EMAIL_EXISTS') {
-              // If exists, we don't have UID from signup, but we can try to set doc anyway if we can determine it 
-              // or just skip. For now, only handle new ones or assume existing UID == some convention?
-              // Better logic: if exists, it's a fail for 'create' unless we handle update.
+              const { setDoc } = await import('firebase/firestore');
               
               if (res.ok) {
                 const newUid = data.localId;
-                const { setDoc } = await import('firebase/firestore');
                 await setDoc(doc(db, 'users', newUid), {
                   uid: newUid,
                   email,
@@ -331,7 +315,21 @@ export default function AdminMasterData() {
                 }, { merge: true });
                 successCount++;
               } else {
-                failCount++;
+                // EMAIL_EXISTS: User has Auth record but maybe Firestore doc was deleted.
+                // Create doc with custom ID (NIS) so it shows in list. 
+                // AuthProvider will "adopt" this doc on student login.
+                const fallbackDocId = `recovered_${rawNis}`;
+                await setDoc(doc(db, 'users', fallbackDocId), {
+                  uid: null, // to be updated on login
+                  email,
+                  displayName: name,
+                  role: 'siswa',
+                  kelas: classRoom,
+                  nis: rawNis.toString(),
+                  isActive: true,
+                  createdAt: serverTimestamp()
+                }, { merge: true });
+                successCount++;
               }
             } else {
               failCount++;
