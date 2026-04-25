@@ -15,6 +15,7 @@ export default function AdminHasil() {
   const [pesertaResults, setPesertaResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
+  const [selectedKelas, setSelectedKelas] = useState<string>('all');
 
   // Fetch Ujian List
   useEffect(() => {
@@ -118,10 +119,14 @@ export default function AdminHasil() {
     XLSX.writeFile(wb, `Laporan_${ujianName}.xlsx`);
   };
 
-  const filtered = pesertaResults.filter(p => 
-    p.siswaName?.toLowerCase().includes(search.toLowerCase()) ||
-    p.siswaKelas?.toLowerCase().includes(search.toLowerCase())
-  );
+  const uniqueClasses = Array.from(new Set(pesertaResults.map(p => p.siswaKelas).filter(Boolean))).sort();
+
+  const filtered = pesertaResults.filter(p => {
+    const matchesSearch = p.siswaName?.toLowerCase().includes(search.toLowerCase()) ||
+                          p.siswaKelas?.toLowerCase().includes(search.toLowerCase());
+    const matchesKelas = selectedKelas === 'all' || p.siswaKelas === selectedKelas;
+    return matchesSearch && matchesKelas;
+  });
 
   return (
     <div className="p-6 md:p-8 space-y-6">
@@ -197,16 +202,27 @@ export default function AdminHasil() {
         {/* Main: Table */}
         <div className="md:col-span-3">
           <Card className="overflow-hidden">
-            <div className="p-4 border-b bg-slate-50 flex items-center gap-3">
-              <div className="relative flex-1">
+            <div className="p-4 border-b bg-slate-50 flex flex-col md:flex-row items-center gap-3">
+              <div className="relative flex-1 w-full">
                 <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
                 <Input 
-                  placeholder="Cari nama atau kelas siswa..." 
+                  placeholder="Cari nama siswa..." 
                   className="pl-9 bg-white" 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
+              <Select value={selectedKelas} onValueChange={setSelectedKelas}>
+                <SelectTrigger className="w-full md:w-[200px] bg-white">
+                  <SelectValue placeholder="Semua Kelas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Kelas</SelectItem>
+                  {uniqueClasses.map(kelas => (
+                    <SelectItem key={kelas as string} value={kelas as string}>{kelas as string}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="overflow-x-auto">
