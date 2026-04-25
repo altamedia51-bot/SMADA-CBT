@@ -97,8 +97,8 @@ export default function AdminMasterData() {
   // --- Student Management Functions ---
   const saveSiswa = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!siswaForm.nama || !siswaForm.kelas || !siswaForm.nis) {
-      toast.error('Mohon isi semua field (Nama, Kelas, NIS)');
+    if (!siswaForm.nama || !siswaForm.kelas) {
+      toast.error('Mohon isi Nama dan Kelas');
       return;
     }
 
@@ -108,13 +108,14 @@ export default function AdminMasterData() {
         await updateDoc(doc(db, 'users', editingSiswa.id), {
           displayName: siswaForm.nama,
           kelas: siswaForm.kelas,
-          nis: siswaForm.nis,
+          nis: siswaForm.nis || editingSiswa.nis,
           updatedAt: serverTimestamp()
         });
         toast.success(`Data ${siswaForm.nama} berhasil diperbarui.`);
       } else {
         // Create new
-        const email = `${siswaForm.nis}@edutest.local`;
+        const rawNis = siswaForm.nis || siswaForm.nama.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 8) + Math.floor(Math.random() * 1000);
+        const email = `${rawNis}@edutest.local`;
         const pass = siswaForm.password || 'siswa123';
         
         // Use the manual registration method to avoid logging out
@@ -276,11 +277,14 @@ export default function AdminMasterData() {
         let failCount = 0;
 
         for (const row of rows) {
-          // Format based on hint: Nama, Kelas, NIS (or Username), Password(optional)
+          // Format: Nama, Kelas, Password (NIS is optional now)
           const name = row.Nama || row.nama || row.name;
           const classRoom = row.Kelas || row.kelas || row.class;
-          const rawNis = row.NIS || row.nis || row.username || row.ID;
           const password = row.Password || row.password || 'siswa123';
+          
+          // Generate identifier if NIS missing
+          const rawNis = row.NIS || row.nis || row.username || 
+                        (name ? name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 8) + Math.floor(Math.random() * 1000) : null);
           
           if (!name || !classRoom || !rawNis) {
             failCount++;
@@ -347,7 +351,7 @@ export default function AdminMasterData() {
   };
 
   const downloadTemplate = () => {
-    const csvContent = "Nama,Kelas,NIS,Password\nEVI AYU LESTARI,XE4,190110,siswa123\nALFY NUR ASHIFAK,XE1,1001,siswa123";
+    const csvContent = "Nama,Kelas,Password\nALFY NUR ASHIFAK,XE1,siswa123\nALIFIA NASWA HAFIDHOH,XE1,siswa123";
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -428,7 +432,7 @@ export default function AdminMasterData() {
               </div>
               
               <Input 
-                placeholder="NIS / NOMOR INDUK SISWA" 
+                placeholder="NIS / NOMOR INDUK SISWA (OPSIONAL)" 
                 className="h-11 font-mono"
                 value={siswaForm.nis}
                 onChange={e => setSiswaForm({...siswaForm, nis: e.target.value})}
