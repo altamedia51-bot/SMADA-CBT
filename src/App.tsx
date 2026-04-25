@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminMasterData from './pages/admin/AdminMasterData';
+import AdminBankSoal from './pages/admin/AdminBankSoal';
 import AdminUjian from './pages/admin/AdminUjian';
 import AdminHasil from './pages/admin/AdminHasil';
 import GuruLayout from './layouts/GuruLayout';
@@ -30,8 +31,9 @@ export default function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="master-data" element={<AdminMasterData />} />
             <Route path="administrasi" element={<AdminMasterData />} />
+            <Route path="bank-soal" element={<AdminBankSoal />} />
+            <Route path="bank-soal/:paketId" element={<GuruSoalDetail />} />
             <Route path="ujian" element={<AdminUjian />} />
-            <Route path="ujian/soal/:paketId" element={<GuruSoalDetail />} />
             <Route path="hasil" element={<AdminHasil />} />
             <Route path="leger" element={<AdminLeger />} />
           </Route>

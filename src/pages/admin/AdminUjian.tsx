@@ -145,7 +145,7 @@ export default function AdminUjian() {
     <div className="p-6 md:p-8 max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
       {/* Kiri: Form */}
       <div className="w-full md:w-1/3">
-        <h2 className="text-2xl font-bold mb-6 text-slate-800">Manajemen Ujian</h2>
+        <h2 className="text-2xl font-bold mb-6 text-slate-800">Manajemen Jadwal</h2>
         <Card className="p-5 shadow-sm">
           <form onSubmit={handleSave} className="space-y-4">
             <div>
@@ -290,7 +290,7 @@ export default function AdminUjian() {
                       variant="outline" 
                       size="icon" 
                       className="h-8 w-8 text-primary border-primary/20 hover:bg-primary/10" 
-                      onClick={() => navigate(`/admin/ujian/soal/${u.paketId}`)}
+                      onClick={() => navigate(`/admin/bank-soal/${u.paketId}`)}
                       title="Lihat / Edit Soal"
                     >
                       <Eye className="w-4 h-4" />
