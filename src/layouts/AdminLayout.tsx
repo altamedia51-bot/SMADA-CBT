@@ -2,7 +2,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, Database, FileText, ClipboardCheck, LineChart, ChevronDown, ChevronRight, Calendar, Printer, BookOpen } from 'lucide-react';
+import { LogOut, LayoutDashboard, Database, FileText, ClipboardCheck, LineChart, ChevronDown, ChevronRight, Calendar, Printer, BookOpen, Users } from 'lucide-react';
 import { useIdleLogout } from '../hooks/useIdleLogout';
 
 export default function AdminLayout() {
@@ -38,6 +38,7 @@ export default function AdminLayout() {
     { label: 'Jadwal Ujian', path: '/admin/ujian', icon: Calendar },
     { label: 'Hasil Ujian', path: '/admin/hasil', icon: ClipboardCheck },
     { label: 'Cetak', path: '/admin/cetak', icon: Printer },
+    { label: 'Administrator', path: '/admin/users', icon: Users },
     { label: 'Documentation', path: '/admin/docs', icon: BookOpen },
   ];
 

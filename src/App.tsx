@@ -10,6 +10,7 @@ import AdminUjian from './pages/admin/AdminUjian';
 import AdminHasil from './pages/admin/AdminHasil';
 import AdminCetak from './pages/admin/AdminCetak';
 import AdminDocs from './pages/admin/AdminDocs';
+import AdminUsers from './pages/admin/AdminUsers';
 import GuruLayout from './layouts/GuruLayout';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import GuruPaketSoal from './pages/guru/GuruPaketSoal';
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="hasil" element={<AdminHasil />} />
             <Route path="leger" element={<AdminLeger />} />
             <Route path="cetak" element={<AdminCetak />} />
+            <Route path="users" element={<AdminUsers />} />
             <Route path="docs" element={<AdminDocs />} />
           </Route>
         </Route>
