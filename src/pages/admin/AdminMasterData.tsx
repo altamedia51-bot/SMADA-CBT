@@ -389,18 +389,25 @@ export default function AdminMasterData() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold">Manajemen Master Data</h2>
-        <p className="text-muted-foreground text-sm mt-1">Mengelola relasi infrastruktur dan entitas sekolah.</p>
+    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+              <span className="text-2xl">🏫</span> Master Data
+            </h2>
+          </div>
+          <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-1">Manajemen Variabel</p>
+        </div>
       </div>
 
       <Tabs defaultValue="siswa" className="w-full">
-        <TabsList className="grid w-full max-w-4xl grid-cols-4 mb-6">
-          <TabsTrigger value="siswa">Data Siswa</TabsTrigger>
-          <TabsTrigger value="guru">Data Guru</TabsTrigger>
-          <TabsTrigger value="mapel">Mata Pelajaran</TabsTrigger>
-          <TabsTrigger value="kelas">Data Kelas</TabsTrigger>
+        <TabsList className="flex w-full mb-8 bg-transparent p-0 gap-2 border-b border-slate-200 rounded-none h-auto overflow-x-auto justify-start">
+          <TabsTrigger value="siswa" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">Data Siswa</TabsTrigger>
+          <TabsTrigger value="guru" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">Data Guru</TabsTrigger>
+          <TabsTrigger value="kelas" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">Data Kelas</TabsTrigger>
+          <TabsTrigger value="mapel" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">Data Mapel</TabsTrigger>
         </TabsList>
 
         {/* --- TABS: DATA SISWA --- */}
@@ -709,10 +716,38 @@ export default function AdminMasterData() {
         </TabsContent>
 
         <TabsContent value="kelas" className="space-y-6">
-          <Card className="p-0 border border-indigo-100 overflow-hidden shadow-sm">
+          {/* Action Header */}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-2">
+            <div className="relative w-full md:w-80">
+              <Input 
+                placeholder="Cari kelas..." 
+                className="pl-10 bg-white border-slate-200 rounded-full h-11 text-sm font-medium shadow-sm w-full focus-visible:ring-blue-500" 
+              />
+              <svg className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" onClick={() => {}} className="bg-rose-500 hover:bg-rose-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-rose-500/20">
+                 <Trash2 className="w-3.5 h-3.5 mr-2" /> HAPUS SEMUA
+              </Button>
+              <Button type="button" onClick={() => {}} className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-500/20">
+                 <Download className="w-3.5 h-3.5 mr-2" /> TEMPLATE
+              </Button>
+              <Button type="button" onClick={() => {}} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-emerald-500/20">
+                 <Upload className="w-3.5 h-3.5 mr-2" /> IMPORT
+              </Button>
+              <Button type="button" onClick={() => document.getElementById('form-kelas')?.classList.toggle('hidden')} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-indigo-600/20">
+                 <Plus className="w-3.5 h-3.5 mr-2" /> TAMBAH DATA
+              </Button>
+            </div>
+          </div>
+
+          <Card id="form-kelas" className="p-0 border border-indigo-100 overflow-hidden shadow-sm hidden">
             <div className="bg-indigo-50/50 p-4 border-b flex items-center gap-2 text-indigo-700 font-bold">
               <Plus className="w-5 h-5" />
-              <span>Kelola Kelas</span>
+              <span>Form Kelas Baru</span>
             </div>
             <form onSubmit={tanganiTambahKelas} className="p-6 flex flex-wrap gap-4 items-end bg-white">
               <div className="grid gap-1.5 flex-1 min-w-[240px]">
@@ -720,14 +755,14 @@ export default function AdminMasterData() {
                 <Input 
                   value={newKelasName} 
                   onChange={e => setNewKelasName(e.target.value)} 
-                  placeholder="Contoh: XII IPA 1 / XII RPL 2" 
-                  className="h-10 border-slate-200"
+                  placeholder="Contoh: XII IPA 1" 
+                  className="h-11 border-slate-200"
                 />
               </div>
               <div className="grid gap-1.5 w-32">
                 <label className="text-xs font-bold text-slate-500 ml-1">JENJANG</label>
                 <Select value={jenjangKelas} onValueChange={setJenjangKelas}>
-                  <SelectTrigger className="h-10 border-slate-200"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-11 border-slate-200"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="SD">SD</SelectItem>
                     <SelectItem value="SMP">SMP</SelectItem>
@@ -743,61 +778,61 @@ export default function AdminMasterData() {
                   value={tingkatKelas} 
                   onChange={e => setTingkatKelas(parseInt(e.target.value))} 
                   min={1} max={12} 
-                  className="h-10 border-slate-200 text-center font-bold"
+                  className="h-11 border-slate-200 text-center font-bold"
                 />
               </div>
-              <Button type="submit" className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all">
-                Tambah Kelas
+              <Button type="submit" className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all">
+                Simpan
               </Button>
             </form>
           </Card>
 
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">Database Kelas</h3>
-            </div>
-
-            {kelas.length === 0 ? (
-              <Card className="py-20 text-center border-dashed border-2 bg-slate-50/50 flex flex-col items-center justify-center space-y-3">
-                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-300">
-                  <Hash className="w-8 h-8" />
-                </div>
-                <p className="text-slate-500 font-medium">Belum ada data kelas yang tercatat</p>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {kelas.sort((a,b) => a.name.localeCompare(b.name)).map((k) => {
-                  const studentCount = users.filter(u => u.role === 'siswa' && u.kelas === k.name).length;
-                  return (
-                    <Card key={k.id} className="p-4 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all group relative">
-                      <div className="flex flex-col space-y-2">
-                        <div className="flex justify-between items-start">
-                          <span className="text-xs font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded tracking-wider">
-                            {k.jenjang} - KLS {k.tingkat}
-                          </span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => hapusData('kelas', k.id)} 
-                            className="h-7 w-7 p-0 text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                        <h4 className="text-xl font-black text-slate-800 truncate" title={k.name}>
-                          {k.name}
-                        </h4>
-                        <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
-                          <UserCircle className="w-3.5 h-3.5" />
-                          <span>{studentCount} Siswa Terdaftar</span>
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <Card className="bg-white border-0 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden py-2 px-4">
+             <div className="overflow-x-auto min-h-[400px]">
+               <table className="w-full">
+                 <thead>
+                   <tr className="border-b-2 border-slate-100">
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE / JENJANG</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA KELAS</th>
+                     <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-50">
+                    {kelas.length === 0 ? (
+                       <tr>
+                         <td colSpan={4} className="py-12 text-center text-slate-400 font-medium">Belum ada data.</td>
+                       </tr>
+                    ) : (
+                      kelas.sort((a,b) => a.name.localeCompare(b.name)).map((k, i) => (
+                        <tr key={k.id} className="hover:bg-slate-50/50 transition-colors group">
+                           <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
+                           <td className="py-5 px-6 text-sm font-bold text-blue-600">
+                              {k.jenjang}-{k.tingkat}
+                           </td>
+                           <td className="py-5 px-6 text-sm font-bold text-slate-800">
+                              {k.name}
+                           </td>
+                           <td className="py-5 px-6 text-right">
+                              <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button className="text-blue-500 hover:text-blue-700 transition-colors">
+                                  <Pencil className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => hapusData('kelas', k.id)} className="text-rose-400 hover:text-rose-600 transition-colors">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                           </td>
+                        </tr>
+                      ))
+                    )}
+                 </tbody>
+               </table>
+               <div className="py-4 px-6 text-xs font-semibold text-slate-400 mt-2">
+                 Ditampilkan: {kelas.length} dari {kelas.length} data
+               </div>
+             </div>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
