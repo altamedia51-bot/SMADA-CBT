@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, getDocs, doc, getDoc, where } from 'firebase/firestore';
+import { collection, query, onSnapshot, getDocs, doc, getDoc, where, deleteDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Download, FileText, CheckCircle, XCircle, AlertTriangle, Hash, Clock } from 'lucide-react';
+import { Search, Download, FileText, CheckCircle, XCircle, AlertTriangle, Hash, Clock, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
@@ -128,6 +128,19 @@ export default function AdminHasil() {
     return matchesSearch && matchesKelas;
   });
 
+  const handleResetSession = async (sessionId: string) => {
+    if (!window.confirm("Apakah Anda yakin ingin mereset sesi siswa ini? Seluruh jawaban dan riwayat pengerjaan akan dihapus permanen.")) return;
+
+    try {
+      await deleteDoc(doc(db, 'ujian_sessions', sessionId));
+      setPesertaResults(prev => prev.filter(p => p.id !== sessionId));
+      toast.success("Sesi ujian peserta berhasil direset.");
+    } catch (error) {
+      console.error("Error resetting session:", error);
+      toast.error("Gagal mereset sesi peserta.");
+    }
+  };
+
   return (
     <div className="p-6 md:p-8 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -249,6 +262,7 @@ export default function AdminHasil() {
                       <th className="px-5 py-3 text-center">Detail (B/S/K)</th>
                       <th className="px-5 py-3 text-center">Nilai</th>
                       <th className="px-5 py-3 text-center">Viols</th>
+                      <th className="px-5 py-3 text-center">Aksi</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -299,6 +313,17 @@ export default function AdminHasil() {
                            <span className={`font-medium ${p.violations > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
                              {p.violations || 0}
                            </span>
+                        </td>
+                        <td className="px-5 py-3 text-center">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="bg-white hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-medium"
+                            onClick={() => handleResetSession(p.id)}
+                            title="Reset Sesi"
+                          >
+                            <RotateCcw className="w-4 h-4 mr-2" /> Reset
+                          </Button>
                         </td>
                       </tr>
                     ))}
