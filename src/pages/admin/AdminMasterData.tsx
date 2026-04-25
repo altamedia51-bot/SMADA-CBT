@@ -1050,7 +1050,7 @@ export default function AdminMasterData() {
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE / JENJANG</th>
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA KELAS</th>
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">WALI KELAS</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">WHATSAPP</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-36 whitespace-nowrap">WHATSAPP</th>
                      <th className="py-5 px-6 text-center text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">JUMLAH SISWA</th>
                      <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
                    </tr>
@@ -1086,7 +1086,7 @@ export default function AdminMasterData() {
                                   href={`https://wa.me/${wali.nomorWa.replace(/\D/g, '').replace(/^0/, '62')}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-xs text-green-600 bg-green-50 hover:bg-green-100 flex items-center justify-center px-2 py-1 rounded transition-colors font-medium border border-green-200"
+                                  className="text-xs text-green-600 bg-green-50 hover:bg-green-100 inline-flex items-center justify-center px-2 py-1 rounded transition-colors font-medium border border-green-200 whitespace-nowrap w-max"
                                 >
                                   {wali.nomorWa}
                                 </a>
