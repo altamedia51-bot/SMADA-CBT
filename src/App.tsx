@@ -15,6 +15,8 @@ import SiswaDashboard from './pages/siswa/SiswaDashboard';
 import UjianSession from './pages/siswa/UjianSession';
 import { Toaster } from '@/components/ui/sonner';
 
+import AdminLeger from './pages/admin/AdminLeger';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -30,6 +32,7 @@ export default function App() {
             <Route path="ujian" element={<AdminUjian />} />
             <Route path="ujian/soal/:paketId" element={<GuruSoalDetail />} />
             <Route path="hasil" element={<AdminHasil />} />
+            <Route path="leger" element={<AdminLeger />} />
           </Route>
         </Route>
 

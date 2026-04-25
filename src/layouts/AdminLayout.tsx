@@ -16,6 +16,7 @@ export default function AdminLayout() {
     { label: 'Master Data', path: '/admin/master-data' },
     { label: 'Manajemen Ujian', path: '/admin/ujian' },
     { label: 'Hasil Ujian', path: '/admin/hasil' },
+    { label: 'Leger Nilai', path: '/admin/leger' },
   ];
 
   return (
