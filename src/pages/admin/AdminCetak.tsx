@@ -283,32 +283,74 @@ export default function AdminCetak() {
 
             {/* NASKAH SOAL PRINT */}
             {printMode === 'soal' && (
-               <div>
-                  <div className="text-center border-b-[3px] border-black pb-4 mb-6">
-                     <h2 className="font-bold">{config.kop1}</h2>
-                     <h2 className="font-bold">{config.kop2}</h2>
-                     <h1 className="text-2xl font-black uppercase">{config.sekolah}</h1>
-                     <p className="text-sm">{config.alamat}</p>
+               <div className="text-[13px] font-serif print:text-black">
+                  {/* Header / Kop */}
+                  <div className="border-[1.5px] border-black p-0.5 mb-1 rounded-sm">
+                     <div className="border-[1.5px] border-black p-4 text-center rounded-sm">
+                         <h2 className="font-bold text-[var(--primary)] uppercase tracking-[0.2em] text-lg lg:text-xl">{config.kop1 || 'PANITIA UJIAN SEKOLAH'}</h2>
+                         <h1 className="text-2xl lg:text-3xl font-black text-emerald-600 uppercase tracking-wider mt-1">{config.sekolah}</h1>
+                         <p className="italic font-bold font-sans mt-2 tracking-wide">Tahun Pelajaran 2024-2025</p>
+                     </div>
                   </div>
-                  <h3 className="text-center font-black text-lg mb-6">NASKAH SOAL UJIAN - {printData?.judul}</h3>
-                  <div className="space-y-6">
+                  
+                  {/* Meta Info */}
+                  <div className="border-t-[3px] border-black mt-2 mb-4 border-b pb-0.5">
+                     <div className="border-b-[1.5px] border-black border-dotted flex justify-between py-1.5 font-bold px-2">
+                        <div className="flex gap-2 w-1/2">
+                           <div className="w-32">Mata Pelajaran</div>
+                           <div>: {printData?.mapel || printData?.judul || '.....................'}</div>
+                        </div>
+                        <div className="flex gap-2 w-1/2 justify-start">
+                           <div className="w-32">Hari, tanggal</div>
+                           <div>: .......................................</div>
+                        </div>
+                     </div>
+                     <div className="flex justify-between py-1.5 font-bold px-2 border-b-[3px] border-black">
+                        <div className="flex gap-2 w-1/2">
+                           <div className="w-32">Kelas / Program</div>
+                           <div>: .......................................</div>
+                        </div>
+                        <div className="flex gap-2 w-1/2 justify-start">
+                           <div className="w-32">Waktu</div>
+                           <div>: .......................................</div>
+                        </div>
+                     </div>
+                  </div>
+
+                  <h3 className="font-bold mb-3 italic">A. Pilihlah jawaban yang benar!</h3>
+                  
+                  {/* Soal Content in Two Columns */}
+                  <div className="columns-1 sm:columns-2 gap-x-8 gap-y-0 space-y-4">
                      {printData?.soal.map((s:any, idx:number) => {
-                        const ops = ['A', 'B', 'C', 'D', 'E'];
+                        const ops = ['A.', 'B.', 'C.', 'D.', 'E.'];
                         return (
-                          <div key={idx} className="break-inside-avoid">
-                             <div className="flex">
-                                <div className="w-8 font-bold text-lg">{idx + 1}.</div>
-                                <div className="flex-1">
-                                   {s.stimulus && <div className="mb-3 italic text-sm border p-4 bg-slate-50 rounded-lg shadow-sm" dangerouslySetInnerHTML={{__html: s.stimulus}} />}
-                                   <div className="prose max-w-none text-justify" dangerouslySetInnerHTML={{__html: s.content}} />
+                          <div key={idx} className="break-inside-avoid w-full mb-4 inline-block">
+                             <div className="flex items-start">
+                                <div className="w-6 font-bold leading-relaxed">{idx + 1}.</div>
+                                <div className="flex-1 mt-0">
+                                   {s.stimulus && (
+                                      <div 
+                                         className="mb-2 italic text-[12px] border p-2 bg-slate-50/50" 
+                                         dangerouslySetInnerHTML={{__html: s.stimulus}} 
+                                      />
+                                   )}
+                                   <div 
+                                      className="prose prose-sm max-w-none leading-relaxed text-justify text-[13px] text-black" 
+                                      dangerouslySetInnerHTML={{__html: s.content}} 
+                                   />
                                    {s.type !== 'essay' && s.type !== 'isian' && s.options && s.options.length > 0 && (
-                                     <div className="mt-4 space-y-3">
-                                        {s.options.map((opt:string, oIdx:number) => (
-                                           <div key={oIdx} className="flex">
-                                              <div className="w-8 font-semibold">{ops[oIdx]}.</div>
-                                              <div className="prose max-w-none" dangerouslySetInnerHTML={{__html: opt}} />
-                                           </div>
-                                        ))}
+                                     <div className="mt-2 text-[13px]">
+                                        <div className="grid grid-cols-1 gap-y-1 gap-x-4">
+                                           {s.options.map((opt:string, oIdx:number) => (
+                                              <div key={oIdx} className="flex gap-1.5 items-start">
+                                                 <div className="w-5 font-medium leading-relaxed">{ops[oIdx]}</div>
+                                                 <div 
+                                                    className="prose prose-sm max-w-none text-[13px] leading-relaxed text-black" 
+                                                    dangerouslySetInnerHTML={{__html: opt}} 
+                                                 />
+                                              </div>
+                                           ))}
+                                        </div>
                                      </div>
                                    )}
                                 </div>
