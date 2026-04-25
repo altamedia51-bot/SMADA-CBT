@@ -65,7 +65,6 @@ export default function AdminLayout() {
                    <button
                      onClick={() => {
                         setIsOpen(!isOpen);
-                        navigate(item.path);
                      }}
                      className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all ${
                        isActive 
