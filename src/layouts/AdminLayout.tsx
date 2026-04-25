@@ -163,7 +163,7 @@ export default function AdminLayout() {
            <Outlet />
            
            <div className="p-6 text-center text-xs text-slate-400 font-medium tracking-widest uppercase">
-              © 2026 DEVELOPED BY MGHOUSE DIGITAL - ALL RIGHTS RESERVED
+              © 2026 DEVELOPED BY AL-SUKOREJOI | VERSI APP 1.0.0
            </div>
          </div>
       </div>

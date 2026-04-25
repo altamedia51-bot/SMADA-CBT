@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, PlayCircle, StopCircle, Calendar, Hash, Eye } from 'lucide-react';
+import { Plus, Trash2, Edit2, PlayCircle, StopCircle, Calendar, Hash, Eye, Clock, Users, BookOpen } from 'lucide-react';
 
 export default function AdminUjian() {
   const navigate = useNavigate();
@@ -142,187 +142,240 @@ export default function AdminUjian() {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
-      {/* Kiri: Form */}
-      <div className="w-full md:w-1/3">
-        <h2 className="text-2xl font-bold mb-6 text-slate-800">Manajemen Jadwal</h2>
-        <Card className="p-5 shadow-sm">
-          <form onSubmit={handleSave} className="space-y-4">
-            <div>
-              <label className="text-sm font-semibold mb-1 block">Nama Ujian</label>
-              <Input 
-                value={title} 
-                onChange={(e) => setTitle(e.target.value)} 
-                placeholder="Contoh: PAS Matematika X" 
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold mb-1 block">Paket Soal</label>
-              <Select value={paketId} onValueChange={setPaketId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih Paket Soal" />
-                </SelectTrigger>
-                <SelectContent>
-                  {paketList.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold mb-1 block">Peserta (Kelas)</label>
-              <Select value={kelasId} onValueChange={setKelasId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih Kelas" />
-                </SelectTrigger>
-                <SelectContent>
-                  {kelasList.map(k => (
-                    <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold mb-1 block">Jenis Ujian</label>
-              <Select value={jenisUjianId} onValueChange={setJenisUjianId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih Jenis Ujian" />
-                </SelectTrigger>
-                <SelectContent>
-                  {jenisUjianList.map(j => (
-                    <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold mb-1 block">Durasi (Menit)</label>
-              <Input 
-                type="number"
-                value={duration} 
-                onChange={(e) => setDuration(e.target.value)} 
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-semibold mb-1 block">Status Awal</label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft (Belum Mulai)</SelectItem>
-                  <SelectItem value="aktif">Aktif (Sedang Berjalan)</SelectItem>
-                  <SelectItem value="selesai">Selesai</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="pt-2 flex gap-2">
-              <Button type="submit" className="flex-1">
-                {editingId ? 'Update Ujian' : 'Simpan Ujian'}
-              </Button>
-              {editingId && (
-                <Button type="button" variant="outline" onClick={() => {
-                  setEditingId(null);
-                  setTitle(''); setPaketId(''); setKelasId(''); setDuration('120'); setStatus('draft');
-                }}>Batal</Button>
-              )}
-            </div>
-          </form>
-        </Card>
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+             <div className="p-2.5 bg-indigo-100 rounded-xl text-indigo-600">
+               <Calendar className="w-6 h-6" />
+             </div>
+             <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Jadwal Ujian</h2>
+          </div>
+          <p className="text-slate-500 font-medium max-w-xl">
+            Atur dan kelola pelaksanaan ujian. Mulai atau hentikan sesi ujian secara real-time, bagikan token ujian, dan pantau status pelaksanaan.
+          </p>
+        </div>
       </div>
 
-      {/* Kanan: Daftar Ujian */}
-      <div className="w-full md:w-2/3">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-primary" /> Daftar Sesi Ujian
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {ujianList.map(u => {
-            const paket = paketList.find(p => p.id === u.paketId);
-            const kelas = kelasList.find(k => k.id === u.kelasId);
-            const jenis = jenisUjianList.find(j => j.id === u.jenisUjianId);
-            
-            return (
-              <Card key={u.id} className="p-4 border shadow-sm flex flex-col relative overflow-hidden transition-all hover:shadow-md">
-                <div className={`absolute top-0 right-0 w-2 h-full ${
-                  u.status === 'aktif' ? 'bg-emerald-500' : 
-                  u.status === 'selesai' ? 'bg-slate-300' : 'bg-amber-400'
-                }`} />
-                
-                <h4 className="font-bold text-lg mb-1 pr-4">{u.title}</h4>
-                <div className="text-sm text-muted-foreground space-y-1 mb-4 flex-1">
-                  <p>Jenis Ujian: <span className="font-medium text-slate-700">{jenis?.name || '-'}</span></p>
-                  <p>Paket: <span className="font-medium text-slate-700">{paket?.title || '-'}</span></p>
-                  <p className="flex items-center gap-1.5">
-                    Jumlah Soal: 
-                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold ${
-                      (soalCounts[u.paketId] || 0) > 0 ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
-                    }`}>
-                      <Hash className="w-3 h-3 mr-0.5" />
-                      {soalCounts[u.paketId] || 0} Item
-                    </span>
-                  </p>
-                  <p>Kelas: <span className="font-medium text-slate-700">{kelas?.name || '-'}</span></p>
-                  <p>Durasi: <span className="font-medium text-slate-700">{u.duration} Menit</span></p>
-                  <div className="mt-2 bg-slate-100 p-2 rounded-md border text-center">
-                    <p className="text-xs uppercase font-bold text-slate-400 mb-0.5">Token Ujian</p>
-                    <p className="text-xl font-black tracking-[0.2em] text-blue-600">{u.token || '------'}</p>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center mt-auto border-t pt-3">
-                  <span className={`text-xs font-bold px-2 py-1 rounded uppercase tracking-wider ${
-                    u.status === 'aktif' ? 'bg-emerald-100 text-emerald-700' : 
-                    u.status === 'selesai' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-700'
-                  }`}>
-                    {u.status}
-                  </span>
-
-                  <div className="flex gap-1.5">
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="h-8 w-8 text-primary border-primary/20 hover:bg-primary/10" 
-                      onClick={() => navigate(`/admin/bank-soal/${u.paketId}`)}
-                      title="Lihat / Edit Soal"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    {u.status !== 'selesai' && (
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className={`h-8 w-8 ${u.status === 'aktif' ? 'text-rose-600 border-rose-200 hover:bg-rose-50' : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'}`}
-                        onClick={() => toggleStatus(u.id, u.status)}
-                        title={u.status === 'aktif' ? 'Hentikan Ujian' : 'Mulai Ujian'}
-                      >
-                        {u.status === 'aktif' ? <StopCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
-                      </Button>
-                    )}
-                    <Button variant="outline" size="icon" className="h-8 w-8 text-blue-600" onClick={() => handleEdit(u)}>
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8 text-red-600" onClick={() => handleDelete(u.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-          
-          {ujianList.length === 0 && (
-            <div className="col-span-2 text-center p-8 border border-dashed rounded-lg text-muted-foreground">
-              Belum ada ujian yang dijadwalkan. Buat baru melalui form di samping.
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* Kiri: Form Dashboard-style */}
+        <div className="w-full lg:w-1/3 sticky top-6">
+          <Card className="border-0 shadow-xl shadow-slate-200/50 rounded-2xl overflow-hidden bg-white">
+            <div className="bg-slate-50/80 p-5 items-center border-b border-slate-100">
+               <h3 className="text-sm font-bold uppercase tracking-widest text-slate-800 flex items-center gap-2">
+                 {editingId ? <Edit2 className="w-4 h-4 text-blue-600" /> : <Plus className="w-4 h-4 text-indigo-600" />}
+                 {editingId ? 'Edit Jadwal' : 'Buat Jadwal Baru'}
+               </h3>
+               <p className="text-xs text-slate-500 mt-1 font-medium">Buka sesi ujian dan generate token otomatis</p>
             </div>
-          )}
+            <form onSubmit={handleSave} className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Nama Ujian / Sesi</label>
+                <Input 
+                  value={title} 
+                  onChange={(e) => setTitle(e.target.value)} 
+                  placeholder="Contoh: PAS Matematika X" 
+                  className="h-11 bg-slate-50 border-slate-200 focus-visible:ring-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bank Soal (Materi)</label>
+                <Select value={paketId} onValueChange={setPaketId}>
+                  <SelectTrigger className="h-11 bg-slate-50 border-slate-200 focus:ring-indigo-500">
+                    <SelectValue placeholder="Pilih Paket Soal" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paketList.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Peserta (Kelas)</label>
+                  <Select value={kelasId} onValueChange={setKelasId}>
+                    <SelectTrigger className="h-11 bg-slate-50 border-slate-200 focus:ring-indigo-500">
+                      <SelectValue placeholder="Pilih Kelas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {kelasList.map(k => (
+                        <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Durasi (Menit)</label>
+                  <Input 
+                    type="number"
+                    value={duration} 
+                    onChange={(e) => setDuration(e.target.value)} 
+                    className="h-11 bg-slate-50 border-slate-200 focus-visible:ring-indigo-500 font-mono text-center text-lg"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Jenis Ujian</label>
+                  <Select value={jenisUjianId} onValueChange={setJenisUjianId}>
+                    <SelectTrigger className="h-11 bg-slate-50 border-slate-200 focus:ring-indigo-500">
+                      <SelectValue placeholder="Jenis" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jenisUjianList.map(j => (
+                        <SelectItem key={j.id} value={j.id}>{j.kode}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Awal</label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className="h-11 bg-slate-50 border-slate-200 font-bold focus:ring-indigo-500">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft"><span className="text-slate-600">Draft</span></SelectItem>
+                      <SelectItem value="aktif"><span className="text-emerald-600">Aktif</span></SelectItem>
+                      <SelectItem value="selesai"><span className="text-rose-600">Selesai</span></SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                {editingId && (
+                  <Button type="button" variant="outline" className="h-11 flex-1 font-bold rounded-xl" onClick={() => {
+                    setEditingId(null);
+                    setTitle(''); setPaketId(''); setKelasId(''); setDuration('120'); setStatus('draft');
+                  }}>Batal</Button>
+                )}
+                <Button type="submit" className={`h-11 ${editingId ? 'flex-1' : 'w-full'} font-bold rounded-xl shadow-md ${editingId ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}>
+                  {editingId ? 'Update Jadwal' : 'Buat Jadwal & Token'}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+
+        {/* Kanan: Daftar Ujian Aktif & Lalu */}
+        <div className="w-full lg:w-2/3 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {ujianList.length === 0 && (
+              <div className="col-span-full py-16 text-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl">
+                <div className="w-16 h-16 bg-white border border-slate-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <Calendar className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-700 mb-1">Tidak ada Jadwal Ujian</h3>
+                <p className="text-slate-500 max-w-sm mx-auto">Buat jadwal baru di form sebelah kiri untuk memulai sesi ujian.</p>
+              </div>
+            )}
+
+            {ujianList.map(u => {
+              const paket = paketList.find(p => p.id === u.paketId);
+              const kelas = kelasList.find(k => k.id === u.kelasId);
+              const jenis = jenisUjianList.find(j => j.id === u.jenisUjianId);
+              
+              const isAktif = u.status === 'aktif';
+              const isSelesai = u.status === 'selesai';
+
+              return (
+                <Card 
+                  key={u.id} 
+                  className={`border-0 shadow-lg rounded-2xl overflow-hidden flex flex-col group transition-all duration-300 ${isAktif ? 'shadow-emerald-500/10 hover:shadow-emerald-500/20 ring-1 ring-emerald-500/20 bg-emerald-50/30' : isSelesai ? 'shadow-slate-200 bg-slate-50' : 'shadow-slate-200 bg-white hover:shadow-xl hover:shadow-indigo-500/5 ring-1 ring-slate-100'}`}
+                >
+                  <div className={`h-1.5 w-full ${isAktif ? 'bg-emerald-500' : isSelesai ? 'bg-slate-300' : 'bg-amber-400'}`} />
+                  
+                  <div className="p-5 flex-1 relative">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 border
+                        ${isAktif ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 
+                          isSelesai ? 'bg-slate-200 text-slate-600 border-slate-300' : 
+                          'bg-amber-100 text-amber-700 border-amber-200'}`}
+                      >
+                        {isAktif && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                        {u.status}
+                      </div>
+
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600 hover:bg-blue-100 rounded-lg" onClick={() => handleEdit(u)}>
+                           <Edit2 className="w-3.5 h-3.5" />
+                         </Button>
+                         <Button variant="ghost" size="icon" className="h-7 w-7 text-red-600 hover:bg-red-100 rounded-lg" onClick={() => handleDelete(u.id)}>
+                           <Trash2 className="w-3.5 h-3.5" />
+                         </Button>
+                      </div>
+                    </div>
+
+                    <h4 className="font-extrabold text-[1.1rem] leading-tight text-slate-800 mb-4 pr-6">{u.title}</h4>
+                    
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-[13px]">
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <BookOpen className="w-4 h-4 text-indigo-400 shrink-0" />
+                        <span className="font-medium truncate">{paket?.title || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Users className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span className="font-medium truncate">{kelas?.name || 'Semua Kelas'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Clock className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="font-bold">{u.duration} <span className="font-medium text-slate-500">mnt</span></span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Hash className="w-4 h-4 text-blue-400 shrink-0" />
+                        <span className="font-bold">{soalCounts[u.paketId] || 0} <span className="font-medium text-slate-500">Soal</span></span>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 pt-4 border-t border-slate-100/80 flex items-center justify-between">
+                       <div>
+                         <p className="text-[10px] uppercase font-bold text-slate-400 mb-0.5 tracking-wider">Token Ujian</p>
+                         <p className={`font-mono text-xl font-black tracking-widest ${isAktif ? 'text-emerald-600' : isSelesai ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                           {u.token || '------'}
+                         </p>
+                       </div>
+                       
+                       <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="h-10 w-10 text-indigo-600 border-indigo-200 hover:bg-indigo-50 rounded-xl" 
+                            onClick={() => navigate(`/admin/bank-soal/${u.paketId}`)}
+                            title="Pratinjau Soal"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          {u.status !== 'selesai' && (
+                            <Button 
+                              onClick={() => toggleStatus(u.id, u.status)}
+                              className={`h-10 px-4 rounded-xl font-bold shadow-sm ${
+                                isAktif 
+                                  ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 border border-rose-200' 
+                                  : 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/20'
+                              }`}
+                            >
+                              {isAktif ? (
+                                <><StopCircle className="w-4 h-4 mr-1.5" /> Stop</>
+                              ) : (
+                                <><PlayCircle className="w-4 h-4 mr-1.5" /> Mulai</>
+                              )}
+                            </Button>
+                          )}
+                       </div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
