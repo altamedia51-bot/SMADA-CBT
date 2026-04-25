@@ -16,6 +16,17 @@ export default function AdminMasterData() {
   const [mapel, setMapel] = useState<any[]>([]);
   const [kelas, setKelas] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [ruang, setRuang] = useState<any[]>([]);
+  const [sesi, setSesi] = useState<any[]>([]);
+  const [jenisUjian, setJenisUjian] = useState<any[]>([]);
+
+  // Form states
+  const [newRuangKode, setNewRuangKode] = useState('');
+  const [newRuangName, setNewRuangName] = useState('');
+  const [newSesiKode, setNewSesiKode] = useState('');
+  const [newSesiName, setNewSesiName] = useState('');
+  const [newJenisUjianKode, setNewJenisUjianKode] = useState('');
+  const [newJenisUjianName, setNewJenisUjianName] = useState('');
   
   // Student Form State
   const [editingSiswa, setEditingSiswa] = useState<any>(null);
@@ -60,7 +71,22 @@ export default function AdminMasterData() {
       setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
-    return () => { unMapel(); unKelas(); unUsers(); };
+    const qRuang = query(collection(db, 'ruang'));
+    const unRuang = onSnapshot(qRuang, (snap) => {
+      setRuang(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    const qSesi = query(collection(db, 'sesi'));
+    const unSesi = onSnapshot(qSesi, (snap) => {
+      setSesi(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    const qJenisUjian = query(collection(db, 'jenis_ujian'));
+    const unJenisUjian = onSnapshot(qJenisUjian, (snap) => {
+      setJenisUjian(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => { unMapel(); unKelas(); unUsers(); unRuang(); unSesi(); unJenisUjian(); };
   }, []);
 
   const tanganiTambahMapel = async (e: React.FormEvent) => {
@@ -75,6 +101,57 @@ export default function AdminMasterData() {
       toast('Berhasil!', { description: `Mapel ${newMapelPrefix} berhasil ditambah.`, icon: <AlertCircle className="w-4 h-4" /> });
     } catch (err: any) {
       toast.error('Gagal menambahkan data: ' + err.message);
+    }
+  };
+
+  const tanganiTambahRuang = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRuangName) return;
+    try {
+      await addDoc(collection(db, 'ruang'), {
+        kode: newRuangKode,
+        name: newRuangName,
+        createdAt: serverTimestamp()
+      });
+      setNewRuangKode('');
+      setNewRuangName('');
+      toast.success('Ruang berhasil ditambahkan');
+    } catch (err: any) {
+      toast.error('Gagal menambah ruang: ' + err.message);
+    }
+  };
+
+  const tanganiTambahSesi = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSesiName) return;
+    try {
+      await addDoc(collection(db, 'sesi'), {
+        kode: newSesiKode,
+        name: newSesiName,
+        createdAt: serverTimestamp()
+      });
+      setNewSesiKode('');
+      setNewSesiName('');
+      toast.success('Sesi berhasil ditambahkan');
+    } catch (err: any) {
+      toast.error('Gagal menambah sesi: ' + err.message);
+    }
+  };
+
+  const tanganiTambahJenisUjian = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newJenisUjianName) return;
+    try {
+      await addDoc(collection(db, 'jenis_ujian'), {
+        kode: newJenisUjianKode,
+        name: newJenisUjianName,
+        createdAt: serverTimestamp()
+      });
+      setNewJenisUjianKode('');
+      setNewJenisUjianName('');
+      toast.success('Jenis Ujian berhasil ditambahkan');
+    } catch (err: any) {
+      toast.error('Gagal menambah jenis ujian: ' + err.message);
     }
   };
 
@@ -483,10 +560,13 @@ export default function AdminMasterData() {
 
       <Tabs defaultValue="siswa" className="w-full">
         <TabsList className="flex w-full mb-8 bg-transparent p-0 gap-2 border-b border-slate-200 rounded-none h-auto overflow-x-auto justify-start">
-          <TabsTrigger value="siswa" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">Data Siswa</TabsTrigger>
-          <TabsTrigger value="guru" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">Data Guru</TabsTrigger>
-          <TabsTrigger value="kelas" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">Data Kelas</TabsTrigger>
-          <TabsTrigger value="mapel" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all">Data Mapel</TabsTrigger>
+          <TabsTrigger value="siswa" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all whitespace-nowrap">Data Siswa</TabsTrigger>
+          <TabsTrigger value="guru" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all whitespace-nowrap">Data Guru</TabsTrigger>
+          <TabsTrigger value="kelas" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all whitespace-nowrap">Data Kelas</TabsTrigger>
+          <TabsTrigger value="mapel" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all whitespace-nowrap">Data Mapel</TabsTrigger>
+          <TabsTrigger value="ruang" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all whitespace-nowrap">Data Ruang</TabsTrigger>
+          <TabsTrigger value="sesi" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all whitespace-nowrap">Data Sesi</TabsTrigger>
+          <TabsTrigger value="jenis_ujian" className="rounded-t-xl rounded-b-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50/50 data-[state=active]:text-blue-700 bg-transparent px-6 py-3 font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all whitespace-nowrap">Jenis Ujian</TabsTrigger>
         </TabsList>
 
         {/* --- TABS: DATA SISWA --- */}
@@ -921,6 +1001,221 @@ export default function AdminMasterData() {
                <div className="py-4 px-6 text-xs font-semibold text-slate-400 mt-2">
                  Ditampilkan: {kelas.length} dari {kelas.length} data
                </div>
+             </div>
+          </Card>
+        </TabsContent>
+        <TabsContent value="ruang" className="space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-2">
+            <div className="relative w-full md:w-80">
+              <Input 
+                placeholder="Cari ruang..." 
+                className="pl-10 bg-white border-slate-200 rounded-full h-11 text-sm font-medium shadow-sm w-full focus-visible:ring-blue-500" 
+              />
+              <svg className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" onClick={() => toast("Fitur Template akan segera hadir")} className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-500/20">
+                 <Download className="w-3.5 h-3.5 mr-2" /> TEMPLATE
+              </Button>
+              <Button type="button" onClick={() => toast("Fitur Import akan segera hadir")} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-emerald-500/20">
+                 <Upload className="w-3.5 h-3.5 mr-2" /> IMPORT
+              </Button>
+              <Button type="button" onClick={() => document.getElementById('form-ruang')?.classList.toggle('hidden')} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-600/20">
+                 <Plus className="w-3.5 h-3.5 mr-2" /> TAMBAH DATA
+              </Button>
+            </div>
+          </div>
+
+          <Card id="form-ruang" className="p-0 border border-blue-100 overflow-hidden shadow-sm hidden">
+            <form onSubmit={tanganiTambahRuang} className="p-6 flex flex-wrap gap-4 items-end bg-white">
+              <div className="grid gap-1.5 w-40">
+                <label className="text-xs font-bold text-slate-500 uppercase">KODE</label>
+                <Input value={newRuangKode} onChange={e => setNewRuangKode(e.target.value)} placeholder="Contoh: R1" className="h-11 border-slate-200 uppercase font-bold" />
+              </div>
+              <div className="grid gap-1.5 flex-1 min-w-[240px]">
+                <label className="text-xs font-bold text-slate-500 uppercase">Nama Ruang</label>
+                <Input value={newRuangName} onChange={e => setNewRuangName(e.target.value)} placeholder="Contoh: Ruang 1" className="h-11 border-slate-200 font-bold" />
+              </div>
+              <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
+            </form>
+          </Card>
+
+          <Card className="bg-white border-0 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden py-2 px-4">
+             <div className="overflow-x-auto min-h-[300px]">
+               <table className="w-full">
+                 <thead>
+                   <tr className="border-b-2 border-slate-100">
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE RUANG</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA RUANG</th>
+                     <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-50">
+                    {ruang.length === 0 ? (
+                       <tr><td colSpan={4} className="py-12 text-center text-slate-400 font-medium">Belum ada data ruang.</td></tr>
+                    ) : (
+                      ruang.sort((a,b) => a.kode.localeCompare(b.kode)).map((item, i) => (
+                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                           <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
+                           <td className="py-5 px-6 text-sm font-bold text-blue-600">{item.kode}</td>
+                           <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
+                           <td className="py-5 px-6 text-right">
+                              <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
+                                <button onClick={() => hapusData('ruang', item.id)} className="text-rose-400 hover:text-rose-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                              </div>
+                           </td>
+                        </tr>
+                      ))
+                    )}
+                 </tbody>
+               </table>
+             </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sesi" className="space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-2">
+            <div className="relative w-full md:w-80">
+              <Input 
+                placeholder="Cari sesi..." 
+                className="pl-10 bg-white border-slate-200 rounded-full h-11 text-sm font-medium shadow-sm w-full focus-visible:ring-blue-500" 
+              />
+              <svg className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" onClick={() => toast("Fitur Template akan segera hadir")} className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-500/20">
+                 <Download className="w-3.5 h-3.5 mr-2" /> TEMPLATE
+              </Button>
+              <Button type="button" onClick={() => toast("Fitur Import akan segera hadir")} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-emerald-500/20">
+                 <Upload className="w-3.5 h-3.5 mr-2" /> IMPORT
+              </Button>
+              <Button type="button" onClick={() => document.getElementById('form-sesi')?.classList.toggle('hidden')} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-600/20">
+                 <Plus className="w-3.5 h-3.5 mr-2" /> TAMBAH DATA
+              </Button>
+            </div>
+          </div>
+
+          <Card id="form-sesi" className="p-0 border border-blue-100 overflow-hidden shadow-sm hidden">
+            <form onSubmit={tanganiTambahSesi} className="p-6 flex flex-wrap gap-4 items-end bg-white">
+              <div className="grid gap-1.5 w-40">
+                <label className="text-xs font-bold text-slate-500 uppercase">KODE</label>
+                <Input value={newSesiKode} onChange={e => setNewSesiKode(e.target.value)} placeholder="S1" className="h-11 border-slate-200 uppercase font-bold" />
+              </div>
+              <div className="grid gap-1.5 flex-1 min-w-[240px]">
+                <label className="text-xs font-bold text-slate-500 uppercase">Nama Sesi</label>
+                <Input value={newSesiName} onChange={e => setNewSesiName(e.target.value)} placeholder="Sesi 1" className="h-11 border-slate-200 font-bold" />
+              </div>
+              <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
+            </form>
+          </Card>
+
+          <Card className="bg-white border-0 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden py-2 px-4">
+             <div className="overflow-x-auto min-h-[300px]">
+               <table className="w-full">
+                 <thead>
+                   <tr className="border-b-2 border-slate-100">
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE SESI</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA SESI</th>
+                     <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-50">
+                    {sesi.length === 0 ? (
+                       <tr><td colSpan={4} className="py-12 text-center text-slate-400 font-medium">Belum ada data sesi.</td></tr>
+                    ) : (
+                      sesi.sort((a,b) => a.kode.localeCompare(b.kode)).map((item, i) => (
+                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                           <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
+                           <td className="py-5 px-6 text-sm font-bold text-blue-600">{item.kode}</td>
+                           <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
+                           <td className="py-5 px-6 text-right">
+                              <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
+                                <button onClick={() => hapusData('sesi', item.id)} className="text-rose-400 hover:text-rose-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                              </div>
+                           </td>
+                        </tr>
+                      ))
+                    )}
+                 </tbody>
+               </table>
+             </div>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="jenis_ujian" className="space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-2">
+            <div className="relative w-full md:w-80">
+              <Input 
+                placeholder="Cari jenis ujian..." 
+                className="pl-10 bg-white border-slate-200 rounded-full h-11 text-sm font-medium shadow-sm w-full focus-visible:ring-blue-500" 
+              />
+              <svg className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" onClick={() => toast("Fitur Template akan segera hadir")} className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-500/20">
+                 <Download className="w-3.5 h-3.5 mr-2" /> TEMPLATE
+              </Button>
+              <Button type="button" onClick={() => toast("Fitur Import akan segera hadir")} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-emerald-500/20">
+                 <Upload className="w-3.5 h-3.5 mr-2" /> IMPORT
+              </Button>
+              <Button type="button" onClick={() => document.getElementById('form-jenis')?.classList.toggle('hidden')} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-600/20">
+                 <Plus className="w-3.5 h-3.5 mr-2" /> TAMBAH DATA
+              </Button>
+            </div>
+          </div>
+
+          <Card id="form-jenis" className="p-0 border border-blue-100 overflow-hidden shadow-sm hidden">
+            <form onSubmit={tanganiTambahJenisUjian} className="p-6 flex flex-wrap gap-4 items-end bg-white">
+              <div className="grid gap-1.5 w-40">
+                <label className="text-xs font-bold text-slate-500 uppercase">KODE</label>
+                <Input value={newJenisUjianKode} onChange={e => setNewJenisUjianKode(e.target.value)} placeholder="PTS" className="h-11 border-slate-200 uppercase font-bold" />
+              </div>
+              <div className="grid gap-1.5 flex-1 min-w-[240px]">
+                <label className="text-xs font-bold text-slate-500 uppercase">Jenis Ujian</label>
+                <Input value={newJenisUjianName} onChange={e => setNewJenisUjianName(e.target.value)} placeholder="Penilaian Tengah Semester" className="h-11 border-slate-200 font-bold" />
+              </div>
+              <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
+            </form>
+          </Card>
+
+          <Card className="bg-white border-0 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden py-2 px-4">
+             <div className="overflow-x-auto min-h-[300px]">
+               <table className="w-full">
+                 <thead>
+                   <tr className="border-b-2 border-slate-100">
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE UJIAN</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">JENIS UJIAN</th>
+                     <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-50">
+                    {jenisUjian.length === 0 ? (
+                       <tr><td colSpan={4} className="py-12 text-center text-slate-400 font-medium">Belum ada data.</td></tr>
+                    ) : (
+                      jenisUjian.sort((a,b) => a.kode.localeCompare(b.kode)).map((item, i) => (
+                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                           <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
+                           <td className="py-5 px-6 text-sm font-bold text-blue-600">{item.kode}</td>
+                           <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
+                           <td className="py-5 px-6 text-right">
+                              <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
+                                <button onClick={() => hapusData('jenis_ujian', item.id)} className="text-rose-400 hover:text-rose-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                              </div>
+                           </td>
+                        </tr>
+                      ))
+                    )}
+                 </tbody>
+               </table>
              </div>
           </Card>
         </TabsContent>
