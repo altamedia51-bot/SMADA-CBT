@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { collection, query, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Button } from '@/components/ui/button';
@@ -6,9 +7,10 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, PlayCircle, StopCircle, Calendar, Hash } from 'lucide-react';
+import { Plus, Trash2, Edit2, PlayCircle, StopCircle, Calendar, Hash, Eye } from 'lucide-react';
 
 export default function AdminUjian() {
+  const navigate = useNavigate();
   const [ujianList, setUjianList] = useState<any[]>([]);
   const [paketList, setPaketList] = useState<any[]>([]);
   const [kelasList, setKelasList] = useState<any[]>([]);
@@ -257,6 +259,15 @@ export default function AdminUjian() {
                   </span>
 
                   <div className="flex gap-1.5">
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-8 w-8 text-primary border-primary/20 hover:bg-primary/10" 
+                      onClick={() => navigate(`/admin/ujian/soal/${u.paketId}`)}
+                      title="Lihat / Edit Soal"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
                     {u.status !== 'selesai' && (
                       <Button 
                         variant="outline" 

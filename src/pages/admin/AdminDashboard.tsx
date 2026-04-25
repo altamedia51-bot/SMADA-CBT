@@ -210,7 +210,7 @@ export default function AdminDashboard() {
           <div className="p-5 z-10 flex flex-col h-full">
             <h3 className="font-semibold mb-2 text-lg">Menu Cepat Administrasi</h3>
             <div className="flex-1 space-y-2 mt-4 text-sm">
-                <div className="flex items-center gap-2 opacity-90"><span className="w-1.5 h-1.5 rounded-full bg-white"/> Manajemen Bank Soal</div>
+                <div className="flex items-center gap-2 opacity-90 cursor-pointer hover:underline" onClick={() => navigate('/admin/ujian')}><span className="w-1.5 h-1.5 rounded-full bg-white"/> Manajemen Bank Soal / Ujian</div>
                 <div className="flex items-center gap-2 opacity-90"><span className="w-1.5 h-1.5 rounded-full bg-white"/> Tambah Peserta Ujian</div>
                 <div className="flex items-center gap-2 opacity-90 cursor-pointer hover:underline" onClick={() => navigate('/admin/hasil')}><span className="w-1.5 h-1.5 rounded-full bg-white"/> Laporan Hasil Akhir</div>
             </div>

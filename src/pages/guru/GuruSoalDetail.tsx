@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, onSnapshot, addDoc, doc, getDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, doc, getDoc, writeBatch, serverTimestamp, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Upload, Plus, ChevronLeft, Save, Download, FileType } from 'lucide-react';
+import { Upload, Plus, ChevronLeft, Save, Download, FileType, Trash2, Edit2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -39,6 +39,8 @@ export default function GuruSoalDetail() {
   const [correctKey, setCorrectKey] = useState('A'); // Untuk PG
   const [pgkKeys, setPgkKeys] = useState<string[]>([]); // Untuk PG Kompleks (multiple correct options)
   const [textAnswer, setTextAnswer] = useState(''); // Untuk Isian / Essay (Rubrik)
+
+  const [editingSoalId, setEditingSoalId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!paketId) return;
@@ -109,24 +111,77 @@ export default function GuruSoalDetail() {
     }
 
     try {
-      await addDoc(collection(db, `paket_soal/${paketId}/soal`), {
-        paketId,
+      const payload = {
         type: soalType,
         stimulus,
         content,
         options,
         correctAnswer: finalAnswer,
-        mediaType: 'none',
-        mediaUrl: ''
-      });
+      };
+
+      if (editingSoalId) {
+        await updateDoc(doc(db, `paket_soal/${paketId}/soal`, editingSoalId), payload);
+        toast.success('Soal berhasil diperbarui');
+        setEditingSoalId(null);
+      } else {
+        await addDoc(collection(db, `paket_soal/${paketId}/soal`), {
+          ...payload,
+          paketId,
+          mediaType: 'none',
+          mediaUrl: ''
+        });
+        toast.success('Soal berhasil ditambah ke paket');
+      }
+
       // Reset Form
       setContent(''); setStimulus('');
       setOptA(''); setOptB(''); setOptC(''); setOptD(''); setOptE(''); 
       setCorrectKey('A'); setPgkKeys([]); setTextAnswer('');
       
-      toast.success('Soal berhasil ditambah ke paket');
     } catch(err: any) {
       toast.error('Gagal menyimpan soal: ' + err.message);
+    }
+  };
+
+  const handleEditSoal = (s: any) => {
+    setEditingSoalId(s.id);
+    setSoalType(s.type || 'pg');
+    setStimulus(s.stimulus || '');
+    setContent(s.content || '');
+    
+    if (s.type === 'pg' || s.type === 'pgk') {
+      setOptA(s.options?.[0] || '');
+      setOptB(s.options?.[1] || '');
+      setOptC(s.options?.[2] || '');
+      setOptD(s.options?.[3] || '');
+      setOptE(s.options?.[4] || '');
+      
+      if (s.type === 'pg') {
+         const idx = s.options?.indexOf(s.correctAnswer);
+         if (idx >= 0) setCorrectKey(['A','B','C','D','E'][idx]);
+      } else {
+         const keys = Array.isArray(s.correctAnswer) ? s.correctAnswer.map(ans => {
+           const idx = s.options?.indexOf(ans);
+           return idx >= 0 ? ['A','B','C','D','E'][idx] : null;
+         }).filter(Boolean) : [];
+         setPgkKeys(keys);
+      }
+    } else {
+      setTextAnswer(s.correctAnswer || '');
+    }
+    
+    // Switch to manual tab
+    const el = document.querySelector('[value="manual"]');
+    if (el) (el as HTMLElement).click();
+  };
+
+  const handleDeleteSoal = async (id: string) => {
+    if(!confirm('Yakin ingin menghapus soal ini?')) return;
+    try {
+      await deleteDoc(doc(db, `paket_soal/${paketId}/soal`, id));
+      toast.success('Soal berhasil dihapus');
+    } catch (err: any) {
+      toast.error('Gagal menghapus soal: ' + err.message);
     }
   };
 
@@ -295,7 +350,7 @@ export default function GuruSoalDetail() {
       {/* Left: Input Areas */}
       <div className="flex-1 space-y-6">
         <div className="flex items-center gap-4 mb-4">
-          <Button variant="outline" size="sm" onClick={() => navigate('/guru/paket-soal')} className="shrink-0 p-2">
+          <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="shrink-0 p-2">
              <ChevronLeft className="w-5 h-5" />
           </Button>
           <div>
@@ -407,7 +462,20 @@ export default function GuruSoalDetail() {
                   </div>
                 )}
                 
-                <Button type="submit" className="w-full text-base py-6"><Save className="w-5 h-5 mr-2"/> Tambahkan ke Paket Ujian</Button>
+                <div className="flex gap-2">
+                  <Button type="submit" className="flex-1 text-base py-6">
+                    <Save className="w-5 h-5 mr-2"/> 
+                    {editingSoalId ? 'Simpan Perubahan' : 'Tambahkan ke Paket Ujian'}
+                  </Button>
+                  {editingSoalId && (
+                    <Button type="button" variant="outline" className="text-base py-6 px-6" onClick={() => {
+                        setEditingSoalId(null);
+                        setContent(''); setStimulus(''); setOptA(''); setOptB(''); setOptC(''); setOptD(''); setOptE(''); setCorrectKey('A'); setPgkKeys([]); setTextAnswer('');
+                    }}>
+                      Batal
+                    </Button>
+                  )}
+                </div>
               </form>
             </Card>
           </TabsContent>
@@ -507,6 +575,15 @@ export default function GuruSoalDetail() {
                        <span className="line-clamp-2">{s.correctAnswer}</span>
                      </div>
                   )}
+
+                  <div className="mt-4 pt-3 border-t flex justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleEditSoal(s)} className="text-blue-600 border-blue-200 hover:bg-blue-50 h-8">
+                      <Edit2 className="w-3.5 h-3.5 mr-1" /> Edit
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDeleteSoal(s.id)} className="text-red-600 border-red-200 hover:bg-red-50 h-8">
+                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))
