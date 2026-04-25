@@ -1,7 +1,8 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, Database, FileText, ClipboardCheck, LineChart } from 'lucide-react';
+import { LogOut, LayoutDashboard, Database, FileText, ClipboardCheck, LineChart, ChevronDown, ChevronRight } from 'lucide-react';
 import { useIdleLogout } from '../hooks/useIdleLogout';
 
 export default function AdminLayout() {
@@ -11,12 +12,27 @@ export default function AdminLayout() {
 
   useIdleLogout(10); // Auto logout 10 menit
 
+  const [isMasterDataOpen, setIsMasterDataOpen] = useState(true);
+
   const navItems = [
     { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-    { label: 'Master Data', path: '/admin/master-data', icon: Database },
-    { label: 'Manajemen Ujian', path: '/admin/ujian', icon: FileText },
-    { label: 'Hasil Ujian', path: '/admin/hasil', icon: ClipboardCheck },
-    { label: 'Leger Nilai', path: '/admin/leger', icon: LineChart },
+    { label: 'Master Data', path: '/admin/master-data', icon: Database, 
+      subItems: [
+        { label: 'Data Siswa', path: '/admin/master-data?tab=siswa' },
+        { label: 'Data Guru', path: '/admin/master-data?tab=guru' },
+        { label: 'Data Kelas', path: '/admin/master-data?tab=kelas' },
+        { label: 'Data Mapel', path: '/admin/master-data?tab=mapel' },
+        { label: 'Data Ruang', path: '/admin/master-data?tab=ruang' },
+        { label: 'Data Sesi', path: '/admin/master-data?tab=sesi' },
+        { label: 'Data Agama', path: '/admin/master-data?tab=agama' },
+        { label: 'Jenis Ujian', path: '/admin/master-data?tab=jenis_ujian' }
+      ]
+    },
+    { label: 'Administrasi', path: '/admin/administrasi', icon: FileText },
+    { label: 'Bank Soal', path: '/admin/ujian', icon: FileText },
+    { label: 'Ujian', path: '/admin/hasil', icon: ClipboardCheck },
+    { label: 'Cetak', path: '/admin/cetak', icon: FileText },
+    { label: 'Analisis Butir Soal', path: '/admin/analisis', icon: LineChart },
   ];
 
   return (
@@ -32,8 +48,54 @@ export default function AdminLayout() {
 
         <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
            {navItems.map((item) => {
-             const isActive = location.pathname === item.path;
+             const isActive = location.pathname === item.path || (item.path === '/admin/master-data' && location.pathname.startsWith('/admin/master-data'));
              const Icon = item.icon;
+             
+             if (item.subItems) {
+               return (
+                 <div key={item.path} className="space-y-1">
+                   <button
+                     onClick={() => {
+                        setIsMasterDataOpen(!isMasterDataOpen);
+                        navigate(item.path);
+                     }}
+                     className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all ${
+                       isActive 
+                         ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
+                         : 'text-slate-400 hover:text-slate-100 hover:bg-[#1a2942]'
+                     }`}
+                   >
+                     <div className="flex items-center gap-3">
+                       <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                       {item.label}
+                     </div>
+                     {isMasterDataOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                   </button>
+                   {isMasterDataOpen && (
+                     <div className="pl-4 pr-2 py-1 space-y-1">
+                       {item.subItems.map(subItem => {
+                         const isSubActive = location.pathname + location.search === subItem.path || (location.pathname === item.path && location.search === '' && subItem.path.includes('tab=siswa'));
+                         return (
+                           <button
+                             key={subItem.path}
+                             onClick={() => navigate(subItem.path)}
+                             className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                               isSubActive 
+                                 ? 'bg-[#1a2942] text-blue-400 border border-blue-500/20' 
+                                 : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a2942]/50'
+                             }`}
+                           >
+                             <div className={`w-1.5 h-1.5 rounded-full ${isSubActive ? 'bg-blue-500' : 'bg-slate-600'}`} />
+                             {subItem.label}
+                           </button>
+                         )
+                       })}
+                     </div>
+                   )}
+                 </div>
+               );
+             }
+
              return (
                <button
                  key={item.path}
