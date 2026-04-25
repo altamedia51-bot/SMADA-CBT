@@ -277,16 +277,31 @@ export default function AdminMasterData() {
         let failCount = 0;
 
         for (const row of rows) {
-          // Format: Nama, Kelas, Password (NIS is optional now)
-          const name = row.Nama || row.nama || row.name;
-          const classRoom = row.Kelas || row.kelas || row.class;
-          const password = row.Password || row.password || 'siswa123';
+          // Robust key searching
+          const findVal = (keys: string[]) => {
+            const rowKeys = Object.keys(row);
+            for (const k of rowKeys) {
+              const cleanK = k.toLowerCase().trim();
+              if (keys.some(searchKey => cleanK === searchKey.toLowerCase())) {
+                return row[k];
+              }
+            }
+            return null;
+          };
+
+          const name = findVal(['Nama', 'nama', 'name', 'DisplayName']);
+          const classRoom = findVal(['Kelas', 'kelas', 'class', 'ClassRoom']);
+          const password = findVal(['Password', 'password', 'pass', 'PIN']) || 'siswa123';
           
-          // Generate identifier if NIS missing
-          const rawNis = row.NIS || row.nis || row.username || 
-                        (name ? name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 8) + Math.floor(Math.random() * 1000) : null);
+          let rawNis = findVal(['NIS', 'nis', 'username', 'ID', 'no_induk']);
+          
+          // Generate NIS if missing
+          if (!rawNis && name) {
+            rawNis = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 8) + Math.floor(Math.random() * 1000);
+          }
           
           if (!name || !classRoom || !rawNis) {
+            console.warn("Skipping row due to missing data:", { name, classRoom, rawNis });
             failCount++;
             continue;
           }
@@ -319,12 +334,9 @@ export default function AdminMasterData() {
                 }, { merge: true });
                 successCount++;
               } else {
-                // EMAIL_EXISTS: User has Auth record but maybe Firestore doc was deleted.
-                // Create doc with custom ID (NIS) so it shows in list. 
-                // AuthProvider will "adopt" this doc on student login.
                 const fallbackDocId = `recovered_${rawNis}`;
                 await setDoc(doc(db, 'users', fallbackDocId), {
-                  uid: null, // to be updated on login
+                  uid: null,
                   email,
                   displayName: name,
                   role: 'siswa',
@@ -336,9 +348,11 @@ export default function AdminMasterData() {
                 successCount++;
               }
             } else {
+              console.error("Auth creation failed:", data.error?.message);
               failCount++;
             }
           } catch (err) {
+            console.error("Import error for row:", name, err);
             failCount++;
           }
         }
