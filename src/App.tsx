@@ -29,6 +29,7 @@ export default function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="master-data" element={<AdminMasterData />} />
+            <Route path="administrasi" element={<AdminMasterData />} />
             <Route path="ujian" element={<AdminUjian />} />
             <Route path="ujian/soal/:paketId" element={<GuruSoalDetail />} />
             <Route path="hasil" element={<AdminHasil />} />

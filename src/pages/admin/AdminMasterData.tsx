@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,9 @@ import firebaseConfig from '../../../firebase-applet-config.json';
 
 export default function AdminMasterData() {
   const [searchParams] = useSearchParams();
-  const currentTab = searchParams.get('tab') || 'siswa';
+  const location = useLocation();
+  const isAdministrasi = location.pathname.includes('/administrasi');
+  const currentTab = searchParams.get('tab') || (isAdministrasi ? 'siswa' : 'ruang');
 
   const [mapel, setMapel] = useState<any[]>([]);
   const [kelas, setKelas] = useState<any[]>([]);
@@ -589,7 +591,9 @@ export default function AdminMasterData() {
               <span className="text-2xl">{getIcon()}</span> {getTitle()}
             </h2>
           </div>
-          <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-1 ml-10 text-left">Manajemen Variabel</p>
+          <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-1 ml-10 text-left">
+            {isAdministrasi ? 'Administrasi' : 'Master Data'}
+          </p>
         </div>
       </div>
 

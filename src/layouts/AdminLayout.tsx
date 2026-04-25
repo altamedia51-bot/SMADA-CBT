@@ -13,21 +13,27 @@ export default function AdminLayout() {
   useIdleLogout(10); // Auto logout 10 menit
 
   const [isMasterDataOpen, setIsMasterDataOpen] = useState(true);
+  const [isAdministrasiOpen, setIsAdministrasiOpen] = useState(false);
 
   const navItems = [
     { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
     { label: 'Master Data', path: '/admin/master-data', icon: Database, 
+      id: 'master-data',
       subItems: [
-        { label: 'Data Siswa', path: '/admin/master-data?tab=siswa' },
-        { label: 'Data Guru', path: '/admin/master-data?tab=guru' },
-        { label: 'Data Kelas', path: '/admin/master-data?tab=kelas' },
-        { label: 'Data Mapel', path: '/admin/master-data?tab=mapel' },
         { label: 'Data Ruang', path: '/admin/master-data?tab=ruang' },
         { label: 'Data Sesi', path: '/admin/master-data?tab=sesi' },
         { label: 'Jenis Ujian', path: '/admin/master-data?tab=jenis_ujian' }
       ]
     },
-    { label: 'Administrasi', path: '/admin/administrasi', icon: FileText },
+    { label: 'Administrasi', path: '/admin/administrasi', icon: FileText,
+      id: 'administrasi',
+      subItems: [
+        { label: 'Data Siswa', path: '/admin/administrasi?tab=siswa' },
+        { label: 'Data Guru', path: '/admin/administrasi?tab=guru' },
+        { label: 'Data Kelas', path: '/admin/administrasi?tab=kelas' },
+        { label: 'Data Mapel', path: '/admin/administrasi?tab=mapel' }
+      ]
+    },
     { label: 'Bank Soal', path: '/admin/ujian', icon: FileText },
     { label: 'Ujian', path: '/admin/hasil', icon: ClipboardCheck },
     { label: 'Cetak', path: '/admin/cetak', icon: FileText },
@@ -47,15 +53,18 @@ export default function AdminLayout() {
 
         <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
            {navItems.map((item) => {
-             const isActive = location.pathname === item.path || (item.path === '/admin/master-data' && location.pathname.startsWith('/admin/master-data'));
+             const isActive = location.pathname === item.path || (item.subItems && location.pathname.startsWith(item.path));
              const Icon = item.icon;
              
              if (item.subItems) {
+               const isOpen = item.id === 'master-data' ? isMasterDataOpen : isAdministrasiOpen;
+               const setIsOpen = item.id === 'master-data' ? setIsMasterDataOpen : setIsAdministrasiOpen;
+               
                return (
                  <div key={item.path} className="space-y-1">
                    <button
                      onClick={() => {
-                        setIsMasterDataOpen(!isMasterDataOpen);
+                        setIsOpen(!isOpen);
                         navigate(item.path);
                      }}
                      className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all ${
@@ -68,12 +77,16 @@ export default function AdminLayout() {
                        <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                        {item.label}
                      </div>
-                     {isMasterDataOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                     {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                    </button>
-                   {isMasterDataOpen && (
+                   {isOpen && (
                      <div className="pl-4 pr-2 py-1 space-y-1">
                        {item.subItems.map(subItem => {
-                         const isSubActive = location.pathname + location.search === subItem.path || (location.pathname === item.path && location.search === '' && subItem.path.includes('tab=siswa'));
+                         const searchParams = new URLSearchParams(location.search);
+                         const currentTab = searchParams.get('tab');
+                         const subItemTab = new URLSearchParams(subItem.path.split('?')[1]).get('tab');
+                         
+                         const isSubActive = currentTab === subItemTab || (!currentTab && location.pathname === item.path && ((item.id === 'master-data' && subItemTab === 'ruang') || (item.id === 'administrasi' && subItemTab === 'siswa')));
                          return (
                            <button
                              key={subItem.path}
