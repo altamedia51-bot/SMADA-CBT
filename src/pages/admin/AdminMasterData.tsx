@@ -126,7 +126,7 @@ export default function AdminMasterData() {
         });
         const data = await res.json();
         
-        if (!res.ok && data.error?.message !== 'EMAIL_EXISTS') throw new Error(data.error?.message || 'Gagal registrasi Auth');
+        if (!res.ok && data.error?.message !== 'EMAIL_EXISTS' && data.error?.message !== 'TOO_MANY_ATTEMPTS_TRY_LATER') throw new Error(data.error?.message || 'Gagal registrasi Auth');
         
         const uid = res.ok ? data.localId : null;
         const docId = uid || `recovered_${siswaForm.nis}`;
@@ -319,7 +319,7 @@ export default function AdminMasterData() {
 
             const data = await res.json();
             
-            if (res.ok || data.error?.message === 'EMAIL_EXISTS') {
+            if (res.ok || data.error?.message === 'EMAIL_EXISTS' || data.error?.message === 'TOO_MANY_ATTEMPTS_TRY_LATER') {
               const { setDoc } = await import('firebase/firestore');
               
               if (res.ok) {
@@ -348,6 +348,9 @@ export default function AdminMasterData() {
                   createdAt: serverTimestamp()
                 }, { merge: true });
                 successCount++;
+                if (data.error?.message === 'TOO_MANY_ATTEMPTS_TRY_LATER' && !lastError.includes('Firebase')) {
+                  lastError = 'Limit Firebase (100 akun/jam) tercapai. Data Database tersimpan & Siswa yang sudah terdaftar tadi akan tetap bisa login dengan akun yang sama.';
+                }
               }
             } else {
               console.error("Auth creation failed:", data.error?.message);
