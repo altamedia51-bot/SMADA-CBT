@@ -378,7 +378,7 @@ export default function GuruSoalDetail() {
                 </h3>
                 <div className="w-[280px]">
                   <Select value={soalType} onValueChange={setSoalType}>
-                    <SelectTrigger><SelectValue/></SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue/></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pg">Pilihan Ganda (1 Benar)</SelectItem>
                       <SelectItem value="pgk">PG Kompleks (Banyak Benar)</SelectItem>
