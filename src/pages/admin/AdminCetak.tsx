@@ -6,22 +6,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Printer, Settings, CreditCard, ListChecks, FileText, CheckCircle, School } from 'lucide-react';
+import { Printer, Settings, CreditCard, ListChecks, FileText, CheckCircle, School, FileQuestion, ScanLine } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AdminCetak() {
   const [kelasList, setKelasList] = useState<any[]>([]);
   const [ujianList, setUjianList] = useState<any[]>([]);
+  const [paketList, setPaketList] = useState<any[]>([]);
   
   const [isKartuModalOpen, setIsKartuModalOpen] = useState(false);
   const [isHadirModalOpen, setIsHadirModalOpen] = useState(false);
   const [isBeritaModalOpen, setIsBeritaModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isSoalModalOpen, setIsSoalModalOpen] = useState(false);
+  const [isLjkModalOpen, setIsLjkModalOpen] = useState(false);
   
   const [selectedKelasId, setSelectedKelasId] = useState('');
   const [selectedUjianId, setSelectedUjianId] = useState('');
+  const [selectedPaketId, setSelectedPaketId] = useState('');
+  const [jumlahSoalLjk, setJumlahSoalLjk] = useState(50);
   
-  const [printMode, setPrintMode] = useState<'none'|'kartu'|'hadir'|'berita'>('none');
+  const [printMode, setPrintMode] = useState<'none'|'kartu'|'hadir'|'berita'|'soal'|'ljk'>('none');
   const [printData, setPrintData] = useState<any>(null);
   
   const [config, setConfig] = useState({
@@ -43,12 +48,35 @@ export default function AdminCetak() {
     getDocs(query(collection(db, 'ujian'), orderBy('createdAt', 'desc'))).then(snap => {
        setUjianList(snap.docs.map(d => ({id: d.id, ...d.data()})));
     });
+    getDocs(query(collection(db, 'paket_soal'))).then(snap => {
+       setPaketList(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
   }, []);
 
   const saveConfig = () => {
     localStorage.setItem('printConfig', JSON.stringify(config));
     toast.success("Pengaturan cetak disimpan!");
     setIsSettingsModalOpen(false);
+  };
+
+  const handleGenerateSoal = async () => {
+    if (!selectedPaketId) { toast.error("Pilih paket soal terlebih dahulu"); return; }
+    const paket = paketList.find(p => p.id === selectedPaketId);
+    try {
+       const snap = await getDocs(collection(db, `paket_soal/${selectedPaketId}/soal`));
+       const soal = snap.docs.map(d => d.data());
+       if (soal.length === 0) { toast.error("Paket soal belum memiliki soal"); return; }
+       
+       setPrintData({ judul: paket.title, mapel: paket.mapelId, soal });
+       setIsSoalModalOpen(false);
+       setPrintMode('soal');
+    } catch (err: any) { toast.error("Gagal: " + err.message); }
+  };
+
+  const handleGenerateLjk = () => {
+     setIsLjkModalOpen(false);
+     setPrintData({ jumlahSoal: jumlahSoalLjk });
+     setPrintMode('ljk');
   };
 
   const handleGenerateKartu = async () => {
@@ -115,7 +143,7 @@ export default function AdminCetak() {
          `}</style>
          <div className="no-print sticky top-0 bg-white border-b shadow-sm p-4 flex justify-between items-center z-10 px-8">
             <div>
-               <h2 className="text-xl font-bold text-slate-800">Preview {printMode === 'kartu' ? 'Kartu Peserta' : printMode === 'hadir' ? 'Daftar Hadir' : 'Berita Acara'}</h2>
+               <h2 className="text-xl font-bold text-slate-800">Preview {printMode === 'kartu' ? 'Kartu Peserta' : printMode === 'hadir' ? 'Daftar Hadir' : printMode === 'berita' ? 'Berita Acara' : printMode === 'soal' ? 'Soal Ujian' : 'Lembar Jawaban'}</h2>
             </div>
             <div className="flex gap-3">
                <Button variant="outline" onClick={() => setPrintMode('none')} className="h-11">Kembali</Button>
@@ -252,6 +280,85 @@ export default function AdminCetak() {
                   </div>
                </div>
             )}
+
+            {/* NASKAH SOAL PRINT */}
+            {printMode === 'soal' && (
+               <div>
+                  <div className="text-center border-b-[3px] border-black pb-4 mb-6">
+                     <h2 className="font-bold">{config.kop1}</h2>
+                     <h2 className="font-bold">{config.kop2}</h2>
+                     <h1 className="text-2xl font-black uppercase">{config.sekolah}</h1>
+                     <p className="text-sm">{config.alamat}</p>
+                  </div>
+                  <h3 className="text-center font-black text-lg mb-6">NASKAH SOAL UJIAN - {printData?.judul}</h3>
+                  <div className="space-y-6">
+                     {printData?.soal.map((s:any, idx:number) => {
+                        const ops = ['A', 'B', 'C', 'D', 'E'];
+                        return (
+                          <div key={idx} className="break-inside-avoid">
+                             <div className="flex">
+                                <div className="w-8 font-bold text-lg">{idx + 1}.</div>
+                                <div className="flex-1">
+                                   {s.stimulus && <div className="mb-3 italic text-sm border p-4 bg-slate-50 rounded-lg shadow-sm" dangerouslySetInnerHTML={{__html: s.stimulus}} />}
+                                   <div className="prose max-w-none text-justify" dangerouslySetInnerHTML={{__html: s.content}} />
+                                   {s.type !== 'essay' && s.type !== 'isian' && s.options && s.options.length > 0 && (
+                                     <div className="mt-4 space-y-3">
+                                        {s.options.map((opt:string, oIdx:number) => (
+                                           <div key={oIdx} className="flex">
+                                              <div className="w-8 font-semibold">{ops[oIdx]}.</div>
+                                              <div className="prose max-w-none" dangerouslySetInnerHTML={{__html: opt}} />
+                                           </div>
+                                        ))}
+                                     </div>
+                                   )}
+                                </div>
+                             </div>
+                          </div>
+                        )
+                     })}
+                  </div>
+               </div>
+            )}
+
+            {/* LJK PRINT */}
+            {printMode === 'ljk' && (
+               <div>
+                  <div className="text-center border-b-[3px] border-black pb-4 mb-6">
+                     <h1 className="text-3xl font-black uppercase tracking-widest text-slate-900">LEMBAR JAWABAN KOMPUTER (LJK)</h1>
+                     <h2 className="text-xl font-bold uppercase mt-2">{config.sekolah}</h2>
+                  </div>
+                  
+                  <div className="flex gap-8 mb-8 border-2 border-slate-800 p-5 rounded-xl bg-slate-50/50">
+                      <div className="flex-1 space-y-4 font-bold text-sm">
+                         <div className="flex items-end"><span className="w-40 inline-block uppercase tracking-wider">Nama Peserta</span> <span className="flex-1 border-b-2 border-slate-400 border-dotted"></span></div>
+                         <div className="flex items-end"><span className="w-40 inline-block uppercase tracking-wider">NIS / Kelas</span> <span className="w-32 border-b-2 border-slate-400 border-dotted"></span><span className="mx-2">/</span><span className="flex-1 border-b-2 border-slate-400 border-dotted"></span></div>
+                         <div className="flex items-end"><span className="w-40 inline-block uppercase tracking-wider">Mata Pelajaran</span> <span className="flex-1 border-b-2 border-slate-400 border-dotted"></span></div>
+                      </div>
+                      <div className="flex-1 space-y-4 font-bold text-sm">
+                         <div className="flex items-end"><span className="w-36 inline-block uppercase tracking-wider">Tanggal Ujian</span> <span className="flex-1 border-b-2 border-slate-400 border-dotted"></span></div>
+                         <div className="flex items-end"><span className="w-36 inline-block uppercase tracking-wider">Ruang / Sesi</span> <span className="w-32 border-b-2 border-slate-400 border-dotted"></span><span className="mx-2">/</span><span className="flex-1 border-b-2 border-slate-400 border-dotted"></span></div>
+                         <div className="flex items-end"><span className="w-36 inline-block uppercase tracking-wider">Paraf Peserta</span> <span className="flex-1 border-b-2 border-slate-400 border-dotted h-6"></span></div>
+                      </div>
+                  </div>
+
+                  <div className="font-bold text-sm mb-6 p-3 bg-slate-800 text-white rounded-lg flex items-center justify-center tracking-widest uppercase">
+                    Petunjuk: Silang (X) atau hitamkan bulatan pada huruf A, B, C, D, atau E yang dianggap paling benar!
+                  </div>
+
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                     {Array.from({length: printData.jumlahSoal}).map((_, idx) => (
+                        <div key={idx} className="flex items-center gap-3 bg-white p-2 border-b border-dashed border-slate-200 hover:bg-slate-50 transition-colors">
+                           <span className="w-8 text-right font-black text-lg text-slate-800">{idx + 1}.</span>
+                           {['A','B','C','D','E'].map(opt => (
+                              <div key={opt} className="w-7 h-7 rounded-full border-[1.5px] border-slate-800 flex items-center justify-center text-xs font-bold text-slate-700 mx-0.5">
+                                 {opt}
+                              </div>
+                           ))}
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            )}
          </div>
       </div>
     );
@@ -269,23 +376,35 @@ export default function AdminCetak() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-        <Card className="p-10 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsKartuModalOpen(true)}>
-          <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-6 h-6 text-blue-500" /></div>
-          <div className="w-24 h-24 rounded-3xl bg-[#00d0f1] flex items-center justify-center mb-6 shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform"><CreditCard className="w-12 h-12 text-white" strokeWidth={1.5} /></div>
-          <h3 className="font-bold text-slate-700 text-lg">Cetak Kartu Peserta</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsKartuModalOpen(true)}>
+           <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-blue-500" /></div>
+           <div className="w-20 h-20 rounded-2xl bg-[#00d0f1] flex items-center justify-center mb-5 shadow-lg shadow-cyan-500/20 group-hover:scale-110 transition-transform"><CreditCard className="w-10 h-10 text-white" strokeWidth={1.5} /></div>
+           <h3 className="font-bold text-slate-700 text-center">Cetak Kartu Peserta</h3>
         </Card>
 
-        <Card className="p-10 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsHadirModalOpen(true)}>
-          <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-6 h-6 text-amber-500" /></div>
-          <div className="w-24 h-24 rounded-3xl bg-[#f59e0b] flex items-center justify-center mb-6 shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform"><ListChecks className="w-12 h-12 text-white" strokeWidth={1.5} /></div>
-          <h3 className="font-bold text-slate-700 text-lg">Cetak Daftar Hadir</h3>
+        <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsHadirModalOpen(true)}>
+           <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-amber-500" /></div>
+           <div className="w-20 h-20 rounded-2xl bg-[#f59e0b] flex items-center justify-center mb-5 shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform"><ListChecks className="w-10 h-10 text-white" strokeWidth={1.5} /></div>
+           <h3 className="font-bold text-slate-700 text-center">Cetak Daftar Hadir</h3>
         </Card>
 
-        <Card className="p-10 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsBeritaModalOpen(true)}>
-          <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-6 h-6 text-blue-500" /></div>
-          <div className="w-24 h-24 rounded-3xl bg-[#3b82f6] flex items-center justify-center mb-6 shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform"><FileText className="w-12 h-12 text-white" strokeWidth={1.5} /></div>
-          <h3 className="font-bold text-slate-700 text-lg">Cetak Berita Acara</h3>
+        <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsBeritaModalOpen(true)}>
+           <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-blue-500" /></div>
+           <div className="w-20 h-20 rounded-2xl bg-[#3b82f6] flex items-center justify-center mb-5 shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform"><FileText className="w-10 h-10 text-white" strokeWidth={1.5} /></div>
+           <h3 className="font-bold text-slate-700 text-center">Cetak Berita Acara</h3>
+        </Card>
+
+        <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsSoalModalOpen(true)}>
+           <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-violet-500" /></div>
+           <div className="w-20 h-20 rounded-2xl bg-[#8b5cf6] flex items-center justify-center mb-5 shadow-lg shadow-violet-500/20 group-hover:scale-110 transition-transform"><FileQuestion className="w-10 h-10 text-white" strokeWidth={1.5} /></div>
+           <h3 className="font-bold text-slate-700 text-center">Cetak Soal Ujian</h3>
+        </Card>
+
+        <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsLjkModalOpen(true)}>
+           <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-emerald-500" /></div>
+           <div className="w-20 h-20 rounded-2xl bg-[#10b981] flex items-center justify-center mb-5 shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform"><ScanLine className="w-10 h-10 text-white" strokeWidth={1.5} /></div>
+           <h3 className="font-bold text-slate-700 text-center">Cetak LJK</h3>
         </Card>
       </div>
 
@@ -318,6 +437,13 @@ export default function AdminCetak() {
 
       <Dialog open={isBeritaModalOpen} onOpenChange={setIsBeritaModalOpen}>
         <DialogContent><DialogHeader><DialogTitle>Cetak Berita Acara Ujian</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedUjianId} onValueChange={setSelectedUjianId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Jadwal Ujian" /></SelectTrigger><SelectContent>{ujianList.map(u => (<SelectItem key={u.id} value={u.id}>{u.title}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateBerita}>Buat Berita Acara</Button></div></DialogContent>
+      </Dialog>
+      <Dialog open={isSoalModalOpen} onOpenChange={setIsSoalModalOpen}>
+        <DialogContent><DialogHeader><DialogTitle>Cetak Soal Ujian</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedPaketId} onValueChange={setSelectedPaketId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Paket Soal" /></SelectTrigger><SelectContent>{paketList.map(p => (<SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateSoal}>Generate Lembar Soal</Button></div></DialogContent>
+      </Dialog>
+      
+      <Dialog open={isLjkModalOpen} onOpenChange={setIsLjkModalOpen}>
+        <DialogContent><DialogHeader><DialogTitle>Cetak LJK</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><div><label className="text-xs font-bold text-slate-500 mb-1 block">Jumlah Soal</label><Input type="number" min={10} max={100} value={jumlahSoalLjk} onChange={e=>setJumlahSoalLjk(parseInt(e.target.value)||50)} className="h-11" /></div><Button className="w-full bg-emerald-600 hover:bg-emerald-700 h-11 font-bold gap-2" onClick={handleGenerateLjk}><ScanLine className="w-4 h-4"/> Generate LJK</Button></div></DialogContent>
       </Dialog>
     </div>
   );
