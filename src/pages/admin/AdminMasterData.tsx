@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, AlertCircle, Upload, Loader2, Download, UserPlus, UserCircle, Pencil, Plus, FileSpreadsheet, CloudUpload } from 'lucide-react';
+import { Trash2, AlertCircle, Upload, Loader2, Download, UserPlus, UserCircle, Pencil, Plus, FileSpreadsheet, CloudUpload, Hash } from 'lucide-react';
 import { toast } from 'sonner';
 import Papa from 'papaparse';
 import firebaseConfig from '../../../firebase-applet-config.json';
@@ -654,17 +654,25 @@ export default function AdminMasterData() {
         </TabsContent>
 
         <TabsContent value="kelas" className="space-y-6">
-          <Card className="p-6 bg-card">
-            <h3 className="font-semibold mb-4">Tambah Kelas</h3>
-            <form onSubmit={tanganiTambahKelas} className="flex flex-wrap gap-4 items-end">
-              <div className="grid gap-2 flex-1 min-w-[200px]">
-                <label className="text-sm font-medium">Nama Kelas Lengkap</label>
-                <Input value={newKelasName} onChange={e => setNewKelasName(e.target.value)} placeholder="Contoh: XII IPA 1 / XII RPL 2" />
+          <Card className="p-0 border border-indigo-100 overflow-hidden shadow-sm">
+            <div className="bg-indigo-50/50 p-4 border-b flex items-center gap-2 text-indigo-700 font-bold">
+              <Plus className="w-5 h-5" />
+              <span>Kelola Kelas</span>
+            </div>
+            <form onSubmit={tanganiTambahKelas} className="p-6 flex flex-wrap gap-4 items-end bg-white">
+              <div className="grid gap-1.5 flex-1 min-w-[240px]">
+                <label className="text-xs font-bold text-slate-500 ml-1">NAMA KELAS LENGKAP</label>
+                <Input 
+                  value={newKelasName} 
+                  onChange={e => setNewKelasName(e.target.value)} 
+                  placeholder="Contoh: XII IPA 1 / XII RPL 2" 
+                  className="h-10 border-slate-200"
+                />
               </div>
-              <div className="grid gap-2 w-32">
-                <label className="text-sm font-medium">Jenjang</label>
+              <div className="grid gap-1.5 w-32">
+                <label className="text-xs font-bold text-slate-500 ml-1">JENJANG</label>
                 <Select value={jenjangKelas} onValueChange={setJenjangKelas}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 border-slate-200"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="SD">SD</SelectItem>
                     <SelectItem value="SMP">SMP</SelectItem>
@@ -673,44 +681,68 @@ export default function AdminMasterData() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2 w-32">
-                <label className="text-sm font-medium">Tingkat</label>
-                <Input type="number" value={tingkatKelas} onChange={e => setTingkatKelas(parseInt(e.target.value))} min={1} max={12} />
+              <div className="grid gap-1.5 w-24">
+                <label className="text-xs font-bold text-slate-500 ml-1">TINGKAT</label>
+                <Input 
+                  type="number" 
+                  value={tingkatKelas} 
+                  onChange={e => setTingkatKelas(parseInt(e.target.value))} 
+                  min={1} max={12} 
+                  className="h-10 border-slate-200 text-center font-bold"
+                />
               </div>
-              <Button type="submit">Tambah Kelas</Button>
+              <Button type="submit" className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all">
+                Tambah Kelas
+              </Button>
             </form>
           </Card>
 
-          <Card className="overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Nama Kelas</TableHead>
-                  <TableHead>Jenjang</TableHead>
-                  <TableHead>Tingkat</TableHead>
-                  <TableHead className="w-[100px] text-center">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {kelas.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Belum ada data kelas tercatat.</TableCell></TableRow>
-                ) : (
-                  kelas.map((k) => (
-                    <TableRow key={k.id}>
-                      <TableCell className="font-semibold">{k.name}</TableCell>
-                      <TableCell>{k.jenjang}</TableCell>
-                      <TableCell>Kelas {k.tingkat}</TableCell>
-                      <TableCell className="text-center">
-                        <Button variant="ghost" size="sm" onClick={() => hapusData('kelas', k.id)} className="text-destructive hover:bg-destructive/10">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </Card>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">Database Kelas</h3>
+            </div>
+
+            {kelas.length === 0 ? (
+              <Card className="py-20 text-center border-dashed border-2 bg-slate-50/50 flex flex-col items-center justify-center space-y-3">
+                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-300">
+                  <Hash className="w-8 h-8" />
+                </div>
+                <p className="text-slate-500 font-medium">Belum ada data kelas yang tercatat</p>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {kelas.sort((a,b) => a.name.localeCompare(b.name)).map((k) => {
+                  const studentCount = users.filter(u => u.role === 'siswa' && u.kelas === k.name).length;
+                  return (
+                    <Card key={k.id} className="p-4 border border-slate-200 hover:border-indigo-300 hover:shadow-md transition-all group relative">
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex justify-between items-start">
+                          <span className="text-xs font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded tracking-wider">
+                            {k.jenjang} - KLS {k.tingkat}
+                          </span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => hapusData('kelas', k.id)} 
+                            className="h-7 w-7 p-0 text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                        <h4 className="text-xl font-black text-slate-800 truncate" title={k.name}>
+                          {k.name}
+                        </h4>
+                        <div className="flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                          <UserCircle className="w-3.5 h-3.5" />
+                          <span>{studentCount} Siswa Terdaftar</span>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
