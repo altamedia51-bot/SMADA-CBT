@@ -78,6 +78,85 @@ export default function AdminMasterData() {
     }
   };
 
+  const handleDownloadTemplateKelas = () => {
+    const csvContent = "NAMA_KELAS,JENJANG,TINGKAT\nXII IPA 1,SMA,12\nXII IPS 1,SMA,12";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'template_kelas.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const fileInputRefKelas = useRef<HTMLInputElement>(null);
+
+  const handleKelasFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const rows = results.data as any[];
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const row of rows) {
+          const findVal = (keys: string[]) => {
+            const rowKeys = Object.keys(row);
+            for (const k of rowKeys) {
+              const cleanK = k.toLowerCase().trim();
+              if (keys.some(searchKey => cleanK === searchKey.toLowerCase())) {
+                return row[k];
+              }
+            }
+            return '';
+          };
+
+          const namaKelas = findVal(['nama', 'kelas', 'nama_kelas', 'nama kelas']);
+          const jenjang = findVal(['jenjang']) || 'SMA';
+          const tingkat = parseInt(findVal(['tingkat'])) || 10;
+
+          if (namaKelas) {
+             try {
+               await addDoc(collection(db, 'kelas'), {
+                 name: namaKelas,
+                 jenjang,
+                 tingkat,
+                 createdAt: serverTimestamp()
+               });
+               successCount++;
+             } catch (e) {
+               failCount++;
+             }
+          } else {
+             failCount++;
+          }
+        }
+
+        setIsImporting(false);
+        if (successCount > 0) {
+          toast.success(`Berhasil mengimpor ${successCount} kelas.`);
+        }
+        if (failCount > 0) {
+          toast.error(`Gagal mengimpor ${failCount} baris data (format tidak valid).`);
+        }
+        
+        // Reset file input
+        e.target.value = '';
+      },
+      error: (error) => {
+        setIsImporting(false);
+        toast.error("Gagal membaca file CSV: " + error.message);
+      }
+    });
+  };
+
   const tanganiTambahKelas = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newKelasName) return;
@@ -729,14 +808,18 @@ export default function AdminMasterData() {
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
-              <Button type="button" onClick={() => {}} className="bg-rose-500 hover:bg-rose-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-rose-500/20">
-                 <Trash2 className="w-3.5 h-3.5 mr-2" /> HAPUS SEMUA
-              </Button>
-              <Button type="button" onClick={() => {}} className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-500/20">
+              <input
+                 type="file"
+                 accept=".csv"
+                 className="hidden"
+                 ref={fileInputRefKelas}
+                 onChange={handleKelasFileUpload}
+              />
+              <Button type="button" onClick={handleDownloadTemplateKelas} className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-500/20">
                  <Download className="w-3.5 h-3.5 mr-2" /> TEMPLATE
               </Button>
-              <Button type="button" onClick={() => {}} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-emerald-500/20">
-                 <Upload className="w-3.5 h-3.5 mr-2" /> IMPORT
+              <Button type="button" onClick={() => fileInputRefKelas.current?.click()} disabled={isImporting} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-emerald-500/20">
+                 {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-3.5 h-3.5 mr-2" />} IMPORT
               </Button>
               <Button type="button" onClick={() => document.getElementById('form-kelas')?.classList.toggle('hidden')} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-indigo-600/20">
                  <Plus className="w-3.5 h-3.5 mr-2" /> TAMBAH DATA
@@ -795,16 +878,19 @@ export default function AdminMasterData() {
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE / JENJANG</th>
                      <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA KELAS</th>
+                     <th className="py-5 px-6 text-center text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">JUMLAH SISWA</th>
                      <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-50">
                     {kelas.length === 0 ? (
                        <tr>
-                         <td colSpan={4} className="py-12 text-center text-slate-400 font-medium">Belum ada data.</td>
+                         <td colSpan={5} className="py-12 text-center text-slate-400 font-medium">Belum ada data.</td>
                        </tr>
                     ) : (
-                      kelas.sort((a,b) => a.name.localeCompare(b.name)).map((k, i) => (
+                      kelas.sort((a,b) => a.name.localeCompare(b.name)).map((k, i) => {
+                        const studentCount = users.filter(u => u.role === 'siswa' && u.kelas === k.name).length;
+                        return (
                         <tr key={k.id} className="hover:bg-slate-50/50 transition-colors group">
                            <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
                            <td className="py-5 px-6 text-sm font-bold text-blue-600">
@@ -812,6 +898,9 @@ export default function AdminMasterData() {
                            </td>
                            <td className="py-5 px-6 text-sm font-bold text-slate-800">
                               {k.name}
+                           </td>
+                           <td className="py-5 px-6 text-sm font-bold text-slate-600 text-center">
+                              {studentCount}
                            </td>
                            <td className="py-5 px-6 text-right">
                               <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -824,7 +913,8 @@ export default function AdminMasterData() {
                               </div>
                            </td>
                         </tr>
-                      ))
+                        );
+                      })
                     )}
                  </tbody>
                </table>
