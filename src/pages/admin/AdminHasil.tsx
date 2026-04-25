@@ -16,6 +16,21 @@ export default function AdminHasil() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedKelas, setSelectedKelas] = useState<string>('all');
+  const [kelasData, setKelasData] = useState<any[]>([]);
+  const [siswaData, setSiswaData] = useState<any[]>([]);
+
+  // Fetch Master Data
+  useEffect(() => {
+    const getMasterData = async () => {
+       try {
+         const kSnap = await getDocs(collection(db, 'kelas'));
+         const uSnap = await getDocs(collection(db, 'users'));
+         setKelasData(kSnap.docs.map(d => ({id: d.id, ...d.data()})));
+         setSiswaData(uSnap.docs.map(d => ({id: d.id, ...d.data()})).filter((u:any) => u.role === 'siswa'));
+       } catch (err) {}
+    }
+    getMasterData();
+  }, []);
 
   // Fetch Ujian List
   useEffect(() => {
@@ -97,13 +112,13 @@ export default function AdminHasil() {
   }, [selectedUjianId]);
 
   const handleExportExcel = () => {
-    if (pesertaResults.length === 0) return;
+    if (filtered.length === 0) return;
     
-    const data = pesertaResults.map(p => ({
+    const data = filtered.map(p => ({
       'Nama Siswa': p.siswaName,
-      'ID Siswa': p.siswaId,
+      'ID Siswa': p.siswaId || p.id,
       'Kelas': p.siswaKelas,
-      'Status': p.isSubmitted ? 'Selesai' : 'Belum Selesai',
+      'Status': p.unstarted ? 'Belum Mengerjakan' : (p.isSubmitted ? 'Selesai' : 'Sedang Mengerjakan'),
       'Benar': p.metrics.correct,
       'Salah': p.metrics.wrong,
       'Kosong': p.metrics.unanswered,
@@ -119,9 +134,37 @@ export default function AdminHasil() {
     XLSX.writeFile(wb, `Laporan_${ujianName}.xlsx`);
   };
 
-  const uniqueClasses = Array.from(new Set(pesertaResults.map(p => p.siswaKelas).filter(Boolean))).sort();
+  const uniqueClasses = Array.from(new Set([
+    ...kelasData.map(k => k.name), 
+    ...pesertaResults.map(p => p.siswaKelas).filter(Boolean)
+  ])).sort();
 
-  const filtered = pesertaResults.filter(p => {
+  const combinedResults = siswaData.map(siswa => {
+    const attempt = pesertaResults.find(p => p.siswaId === siswa.uid || p.siswaId === siswa.id || p.id === `${selectedUjianId}_${siswa.uid}` || p.id === `${selectedUjianId}_${siswa.id}`);
+    if (attempt) {
+       return { ...attempt, siswaKelas: attempt.siswaKelas || siswa.kelas, siswaName: attempt.siswaName || siswa.displayName || siswa.name };
+    }
+    return {
+      id: `unstarted_${siswa.uid || siswa.id}`,
+      siswaId: siswa.uid || siswa.id,
+      siswaName: siswa.displayName || siswa.name,
+      siswaKelas: siswa.kelas,
+      isSubmitted: false,
+      status: 'BELUM MENGERJAKAN',
+      metrics: { correct: 0, wrong: 0, unanswered: 0, total: 0, score: 0 },
+      violations: 0,
+      unstarted: true,
+    }
+  });
+
+  const allResults = [...combinedResults];
+  pesertaResults.forEach(p => {
+    if (!combinedResults.some(c => c.id === p.id || c.siswaId === p.siswaId)) {
+      allResults.push({ ...p, isSubmitted: p.isSubmitted ?? true });
+    }
+  });
+
+  const filtered = allResults.filter(p => {
     const matchesSearch = p.siswaName?.toLowerCase().includes(search.toLowerCase()) ||
                           p.siswaKelas?.toLowerCase().includes(search.toLowerCase());
     const matchesKelas = selectedKelas === 'all' || p.siswaKelas === selectedKelas;
@@ -179,20 +222,26 @@ export default function AdminHasil() {
             {selectedUjianId && (
               <div className="pt-4 border-t space-y-3">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Total Peserta</span>
-                  <span className="font-bold">{pesertaResults.length}</span>
+                  <span className="text-muted-foreground">Total Siswa</span>
+                  <span className="font-bold">{filtered.length}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Mengerjakan</span>
+                  <span className="font-bold text-blue-600">
+                    {filtered.filter(p => !p.unstarted).length}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Sudah Submit</span>
                   <span className="font-bold text-emerald-600">
-                    {pesertaResults.filter(p => p.isSubmitted).length}
+                    {filtered.filter(p => p.isSubmitted).length}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Rata-rata Nilai</span>
                   <span className="font-bold">
-                    {pesertaResults.length > 0 
-                      ? Math.round(pesertaResults.reduce((acc, curr) => acc + curr.metrics.score, 0) / pesertaResults.length * 10) / 10
+                    {filtered.filter(p => !p.unstarted).length > 0 
+                      ? Math.round(filtered.filter(p => !p.unstarted).reduce((acc, curr) => acc + curr.metrics.score, 0) / filtered.filter(p => !p.unstarted).length * 10) / 10
                       : 0}
                   </span>
                 </div>
@@ -315,15 +364,17 @@ export default function AdminHasil() {
                            </span>
                         </td>
                         <td className="px-5 py-3 text-center">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="bg-white hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-medium"
-                            onClick={() => handleResetSession(p.id)}
-                            title="Reset Sesi"
-                          >
-                            <RotateCcw className="w-4 h-4 mr-2" /> Reset
-                          </Button>
+                          {!p.unstarted && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="bg-white hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-medium"
+                              onClick={() => handleResetSession(p.id)}
+                              title="Reset Sesi"
+                            >
+                              <RotateCcw className="w-4 h-4 mr-2" /> Reset
+                            </Button>
+                          )}
                         </td>
                       </tr>
                     ))}
