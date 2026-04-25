@@ -14,11 +14,13 @@ export default function AdminUjian() {
   const [ujianList, setUjianList] = useState<any[]>([]);
   const [paketList, setPaketList] = useState<any[]>([]);
   const [kelasList, setKelasList] = useState<any[]>([]);
+  const [jenisUjianList, setJenisUjianList] = useState<any[]>([]);
   const [soalCounts, setSoalCounts] = useState<Record<string, number>>({});
   
   const [title, setTitle] = useState('');
   const [paketId, setPaketId] = useState('');
   const [kelasId, setKelasId] = useState('');
+  const [jenisUjianId, setJenisUjianId] = useState('');
   const [duration, setDuration] = useState('120'); // minutes
   const [status, setStatus] = useState('draft'); // draft, aktif, selesai
 
@@ -29,6 +31,12 @@ export default function AdminUjian() {
     const qUjian = query(collection(db, 'ujian'));
     const unsubUjian = onSnapshot(qUjian, snap => {
       setUjianList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    // Fetch Jenis Ujian
+    const qJenisUjian = query(collection(db, 'jenis_ujian'));
+    const unsubJenis = onSnapshot(qJenisUjian, snap => {
+      setJenisUjianList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
     // Fetch Paket Soal
@@ -57,13 +65,13 @@ export default function AdminUjian() {
     });
 
     return () => {
-      unsubUjian(); unsubPaket(); unsubKelas();
+      unsubUjian(); unsubPaket(); unsubKelas(); unsubJenis();
     };
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !paketId || !kelasId || !duration) {
+    if (!title || !paketId || !kelasId || !jenisUjianId || !duration) {
       return toast.error('Harap lengkapi semua bidang');
     }
 
@@ -72,6 +80,7 @@ export default function AdminUjian() {
         title,
         paketId,
         kelasId,
+        jenisUjianId,
         duration: parseInt(duration),
         status,
         token: Math.random().toString(36).substring(2, 8).toUpperCase(), // Generate random 6-char token
@@ -94,6 +103,7 @@ export default function AdminUjian() {
       setTitle('');
       setPaketId('');
       setKelasId('');
+      setJenisUjianId('');
       setDuration('120');
       setStatus('draft');
     } catch (err: any) {
@@ -106,6 +116,7 @@ export default function AdminUjian() {
     setTitle(u.title || '');
     setPaketId(u.paketId || '');
     setKelasId(u.kelasId || '');
+    setJenisUjianId(u.jenisUjianId || '');
     setDuration(u.duration?.toString() || '120');
     setStatus(u.status || 'draft');
   };
@@ -175,6 +186,20 @@ export default function AdminUjian() {
             </div>
 
             <div>
+              <label className="text-sm font-semibold mb-1 block">Jenis Ujian</label>
+              <Select value={jenisUjianId} onValueChange={setJenisUjianId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Jenis Ujian" />
+                </SelectTrigger>
+                <SelectContent>
+                  {jenisUjianList.map(j => (
+                    <SelectItem key={j.id} value={j.id}>{j.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <label className="text-sm font-semibold mb-1 block">Durasi (Menit)</label>
               <Input 
                 type="number"
@@ -222,6 +247,7 @@ export default function AdminUjian() {
           {ujianList.map(u => {
             const paket = paketList.find(p => p.id === u.paketId);
             const kelas = kelasList.find(k => k.id === u.kelasId);
+            const jenis = jenisUjianList.find(j => j.id === u.jenisUjianId);
             
             return (
               <Card key={u.id} className="p-4 border shadow-sm flex flex-col relative overflow-hidden transition-all hover:shadow-md">
@@ -232,6 +258,7 @@ export default function AdminUjian() {
                 
                 <h4 className="font-bold text-lg mb-1 pr-4">{u.title}</h4>
                 <div className="text-sm text-muted-foreground space-y-1 mb-4 flex-1">
+                  <p>Jenis Ujian: <span className="font-medium text-slate-700">{jenis?.name || '-'}</span></p>
                   <p>Paket: <span className="font-medium text-slate-700">{paket?.title || '-'}</span></p>
                   <p className="flex items-center gap-1.5">
                     Jumlah Soal: 

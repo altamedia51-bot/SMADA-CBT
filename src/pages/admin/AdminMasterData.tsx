@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash2, AlertCircle, Upload, Loader2, Download, UserPlus, UserCircle, Pencil, Plus, FileSpreadsheet, CloudUpload, Hash } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,7 +22,6 @@ export default function AdminMasterData() {
   const [ruang, setRuang] = useState<any[]>([]);
   const [sesi, setSesi] = useState<any[]>([]);
   const [jenisUjian, setJenisUjian] = useState<any[]>([]);
-  const [agama, setAgama] = useState<any[]>([]);
 
   // Form states
   const [newRuangKode, setNewRuangKode] = useState('');
@@ -32,8 +30,6 @@ export default function AdminMasterData() {
   const [newSesiName, setNewSesiName] = useState('');
   const [newJenisUjianKode, setNewJenisUjianKode] = useState('');
   const [newJenisUjianName, setNewJenisUjianName] = useState('');
-  const [newAgamaKode, setNewAgamaKode] = useState('');
-  const [newAgamaName, setNewAgamaName] = useState('');
   
   // Student Form State
   const [editingSiswa, setEditingSiswa] = useState<any>(null);
@@ -93,12 +89,7 @@ export default function AdminMasterData() {
       setJenisUjian(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
-    const qAgama = query(collection(db, 'agama'));
-    const unAgama = onSnapshot(qAgama, (snap) => {
-      setAgama(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-
-    return () => { unMapel(); unKelas(); unUsers(); unRuang(); unSesi(); unJenisUjian(); unAgama(); };
+    return () => { unMapel(); unKelas(); unUsers(); unRuang(); unSesi(); unJenisUjian(); };
   }, []);
 
   const tanganiTambahMapel = async (e: React.FormEvent) => {
@@ -164,23 +155,6 @@ export default function AdminMasterData() {
       toast.success('Jenis Ujian berhasil ditambahkan');
     } catch (err: any) {
       toast.error('Gagal menambah jenis ujian: ' + err.message);
-    }
-  };
-
-  const tanganiTambahAgama = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newAgamaName) return;
-    try {
-      await addDoc(collection(db, 'agama'), {
-        kode: newAgamaKode,
-        name: newAgamaName,
-        createdAt: serverTimestamp()
-      });
-      setNewAgamaKode('');
-      setNewAgamaName('');
-      toast.success('Agama berhasil ditambahkan');
-    } catch (err: any) {
-      toast.error('Gagal menambah agama: ' + err.message);
     }
   };
 
@@ -581,7 +555,6 @@ export default function AdminMasterData() {
       case 'mapel': return 'Data Mapel';
       case 'ruang': return 'Data Ruang';
       case 'sesi': return 'Data Sesi';
-      case 'agama': return 'Data Agama';
       case 'jenis_ujian': return 'Jenis Ujian';
       default: return 'Master Data';
     }
@@ -595,7 +568,6 @@ export default function AdminMasterData() {
       case 'mapel': return '📚';
       case 'ruang': return '🏫';
       case 'sesi': return '⏱️';
-      case 'agama': return '🕌';
       case 'jenis_ujian': return '📝';
       default: return '🏫';
     }
@@ -615,11 +587,12 @@ export default function AdminMasterData() {
         </div>
       </div>
 
-      <Tabs value={currentTab} className="w-full">
+      <div className="w-full">
         {/* Submenu is now handled by the sidebar */}
 
         {/* --- TABS: DATA SISWA --- */}
-        <TabsContent value="siswa" className="space-y-8">
+        {currentTab === 'siswa' && (
+        <div className="space-y-8">
           {/* Section: Edit/Tambah Siswa */}
           <Card className="p-0 border border-emerald-100 overflow-hidden shadow-sm">
             <div className="bg-white p-4 border-b flex justify-between items-center">
@@ -781,10 +754,12 @@ export default function AdminMasterData() {
               )}
             </div>
           </div>
-        </TabsContent>
+        </div>
+        )}
 
         {/* --- TABS: DATA GURU --- */}
-        <TabsContent value="guru" className="space-y-6">
+        {currentTab === 'guru' && (
+        <div className="space-y-6">
           <Card className="p-6 border border-blue-100 shadow-sm">
              <div className="flex items-center gap-2 text-blue-700 font-bold mb-6">
                 <UserPlus className="w-5 h-5" />
@@ -867,9 +842,11 @@ export default function AdminMasterData() {
               </TableBody>
             </Table>
           </Card>
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="mapel" className="space-y-6">
+        {currentTab === 'mapel' && (
+        <div className="space-y-6">
           <Card className="p-6 bg-card">
             <h3 className="font-semibold mb-4">Tambah Mata Pelajaran</h3>
             <form onSubmit={tanganiTambahMapel} className="flex gap-4 items-end">
@@ -921,9 +898,11 @@ export default function AdminMasterData() {
               </TableBody>
             </Table>
           </Card>
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="kelas" className="space-y-6">
+        {currentTab === 'kelas' && (
+        <div className="space-y-6">
           {/* Action Header */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-2">
             <div className="relative w-full md:w-80">
@@ -1052,8 +1031,11 @@ export default function AdminMasterData() {
                </div>
              </div>
           </Card>
-        </TabsContent>
-        <TabsContent value="ruang" className="space-y-6">
+        </div>
+        )}
+        
+        {currentTab === 'ruang' && (
+        <div className="space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-2">
             <div className="relative w-full md:w-80">
               <Input 
@@ -1125,9 +1107,11 @@ export default function AdminMasterData() {
                </table>
              </div>
           </Card>
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="sesi" className="space-y-6">
+        {currentTab === 'sesi' && (
+        <div className="space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-2">
             <div className="relative w-full md:w-80">
               <Input 
@@ -1196,86 +1180,11 @@ export default function AdminMasterData() {
                </table>
              </div>
           </Card>
-        </TabsContent>
+        </div>
+        )}
 
-        <TabsContent value="agama" className="space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-2">
-            <div className="relative w-full md:w-80">
-              <Input 
-                placeholder="Cari kode atau nama..." 
-                className="pl-10 bg-white border-slate-200 rounded-full h-11 text-sm font-medium shadow-sm w-full focus-visible:ring-blue-500" 
-              />
-              <svg className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button type="button" onClick={() => toast("Fitur Hapus Semua akan segera hadir")} className="bg-rose-500 hover:bg-rose-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-rose-500/20">
-                 <Trash2 className="w-3.5 h-3.5 mr-2" /> HAPUS SEMUA
-              </Button>
-              <Button type="button" onClick={() => toast("Fitur Template akan segera hadir")} className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-500/20">
-                 <Download className="w-3.5 h-3.5 mr-2" /> TEMPLATE
-              </Button>
-              <Button type="button" onClick={() => toast("Fitur Import akan segera hadir")} className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-emerald-500/20">
-                 <Upload className="w-3.5 h-3.5 mr-2" /> IMPORT
-              </Button>
-              <Button type="button" onClick={() => document.getElementById('form-agama')?.classList.toggle('hidden')} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-blue-600/20">
-                 <Plus className="w-3.5 h-3.5 mr-2" /> TAMBAH DATA
-              </Button>
-            </div>
-          </div>
-
-          <Card id="form-agama" className="p-0 border border-blue-100 overflow-hidden shadow-sm hidden">
-            <form onSubmit={tanganiTambahAgama} className="p-6 flex flex-wrap gap-4 items-end bg-white">
-              <div className="grid gap-1.5 w-40">
-                <label className="text-xs font-bold text-slate-500 uppercase">KODE AGAMA</label>
-                <Input value={newAgamaKode} onChange={e => setNewAgamaKode(e.target.value)} placeholder="ISLAM" className="h-11 border-slate-200 uppercase font-bold" />
-              </div>
-              <div className="grid gap-1.5 flex-1 min-w-[240px]">
-                <label className="text-xs font-bold text-slate-500 uppercase">Nama Agama</label>
-                <Input value={newAgamaName} onChange={e => setNewAgamaName(e.target.value)} placeholder="Islam" className="h-11 border-slate-200 font-bold" />
-              </div>
-              <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
-            </form>
-          </Card>
-
-          <Card className="bg-white border-0 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden py-2 px-4">
-             <div className="overflow-x-auto min-h-[300px]">
-               <table className="w-full">
-                 <thead>
-                   <tr className="border-b-2 border-slate-100">
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE AGAMA</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA AGAMA</th>
-                     <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
-                   </tr>
-                 </thead>
-                 <tbody className="divide-y divide-slate-50">
-                    {agama.length === 0 ? (
-                       <tr><td colSpan={4} className="py-12 text-center text-slate-400 font-medium">Belum ada data agama.</td></tr>
-                    ) : (
-                      agama.sort((a,b) => a.kode.localeCompare(b.kode)).map((item, i) => (
-                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                           <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
-                           <td className="py-5 px-6 text-sm font-bold text-blue-600">{item.kode}</td>
-                           <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
-                           <td className="py-5 px-6 text-right">
-                              <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
-                                <button onClick={() => hapusData('agama', item.id)} className="text-rose-400 hover:text-rose-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                              </div>
-                           </td>
-                        </tr>
-                      ))
-                    )}
-                 </tbody>
-               </table>
-               <div className="py-4 px-6 text-xs font-semibold text-slate-400 mt-2">
-                 Ditampilkan: {agama.length} dari {agama.length} data
-               </div>
-             </div>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="jenis_ujian" className="space-y-6">
+        {currentTab === 'jenis_ujian' && (
+        <div className="space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-2">
             <div className="relative w-full md:w-80">
               <Input 
@@ -1344,8 +1253,9 @@ export default function AdminMasterData() {
                </table>
              </div>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+        )}
+      </div>
     </div>
   );
 }

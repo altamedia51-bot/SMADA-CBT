@@ -24,7 +24,6 @@ export default function AdminLayout() {
         { label: 'Data Mapel', path: '/admin/master-data?tab=mapel' },
         { label: 'Data Ruang', path: '/admin/master-data?tab=ruang' },
         { label: 'Data Sesi', path: '/admin/master-data?tab=sesi' },
-        { label: 'Data Agama', path: '/admin/master-data?tab=agama' },
         { label: 'Jenis Ujian', path: '/admin/master-data?tab=jenis_ujian' }
       ]
     },

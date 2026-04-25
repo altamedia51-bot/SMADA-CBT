@@ -21,15 +21,15 @@ export default function AdminLeger() {
         setLoading(true);
         // 1. Fetch Students & Classes
         const kSnap = await getDocs(collection(db, 'kelas'));
-        setKelasData(kSnap.docs.map(d => ({id: d.id, ...d.data()})));
+        setKelasData(kSnap.docs.map(d => ({id: d.id, ...d.data()} as any)));
         
         const uSnap = await getDocs(collection(db, 'users'));
-        const students = uSnap.docs.map(d => ({id: d.id, ...d.data()})).filter(u => u.role === 'siswa');
+        const students = uSnap.docs.map(d => ({id: d.id, ...d.data()} as any)).filter(u => u.role === 'siswa');
         setSiswaData(students);
 
         // 2. Fetch all Ujian
         const ujianSnap = await getDocs(collection(db, 'ujian'));
-        const ujianList = ujianSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const ujianList = ujianSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
 
         // 3. To calculate scores, we need Soal for each Paket used in Ujian
         const paketIds = Array.from(new Set(ujianList.map(u => u.paketId).filter(Boolean)));
@@ -37,12 +37,12 @@ export default function AdminLeger() {
         
         for (const pid of paketIds) {
           const sSnap = await getDocs(collection(db, `paket_soal/${pid}/soal`));
-          soalByPaket[pid as string] = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          soalByPaket[pid as string] = sSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
         }
 
         // 4. Fetch all Jawaban Siswa
         const jawabSnap = await getDocs(collection(db, 'jawaban_siswa'));
-        const jawabanList = jawabSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const jawabanList = jawabSnap.docs.map(d => ({ id: d.id, ...d.data() } as any));
 
         // 5. Compute Ledger Data
         const computedLeger = students.map(siswa => {
