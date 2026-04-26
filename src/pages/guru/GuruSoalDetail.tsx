@@ -39,8 +39,23 @@ export default function GuruSoalDetail() {
   const [correctKey, setCorrectKey] = useState('A'); // Untuk PG
   const [pgkKeys, setPgkKeys] = useState<string[]>([]); // Untuk PG Kompleks (multiple correct options)
   const [textAnswer, setTextAnswer] = useState(''); // Untuk Isian / Essay (Rubrik)
+  const [imageContent, setImageContent] = useState<string | null>(null);
 
   const [editingSoalId, setEditingSoalId] = useState<string | null>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024 * 2) { // 2MB Limit for safety with base64
+        return toast.error("Ukuran gambar maksimal 2MB");
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageContent(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   useEffect(() => {
     if (!paketId) return;
@@ -117,6 +132,7 @@ export default function GuruSoalDetail() {
         content,
         options,
         correctAnswer: finalAnswer,
+        imageUrl: imageContent || ''
       };
 
       if (editingSoalId) {
@@ -127,14 +143,13 @@ export default function GuruSoalDetail() {
         await addDoc(collection(db, `paket_soal/${paketId}/soal`), {
           ...payload,
           paketId,
-          mediaType: 'none',
-          mediaUrl: ''
+          createdAt: serverTimestamp()
         });
         toast.success('Soal berhasil ditambah ke paket');
       }
 
       // Reset Form
-      setContent(''); setStimulus('');
+      setContent(''); setStimulus(''); setImageContent(null);
       setOptA(''); setOptB(''); setOptC(''); setOptD(''); setOptE(''); 
       setCorrectKey('A'); setPgkKeys([]); setTextAnswer('');
       
@@ -148,6 +163,7 @@ export default function GuruSoalDetail() {
     setSoalType(s.type || 'pg');
     setStimulus(s.stimulus || '');
     setContent(s.content || '');
+    setImageContent(s.imageUrl || null);
     
     if (s.type === 'pg' || s.type === 'pgk') {
       setOptA(s.options?.[0] || '');
@@ -402,6 +418,35 @@ export default function GuruSoalDetail() {
                   <label className="font-bold text-base mb-2 block">Isi Pertanyaan *</label>
                   <Textarea value={content} onChange={e=>setContent(e.target.value)} rows={3} placeholder="Tuliskan pertanyaan spesifik..." required className="text-base" />
                 </div>
+
+                {/* IMAGE UPLOAD UI */}
+                <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/50">
+                  <label className="font-semibold mb-2 block text-slate-700 text-sm">Lampiran Gambar (Opsional)</label>
+                  <div className="flex flex-wrap gap-4 items-start">
+                    <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Upload Gambar</p>
+                      </div>
+                      <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                    </label>
+                    {imageContent && (
+                      <div className="relative group">
+                        <img src={imageContent} alt="Preview" className="w-32 h-32 object-cover rounded-lg border shadow-sm" />
+                        <button 
+                          type="button"
+                          onClick={() => setImageContent(null)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex-1 text-[11px] text-slate-400 leading-relaxed italic">
+                      Gunakan gambar untuk melengkapi soal (grafik, peta, tabel gambar, dll). Gambar akan tersimpan langsung ke database. Maksimal 2MB.
+                    </div>
+                  </div>
+                </div>
                 
                 {/* Dynamic Input based on Type */}
                 {(soalType === 'pg' || soalType === 'pgk') && (
@@ -544,6 +589,12 @@ export default function GuruSoalDetail() {
                   <p className="font-medium text-sm text-foreground leading-relaxed mb-3">
                      {s.content}
                   </p>
+
+                  {s.imageUrl && (
+                    <div className="mb-4 rounded-lg overflow-hidden border bg-slate-50">
+                      <img src={s.imageUrl} alt="Lampiran Soal" className="max-h-48 w-full object-contain mx-auto" />
+                    </div>
+                  )}
                   
                   {/* Option Renderer */}
                   {s.type === 'pg' && (

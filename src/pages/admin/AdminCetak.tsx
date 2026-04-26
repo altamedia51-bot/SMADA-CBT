@@ -398,6 +398,11 @@ export default function AdminCetak() {
                                       className="prose prose-sm max-w-none leading-relaxed text-justify text-[13px] text-black" 
                                       dangerouslySetInnerHTML={{__html: s.content}} 
                                    />
+                                   {s.imageUrl && (
+                                      <div className="my-2 border-[0.5px] border-slate-300 rounded-sm overflow-hidden bg-white max-w-full">
+                                         <img src={s.imageUrl} alt="Lampiran" className="max-h-[300px] w-auto object-contain mx-auto" />
+                                      </div>
+                                   )}
                                    {s.type !== 'essay' && s.type !== 'isian' && s.options && s.options.length > 0 && (
                                      <div className="mt-2 text-[13px]">
                                         <div className="grid grid-cols-1 gap-y-1 gap-x-4">
