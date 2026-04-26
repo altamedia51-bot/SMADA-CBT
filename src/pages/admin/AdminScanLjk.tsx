@@ -84,16 +84,10 @@ export default function AdminScanLjk() {
       // FAKE OMR PROCESSING DELAY untuk keperluan simulasi
       setTimeout(() => {
         setIsScanning(false);
-        // Simulate a reading result
-        const mockScore = Math.floor(Math.random() * 41) + 60; // Random score 60-100
         setScanResult({
-           id: Math.random().toString(36).substring(7),
-           score: mockScore,
-           benar: Math.floor((mockScore / 100) * 50),
-           salah: 50 - Math.floor((mockScore / 100) * 50),
-           siswa: 'Peserta ' + Math.floor(Math.random() * 1000)
+           error: "Pemindaian LJK asli melalui browser sangat berat dan tidak stabil karena membutuhkan library Computer Vision (OpenCV). Fitur otomatis ini disimulasikan sebagai prototipe. Untuk penggunaan nyata, Anda bisa menggunakannya via API/Backend yang kami sediakan nantinya."
         });
-        toast.success(`Berhasil! Skor: ${mockScore}`);
+        toast.info(`Simulasi OMR Selesai`);
         stopCamera();
       }, 1500);
     }
@@ -183,30 +177,18 @@ export default function AdminScanLjk() {
 
             {scanResult && (
                <div className="w-full h-full flex items-center justify-center bg-slate-900 absolute inset-0 z-10 p-6">
-                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-slate-800 rounded-2xl border border-emerald-500/30 p-8 max-w-sm w-full text-center shadow-2xl shadow-emerald-900/20">
-                      <div className="mx-auto w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6">
-                         <div className="text-4xl font-black text-emerald-400">{scanResult.score}</div>
+                  <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-slate-800 rounded-2xl border border-blue-500/30 p-8 max-w-sm w-full text-center shadow-2xl shadow-blue-900/20">
+                      <div className="mx-auto w-24 h-24 bg-blue-500/20 rounded-full flex items-center justify-center mb-6">
+                         <Info className="w-12 h-12 text-blue-400" />
                       </div>
-                      <h2 className="text-2xl font-bold text-white mb-1">{scanResult.siswa}</h2>
-                      <p className="text-slate-400 text-sm mb-6">Berhasil dipindai & dikoreksi.</p>
-
-                      <div className="grid grid-cols-2 gap-4 mb-8">
-                         <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-700">
-                             <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Benar</p>
-                             <p className="text-xl font-bold text-emerald-400">{scanResult.benar}</p>
-                         </div>
-                         <div className="bg-slate-900/50 rounded-xl p-3 border border-slate-700">
-                             <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">Salah</p>
-                             <p className="text-xl font-bold text-rose-400">{scanResult.salah}</p>
-                         </div>
-                      </div>
+                      <h2 className="text-xl font-bold text-white mb-2">Simulasi Prototipe</h2>
+                      <p className="text-slate-300 text-sm mb-6 leading-relaxed bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                         {scanResult.error || "Hasil pemindaian LJK."}
+                      </p>
 
                       <div className="flex gap-3">
-                         <Button variant="outline" className="flex-1 bg-transparent border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white" onClick={handleReset}>
-                            Tinjau
-                         </Button>
-                         <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold" onClick={handleReset}>
-                            <ScanLine className="w-4 h-4 mr-2" /> Pindai Baru
+                         <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold" onClick={handleReset}>
+                            <RefreshCcw className="w-4 h-4 mr-2" /> Mengerti & Lanjutkan
                          </Button>
                       </div>
                   </motion.div>
