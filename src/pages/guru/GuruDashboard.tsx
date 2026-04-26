@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuthStore } from '../../store/auth.store';
 import { collection, query, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { db, auth } from '../../lib/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { RefreshCcw, Search, Clock, Users, FileText, Activity, Server, ScrollText } from 'lucide-react';
+import { RefreshCcw, Search, Clock, Users, FileText, Activity, Server, ScrollText, LogOut, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 export default function GuruDashboard() {
@@ -79,16 +79,19 @@ export default function GuruDashboard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
              <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md">
-                <Users className="w-5 h-5"/>
+                <User className="w-5 h-5"/>
              </div>
              <div>
-                <h1 className="text-lg md:text-2xl font-extrabold text-slate-800 tracking-tight">Dashboard</h1>
-                <p className="text-xs text-slate-500 md:hidden">Mobile View</p>
+                <h1 className="text-lg md:text-2xl font-extrabold text-[#0E1726] tracking-tight">Dashboard</h1>
+                <p className="text-[10px] text-slate-400 font-medium md:hidden uppercase tracking-wider">Teacher Panel</p>
              </div>
           </div>
-          <div className="w-9 h-9 border border-slate-200 rounded-full flex items-center justify-center text-slate-400 bg-slate-50">
-             <Server className="w-4 h-4" /> {/* Or Bell icon */}
-          </div>
+          <button 
+            onClick={() => auth.signOut()}
+            className="w-10 h-10 border border-slate-100 rounded-full flex items-center justify-center text-slate-400 bg-slate-50/50 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-100 transition-colors"
+          >
+             <LogOut className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Dropdown Ujian in Header */}

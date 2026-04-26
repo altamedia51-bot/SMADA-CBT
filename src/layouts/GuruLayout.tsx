@@ -78,19 +78,21 @@ export default function GuruLayout() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-         {/* Mobile Header */}
-         <div className="md:hidden h-16 bg-[#0E1726] text-white flex items-center px-4 justify-between shrink-0">
-            <div className="font-bold flex items-center gap-2">
-               <div className="w-8 h-8 bg-blue-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-xs">SMA</div>
-               <span className="flex items-center gap-2">
-                 CBT System 
-                 <span className="bg-blue-600/30 text-blue-300 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase">Guru</span>
-               </span>
+          {/* Mobile Header */}
+          {location.pathname !== '/guru' && (
+            <div className="md:hidden h-16 bg-[#0E1726] text-white flex items-center px-4 justify-between shrink-0">
+               <div className="font-bold flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-xs">SMA</div>
+                  <span className="flex items-center gap-2">
+                    CBT System 
+                    <span className="bg-blue-600/30 text-blue-300 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase">Guru</span>
+                  </span>
+               </div>
+               <button onClick={() => auth.signOut()}>
+                 <LogOut className="w-5 h-5" />
+               </button>
             </div>
-            <button onClick={() => auth.signOut()}>
-              <LogOut className="w-5 h-5" />
-            </button>
-         </div>
+          )}
 
          <div className="flex-1 overflow-auto bg-slate-50 relative pb-24 md:pb-0">
            <Outlet />
