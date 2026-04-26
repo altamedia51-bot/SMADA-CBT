@@ -450,13 +450,19 @@ export default function AdminCetak() {
                       <div className="flex flex-col items-center justify-center text-center font-serif leading-tight z-10 w-full relative h-[120px]">
                          <div className="absolute left-6 top-1/2 -translate-y-1/2">
                             {/* Logo inside */}
-                            <div className="w-20 h-24 border border-slate-300 bg-white flex flex-col items-center justify-start p-1.5 shadow-sm">
-                               <div className="text-[7px] font-sans text-center mb-1 leading-tight tracking-tight uppercase">
-                                 {config.sekolah}
-                               </div>
-                               <div className="w-10 h-10 rounded-full border border-blue-400 bg-blue-50 mt-1 flex items-center justify-center shadow-inner">
-                                  <div className="w-4 h-4 bg-blue-300 rotate-45 transform"></div>
-                               </div>
+                            <div className="w-20 h-24 border border-slate-300 bg-white flex flex-col items-center justify-center p-1 shadow-sm overflow-hidden">
+                               {printData?.logo ? (
+                                 <img src={printData.logo} alt="Logo" className="max-w-full max-h-full object-contain" />
+                               ) : (
+                                 <>
+                                   <div className="text-[7px] font-sans text-center mb-1 leading-tight tracking-tight uppercase">
+                                     {config.sekolah}
+                                   </div>
+                                   <div className="w-10 h-10 rounded-full border border-blue-400 bg-blue-50 mt-1 flex items-center justify-center shadow-inner">
+                                      <div className="w-4 h-4 bg-blue-300 rotate-45 transform"></div>
+                                   </div>
+                                 </>
+                               )}
                             </div>
                          </div>
                          <div className="pl-24 pr-4 w-full">
@@ -497,9 +503,9 @@ export default function AdminCetak() {
                           ZIPGRADE.COM
                        </div>
 
-                       {/* Rotated PSAS text right */}
-                       <div className="absolute right-[0rem] top-12 origin-left text-[14px] font-semibold tracking-widest text-black" style={{transform: "rotate(-90deg) translateX(0%)"}}>
-                          {printData?.ljkKop2?.split('(')[0] || 'PSAS'} ({printData?.ljkCode || '8596'})
+                       {/* Rotated PSAS text right - FIXED POSITIONING */}
+                       <div className="absolute -right-4 top-12 origin-top-right text-[14px] font-semibold tracking-widest text-black whitespace-nowrap" style={{transform: "rotate(-90deg) translateX(100%)"}}>
+                          {printData?.ljkKop2?.split('(')[0]?.substring(0, 30) || 'PSAS'} ({printData?.ljkCode || '8596'})
                        </div>
 
                        {/* Column 1 */}
@@ -815,6 +821,23 @@ export default function AdminCetak() {
             <div>
               <label className="text-xs font-bold text-slate-500 mb-1 block">Kop 2 (Judul Ujian)</label>
               <Input value={ljkKop2} onChange={e=>setLjkKop2(e.target.value)} placeholder="PENILAIAN SUMATIF AKHIR SEMESTER (PSAS)" className="h-11" />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 mb-1 block uppercase">Logo Kop LJK</label>
+              <div className="flex items-center gap-3 mt-1">
+                <Input 
+                   type="file" 
+                   accept="image/*" 
+                   onChange={handleLogoUpload} 
+                   className="h-10 text-xs border-dashed border-2 p-1" 
+                />
+                {logoSoal && (
+                   <div className="h-10 w-10 border rounded bg-white flex items-center justify-center overflow-hidden shrink-0">
+                      <img src={logoSoal} alt="Preview" className="max-w-full max-h-full object-contain" />
+                   </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
