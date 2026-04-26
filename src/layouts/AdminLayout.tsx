@@ -2,7 +2,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, Database, FileText, ClipboardCheck, LineChart, ChevronDown, ChevronRight, Calendar, Printer, BookOpen, Users } from 'lucide-react';
+import { LogOut, LayoutDashboard, Database, FileText, ClipboardCheck, LineChart, ChevronDown, ChevronRight, Calendar, Printer, BookOpen, Users, Box, Clock, Tags, GraduationCap, School, Library } from 'lucide-react';
 import { useIdleLogout } from '../hooks/useIdleLogout';
 
 export default function AdminLayout() {
@@ -20,18 +20,18 @@ export default function AdminLayout() {
     { label: 'Master Data', path: '/admin/master-data', icon: Database, 
       id: 'master-data',
       subItems: [
-        { label: 'Data Ruang', path: '/admin/master-data?tab=ruang' },
-        { label: 'Data Sesi', path: '/admin/master-data?tab=sesi' },
-        { label: 'Jenis Ujian', path: '/admin/master-data?tab=jenis_ujian' }
+        { label: 'Data Ruang', path: '/admin/master-data?tab=ruang', icon: Box },
+        { label: 'Data Sesi', path: '/admin/master-data?tab=sesi', icon: Clock },
+        { label: 'Jenis Ujian', path: '/admin/master-data?tab=jenis_ujian', icon: Tags }
       ]
     },
     { label: 'Administrasi', path: '/admin/administrasi', icon: FileText,
       id: 'administrasi',
       subItems: [
-        { label: 'Data Siswa', path: '/admin/administrasi?tab=siswa' },
-        { label: 'Data Guru', path: '/admin/administrasi?tab=guru' },
-        { label: 'Data Kelas', path: '/admin/administrasi?tab=kelas' },
-        { label: 'Data Mapel', path: '/admin/administrasi?tab=mapel' }
+        { label: 'Data Siswa', path: '/admin/administrasi?tab=siswa', icon: Users },
+        { label: 'Data Guru', path: '/admin/administrasi?tab=guru', icon: GraduationCap },
+        { label: 'Data Kelas', path: '/admin/administrasi?tab=kelas', icon: School },
+        { label: 'Data Mapel', path: '/admin/administrasi?tab=mapel', icon: Library }
       ]
     },
     { label: 'Bank Soal', path: '/admin/bank-soal', icon: FileText },
@@ -98,7 +98,16 @@ export default function AdminLayout() {
                                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a2942]/50'
                              }`}
                            >
-                             <div className={`w-1.5 h-1.5 rounded-full ${isSubActive ? 'bg-blue-500' : 'bg-slate-600'}`} />
+                             {(subItem as any).icon ? (
+                                <div className={`flex items-center justify-center ${isSubActive ? 'text-blue-500' : 'text-slate-500'}`}>
+                                   {(() => {
+                                      const IconItem = (subItem as any).icon;
+                                      return <IconItem className="w-4 h-4" />;
+                                   })()}
+                                </div>
+                             ) : (
+                                <div className={`w-1.5 h-1.5 rounded-full ${isSubActive ? 'bg-blue-500' : 'bg-slate-600'}`} />
+                             )}
                              {subItem.label}
                            </button>
                          )
