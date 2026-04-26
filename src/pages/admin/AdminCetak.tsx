@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Printer, Settings, CreditCard, ListChecks, FileText, CheckCircle, School, FileQuestion, ScanLine } from 'lucide-react';
+import { Printer, Settings, CreditCard, ListChecks, FileText, CheckCircle, School, FileQuestion, ScanLine, ImagePlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AdminCetak() {
@@ -31,6 +31,18 @@ export default function AdminCetak() {
   const [hariTanggal, setHariTanggal] = useState('');
   const [kelasProgram, setKelasProgram] = useState('');
   const [waktuUjian, setWaktuUjian] = useState('90 Menit');
+  const [logoSoal, setLogoSoal] = useState<string | null>(null);
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoSoal(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   
   const [printMode, setPrintMode] = useState<'none'|'kartu'|'hadir'|'berita'|'soal'|'ljk'>('none');
   const [printData, setPrintData] = useState<any>(null);
@@ -80,7 +92,8 @@ export default function AdminCetak() {
          tahunPelajaran,
          hariTanggal,
          kelasProgram,
-         waktuUjian
+         waktuUjian,
+         logo: logoSoal
        });
        setIsSoalModalOpen(false);
        setPrintMode('soal');
@@ -300,10 +313,15 @@ export default function AdminCetak() {
                <div className="text-[13px] font-serif print:text-black">
                   {/* Header / Kop */}
                   <div className="border-[1.5px] border-black p-0.5 mb-1 rounded-sm">
-                     <div className="border-[1.5px] border-black p-4 text-center rounded-sm">
-                         <h2 className="font-bold text-[var(--primary)] uppercase tracking-[0.2em] text-lg lg:text-xl">{config.kop1 || 'PANITIA UJIAN SEKOLAH'}</h2>
-                         <h1 className="text-2xl lg:text-3xl font-black text-emerald-600 uppercase tracking-wider mt-1">{config.sekolah}</h1>
-                         <p className="italic font-bold font-sans mt-2 tracking-wide">Tahun Pelajaran {printData?.tahunPelajaran || '........'}</p>
+                     <div className="border-[1.5px] border-black p-4 text-center rounded-sm relative flex items-center justify-center min-h-[120px]">
+                         {printData?.logo && (
+                            <img src={printData.logo} alt="Logo" className="absolute left-6 h-20 w-auto object-contain" />
+                         )}
+                         <div>
+                            <h2 className="font-bold text-[var(--primary)] uppercase tracking-[0.2em] text-lg lg:text-xl">{config.kop1 || 'PANITIA UJIAN SEKOLAH'}</h2>
+                            <h1 className="text-2xl lg:text-3xl font-black text-emerald-600 uppercase tracking-wider mt-1">{config.sekolah}</h1>
+                            <p className="italic font-bold font-sans mt-2 tracking-wide">Tahun Pelajaran {printData?.tahunPelajaran || '........'}</p>
+                         </div>
                      </div>
                   </div>
                   
@@ -529,6 +547,28 @@ export default function AdminCetak() {
             <div>
               <label className="text-xs font-bold text-slate-500 mb-1 block">Kelas / Program</label>
               <Input value={kelasProgram} onChange={e=>setKelasProgram(e.target.value)} placeholder="Contoh: X MIPA 1 / ALL" />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 mb-1 block uppercase tracking-wider">Logo Sekolah (Opsional)</label>
+              <div className="flex gap-4 items-center">
+                <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl py-4 group hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer">
+                  <ImagePlus className="w-6 h-6 text-slate-400 group-hover:text-blue-500 mb-1" />
+                  <span className="text-[10px] font-bold text-slate-400 group-hover:text-blue-600">Klik untuk Upload Logo</span>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                </label>
+                {logoSoal && (
+                  <div className="relative w-20 h-20 border-2 border-slate-100 rounded-xl p-1 bg-white shadow-sm">
+                    <img src={logoSoal} alt="Logo Preview" className="w-full h-full object-contain" />
+                    <button 
+                      onClick={() => setLogoSoal(null)} 
+                      className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <Button className="w-full bg-blue-600 hover:bg-blue-700 h-11 font-bold shadow-lg shadow-blue-500/20 mt-2" onClick={handleGenerateSoal}>
