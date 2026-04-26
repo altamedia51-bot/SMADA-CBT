@@ -67,7 +67,7 @@ export default function UjianSession() {
               paketId: dataUjian.paketId,
               siswaId: profile.uid,
               siswaName: profile.displayName,
-              siswaKelas: (profile as any).kelasId || 'Unknown',
+              siswaKelas: (profile as any).kelas || (profile as any).tingkat || 'Unknown',
               answers: {},
               marked: [],
               violations: 0,
@@ -318,6 +318,13 @@ export default function UjianSession() {
 
               {/* Teks Soal */}
               <div className="mb-8 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: activeSoalData?.content || activeSoalData?.question || '' }} />
+
+              {/* Lampiran Gambar (Jika ada) */}
+              {activeSoalData?.imageUrl && (
+                <div className="mb-8 rounded-xl overflow-hidden border-2 border-slate-100 bg-white">
+                  <img src={activeSoalData.imageUrl} alt="Lampiran Soal" className="max-h-[400px] w-full object-contain mx-auto" />
+                </div>
+              )}
 
               {/* Opsi / Field Jawaban */}
               {activeSoalData?.type === 'pg' && activeSoalData.options && (
