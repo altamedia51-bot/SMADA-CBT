@@ -32,14 +32,14 @@ export default function GuruDashboard() {
 
   // 2. Fetch Paket Soal Count
   useEffect(() => {
-    if (!profile?.id) return;
+    if (!profile?.uid) return;
     // Assuming we want all paket soal for now, but usually they'd be filtered by author if we stored guru ID
     const qPaket = query(collection(db, 'paket_soal'));
     const unsub = onSnapshot(qPaket, (snap) => {
       setPaketSoalCount(snap.docs.length);
     });
     return () => unsub();
-  }, [profile?.id]);
+  }, [profile?.uid]);
 
   // 3. Fetch Peserta for Selected Ujian
   useEffect(() => {

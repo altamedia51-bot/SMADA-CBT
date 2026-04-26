@@ -483,35 +483,43 @@ export default function AdminCetak() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsKartuModalOpen(true)}>
            <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-blue-500" /></div>
            <div className="w-20 h-20 rounded-2xl bg-[#00d0f1] flex items-center justify-center mb-5 shadow-lg shadow-cyan-500/20 group-hover:scale-110 transition-transform"><CreditCard className="w-10 h-10 text-white" strokeWidth={1.5} /></div>
-           <h3 className="font-bold text-slate-700 text-center">Cetak Kartu Peserta</h3>
+           <h3 className="font-bold text-slate-700 text-center text-sm md:text-base">Cetak Kartu Peserta</h3>
         </Card>
 
         <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsHadirModalOpen(true)}>
            <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-amber-500" /></div>
            <div className="w-20 h-20 rounded-2xl bg-[#f59e0b] flex items-center justify-center mb-5 shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform"><ListChecks className="w-10 h-10 text-white" strokeWidth={1.5} /></div>
-           <h3 className="font-bold text-slate-700 text-center">Cetak Daftar Hadir</h3>
+           <h3 className="font-bold text-slate-700 text-center text-sm md:text-base">Cetak Daftar Hadir</h3>
         </Card>
 
         <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsBeritaModalOpen(true)}>
            <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-blue-500" /></div>
            <div className="w-20 h-20 rounded-2xl bg-[#3b82f6] flex items-center justify-center mb-5 shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform"><FileText className="w-10 h-10 text-white" strokeWidth={1.5} /></div>
-           <h3 className="font-bold text-slate-700 text-center">Cetak Berita Acara</h3>
+           <h3 className="font-bold text-slate-700 text-center text-sm md:text-base">Cetak Berita Acara</h3>
         </Card>
 
         <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsSoalModalOpen(true)}>
            <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-violet-500" /></div>
            <div className="w-20 h-20 rounded-2xl bg-[#8b5cf6] flex items-center justify-center mb-5 shadow-lg shadow-violet-500/20 group-hover:scale-110 transition-transform"><FileQuestion className="w-10 h-10 text-white" strokeWidth={1.5} /></div>
-           <h3 className="font-bold text-slate-700 text-center">Cetak Soal Ujian</h3>
+           <h3 className="font-bold text-slate-700 text-center text-sm md:text-base">Cetak Soal Ujian</h3>
         </Card>
 
         <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsLjkModalOpen(true)}>
            <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-emerald-500" /></div>
            <div className="w-20 h-20 rounded-2xl bg-[#10b981] flex items-center justify-center mb-5 shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform"><ScanLine className="w-10 h-10 text-white" strokeWidth={1.5} /></div>
-           <h3 className="font-bold text-slate-700 text-center">Cetak LJK</h3>
+           <h3 className="font-bold text-slate-700 text-center text-sm md:text-base">Cetak LJK</h3>
+        </Card>
+
+        <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden ring-2 ring-emerald-500/20 bg-emerald-50/50" onClick={() => window.location.href='/admin/scan-ljk'}>
+           <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-emerald-600" /></div>
+           <div className="w-20 h-20 rounded-2xl bg-emerald-600 flex items-center justify-center mb-5 shadow-lg shadow-emerald-600/30 group-hover:scale-110 transition-transform">
+              <ScanLine className="w-10 h-10 text-white" strokeWidth={1.5} />
+           </div>
+           <h3 className="font-bold text-emerald-800 text-center text-sm md:text-base leading-tight">Scan LJK<br/><span className="text-xs font-normal opacity-70">Webcam Scanner</span></h3>
         </Card>
       </div>
 

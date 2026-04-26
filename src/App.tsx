@@ -11,6 +11,7 @@ import AdminHasil from './pages/admin/AdminHasil';
 import AdminCetak from './pages/admin/AdminCetak';
 import AdminDocs from './pages/admin/AdminDocs';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminScanLjk from './pages/admin/AdminScanLjk';
 import GuruLayout from './layouts/GuruLayout';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import GuruPaketSoal from './pages/guru/GuruPaketSoal';
@@ -43,6 +44,8 @@ export default function App() {
             <Route path="users" element={<AdminUsers />} />
             <Route path="docs" element={<AdminDocs />} />
           </Route>
+          {/* Fullscreen tools */}
+          <Route path="/admin/scan-ljk" element={<AdminScanLjk />} />
         </Route>
 
         {/* Guru Routes */}
