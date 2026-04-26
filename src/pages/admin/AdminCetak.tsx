@@ -429,40 +429,183 @@ export default function AdminCetak() {
 
             {/* LJK PRINT */}
             {printMode === 'ljk' && (
-               <div>
-                  <div className="text-center border-b-[3px] border-black pb-4 mb-6">
-                     <h1 className="text-3xl font-black uppercase tracking-widest text-slate-900">LEMBAR JAWABAN KOMPUTER (LJK)</h1>
-                     <h2 className="text-xl font-bold uppercase mt-2">{config.sekolah}</h2>
+               <div className="w-full max-w-[800px] mx-auto bg-white text-black print:p-0 relative font-sans overflow-hidden">
+                  
+                  {/* Header Box */}
+                  <div className="relative pt-2 px-2">
+                    <div className="border-[3px] border-black rounded-[30px] p-2 flex relative items-center justify-center min-h-[140px]">
+                      <div className="border border-black border-dashed rounded-[26px] absolute inset-0 m-1 pointer-events-none"></div>
+                      <div className="flex flex-col items-center justify-center text-center font-serif leading-tight z-10 w-full relative h-[120px]">
+                         <div className="absolute left-6 top-1/2 -translate-y-1/2">
+                            {/* Logo inside */}
+                            <div className="w-20 h-24 border border-slate-300 bg-white flex flex-col items-center justify-start p-1.5 shadow-sm">
+                               <div className="text-[7px] font-sans text-center mb-1 leading-tight tracking-tight uppercase">
+                                 {config.sekolah}
+                               </div>
+                               <div className="w-10 h-10 rounded-full border border-blue-400 bg-blue-50 mt-1 flex items-center justify-center shadow-inner">
+                                  <div className="w-4 h-4 bg-blue-300 rotate-45 transform"></div>
+                               </div>
+                            </div>
+                         </div>
+                         <div className="pl-24 pr-4 w-full">
+                            <h2 className="text-xl font-bold font-serif uppercase tracking-wide">{config.kop1 || 'PANITIA'}</h2>
+                            <h3 className="text-[17px] font-bold font-serif uppercase tracking-wide mt-1">{config.kop2 || 'PENILAIAN SUMATIF AKHIR SEMESTER (PSAS)'}</h3>
+                            <h1 className="text-[22px] font-bold font-serif uppercase tracking-wider mt-1">{config.sekolah}</h1>
+                            <h4 className="text-base font-serif italic mt-1 pb-1">Tahun Pelajaran : 2025 / 2026</h4>
+                         </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Main Grid */}
+                  <div className="px-6 mt-8 relative">
+                    
+                    {/* Anchor 1: Top Left */}
+                    <div className="absolute left-6 top-4 w-[18px] h-[18px] bg-black"></div>
+                    {/* Anchor 2: Top Right */}
+                    <div className="absolute right-6 top-4 w-[18px] h-[18px] bg-black"></div>
+
+                    {/* Identitas */}
+                    <div className="flex px-12 mb-10">
+                       <div className="flex-1 max-w-[260px]">
+                          <div className="font-sans text-sm font-semibold mb-0.5">Nama</div>
+                          <div className="border-[2px] border-black h-[30px] w-full mb-3"></div>
+                          <div className="font-sans text-sm font-semibold mb-0.5">Kelas</div>
+                          <div className="border-[2px] border-black h-[30px] w-full"></div>
+                       </div>
+                       <div className="flex-1 ml-6">
+                          <div className="font-sans text-sm font-semibold mb-0.5">Mapel</div>
+                          <div className="border-[2px] border-black h-[30px] w-[260px]"></div>
+                       </div>
+                    </div>
+
+                    <div className="flex justify-between px-10 relative">
+                       {/* Rotated ZIPGRADE text left */}
+                       <div className="absolute left-[-2rem] top-32 origin-left text-[20px] font-bold tracking-widest text-black" style={{transform: "rotate(-90deg) translateX(-100%)"}}>
+                          ZIPGRADE.COM
+                       </div>
+
+                       {/* Rotated PSAS text right */}
+                       <div className="absolute right-[0rem] top-12 origin-left text-[14px] font-semibold tracking-widest text-black" style={{transform: "rotate(-90deg) translateX(0%)"}}>
+                          PSAS (8596)
+                       </div>
+
+                       {/* Column 1 */}
+                       <div className="flex flex-col items-center flex-1 relative">
+                          {/* 1-10 */}
+                          <div className="space-y-1.5">
+                             {Array.from({length: 10}).map((_, i) => (
+                                <div key={`q${i+1}`} className="flex items-center gap-1.5">
+                                   <span className="w-5 text-right text-[14px] text-slate-800 pr-0.5">{i + 1}</span>
+                                   {['A','B','C','D','E'].map(opt => (
+                                     <div key={opt} className="w-[18px] h-[18px] rounded-full border-[1.5px] border-slate-300 text-slate-300 flex items-center justify-center text-[10px] font-bold">{opt}</div>
+                                   ))}
+                                </div>
+                             ))}
+                          </div>
+
+                          {/* Anchor Middle Left */}
+                          <div className="w-[18px] h-[18px] bg-black my-4"></div>
+
+                          {/* 11-20 + Timing Marks */}
+                          <div className="flex relative w-full justify-center">
+                             <div className="absolute -left-12 top-0 bottom-0 flex flex-col justify-between py-[2px]">
+                                {Array.from({length: 10}).map((_,i) => <div key={`tm${i}`} className="w-[22px] h-[6px] bg-black" />)}
+                             </div>
+                             <div className="space-y-1.5">
+                                {Array.from({length: 10}).map((_, i) => (
+                                   <div key={`q${i+11}`} className="flex items-center gap-1.5">
+                                      <span className="w-5 text-right text-[14px] text-slate-800 pr-0.5">{i + 11}</span>
+                                      {['A','B','C','D','E'].map(opt => (
+                                        <div key={opt} className="w-[18px] h-[18px] rounded-full border-[1.5px] border-slate-300 text-slate-300 flex items-center justify-center text-[10px] font-bold">{opt}</div>
+                                      ))}
+                                   </div>
+                                ))}
+                             </div>
+                          </div>
+                          
+                          {/* Bottom Left Timing + Anchor */}
+                          <div className="absolute -left-2 bottom-0 flex flex-col items-start space-y-2">
+                             <div className="w-[22px] h-[6px] bg-black" />
+                             <div className="w-[22px] h-[6px] bg-black" />
+                             <div className="w-[18px] h-[18px] bg-black mt-2" />
+                          </div>
+                          {/* Wait, the bottom left anchor is actually aligned with the columns, let me put it at the very bottom wrapper */}
+                       </div>
+                       
+                       {/* Column 2 */}
+                       <div className="flex flex-col items-center flex-1">
+                          {/* 21-30 */}
+                          <div className="space-y-1.5">
+                             {Array.from({length: 10}).map((_, i) => (
+                                <div key={`q${i+21}`} className="flex items-center gap-1.5">
+                                   <span className="w-5 text-right text-[14px] text-slate-800 pr-0.5">{i + 21}</span>
+                                   {['A','B','C','D','E'].map(opt => (
+                                     <div key={opt} className="w-[18px] h-[18px] rounded-full border-[1.5px] border-slate-300 text-slate-300 flex items-center justify-center text-[10px] font-bold">{opt}</div>
+                                   ))}
+                                </div>
+                             ))}
+                          </div>
+
+                          {/* Anchor Middle Center */}
+                          <div className="w-[18px] h-[18px] bg-black my-4"></div>
+
+                          {/* 31-40 */}
+                          <div className="space-y-1.5">
+                             {Array.from({length: 10}).map((_, i) => (
+                                <div key={`q${i+31}`} className="flex items-center gap-1.5">
+                                   <span className="w-5 text-right text-[14px] text-slate-800 pr-0.5">{i + 31}</span>
+                                   {['A','B','C','D','E'].map(opt => (
+                                     <div key={opt} className="w-[18px] h-[18px] rounded-full border-[1.5px] border-slate-300 text-slate-300 flex items-center justify-center text-[10px] font-bold">{opt}</div>
+                                   ))}
+                                </div>
+                             ))}
+                          </div>
+                          
+                       </div>
+
+                       {/* Column 3 */}
+                       <div className="flex flex-col items-center flex-1">
+                          {/* 41-50 */}
+                          <div className="space-y-1.5">
+                             {Array.from({length: 10}).map((_, i) => (
+                                <div key={`q${i+41}`} className="flex items-center gap-1.5">
+                                   <span className="w-5 text-right text-[14px] text-slate-800 pr-0.5">{i + 41}</span>
+                                   {['A','B','C','D','E'].map(opt => (
+                                     <div key={opt} className="w-[18px] h-[18px] rounded-full border-[1.5px] border-slate-300 text-slate-300 flex items-center justify-center text-[10px] font-bold">{opt}</div>
+                                   ))}
+                                </div>
+                             ))}
+                          </div>
+
+                          {/* Anchor Middle Right */}
+                          <div className="w-[18px] h-[18px] bg-black my-4"></div>
+
+                          {/* Nomer Ujian Box */}
+                          <div className="flex flex-col items-center">
+                            <div className="text-[12px] font-sans text-slate-800 mb-1">Nomer Ujian</div>
+                            <div className="flex gap-1.5 mb-2">
+                               {Array.from({length: 4}).map((_, i) => <div key={i} className="w-[18px] h-[22px] border border-black"></div>)}
+                            </div>
+                            <div className="flex gap-1.5">
+                               {Array.from({length: 4}).map((_, colIdx) => (
+                                 <div key={colIdx} className="flex flex-col gap-1.5">
+                                    {Array.from({length: 10}).map((_, n) => (
+                                       <div key={n} className="w-[18px] h-[18px] rounded-full border-[1.5px] border-slate-300 text-slate-300 flex items-center justify-center text-[10px] font-bold">{n}</div>
+                                    ))}
+                                 </div>
+                               ))}
+                            </div>
+                          </div>
+                       </div>
+                    </div>
                   </div>
                   
-                  <div className="flex gap-8 mb-8 border-2 border-slate-800 p-5 rounded-xl bg-slate-50/50">
-                      <div className="flex-1 space-y-4 font-bold text-sm">
-                         <div className="flex items-end"><span className="w-40 inline-block uppercase tracking-wider">Nama Peserta</span> <span className="flex-1 border-b-2 border-slate-400 border-dotted"></span></div>
-                         <div className="flex items-end"><span className="w-40 inline-block uppercase tracking-wider">NIS / Kelas</span> <span className="w-32 border-b-2 border-slate-400 border-dotted"></span><span className="mx-2">/</span><span className="flex-1 border-b-2 border-slate-400 border-dotted"></span></div>
-                         <div className="flex items-end"><span className="w-40 inline-block uppercase tracking-wider">Mata Pelajaran</span> <span className="flex-1 border-b-2 border-slate-400 border-dotted"></span></div>
-                      </div>
-                      <div className="flex-1 space-y-4 font-bold text-sm">
-                         <div className="flex items-end"><span className="w-36 inline-block uppercase tracking-wider">Tanggal Ujian</span> <span className="flex-1 border-b-2 border-slate-400 border-dotted"></span></div>
-                         <div className="flex items-end"><span className="w-36 inline-block uppercase tracking-wider">Ruang / Sesi</span> <span className="w-32 border-b-2 border-slate-400 border-dotted"></span><span className="mx-2">/</span><span className="flex-1 border-b-2 border-slate-400 border-dotted"></span></div>
-                         <div className="flex items-end"><span className="w-36 inline-block uppercase tracking-wider">Paraf Peserta</span> <span className="flex-1 border-b-2 border-slate-400 border-dotted h-6"></span></div>
-                      </div>
-                  </div>
-
-                  <div className="font-bold text-sm mb-6 p-3 bg-slate-800 text-white rounded-lg flex items-center justify-center tracking-widest uppercase">
-                    Petunjuk: Silang (X) atau hitamkan bulatan pada huruf A, B, C, D, atau E yang dianggap paling benar!
-                  </div>
-
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-                     {Array.from({length: printData.jumlahSoal}).map((_, idx) => (
-                        <div key={idx} className="flex items-center gap-3 bg-white p-2 border-b border-dashed border-slate-200 hover:bg-slate-50 transition-colors">
-                           <span className="w-8 text-right font-black text-lg text-slate-800">{idx + 1}.</span>
-                           {['A','B','C','D','E'].map(opt => (
-                              <div key={opt} className="w-7 h-7 rounded-full border-[1.5px] border-slate-800 flex items-center justify-center text-xs font-bold text-slate-700 mx-0.5">
-                                 {opt}
-                              </div>
-                           ))}
-                        </div>
-                     ))}
+                  {/* Bottom Anchors */}
+                  <div className="flex justify-between px-6 pb-6 pt-4">
+                     <div className="w-[18px] h-[18px] bg-black"></div>
+                     <div className="w-[18px] h-[18px] bg-black mr-24"></div>
+                     <div className="w-[18px] h-[18px] bg-black"></div>
                   </div>
                </div>
             )}
