@@ -6,7 +6,7 @@ import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 
 import { auth, db } from '../lib/firebase';
 import { useAuthStore } from '../store/auth.store';
 import { Navigate } from 'react-router-dom';
-import { GraduationCap, User, Lock, ChevronDown, Search, ArrowLeft } from 'lucide-react';
+import { GraduationCap, User, Lock, ChevronDown, Search, ArrowLeft, EyeOff, Eye } from 'lucide-react';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { toast } from 'sonner';
 
@@ -25,6 +25,7 @@ export default function Login() {
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
@@ -180,16 +181,22 @@ export default function Login() {
                 {selectedStudent && (
                   <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
                     <label className="text-sm font-bold text-slate-700 ml-1">Password/PIN (Wajib)</label>
-                    <div className="relative">
+                    <div className="relative flex items-center">
                       <Input 
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="Masukkan password..."
-                        className="h-12 bg-white border-indigo-200 border-2 rounded-xl focus-visible:ring-indigo-500/20 px-4 font-medium"
+                        className="h-12 bg-white border-indigo-200 border-2 rounded-xl focus-visible:ring-indigo-500/20 px-4 font-medium pr-10"
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         autoFocus
                       />
-                      <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-300" />
+                      <button 
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -220,13 +227,22 @@ export default function Login() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
-                  <Input 
-                    type="password"
-                    placeholder="••••••" 
-                    className="h-12 bg-white border-slate-200 rounded-xl"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                  />
+                  <div className="relative flex items-center">
+                    <Input 
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••" 
+                      className="h-12 bg-white border-slate-200 rounded-xl pr-10"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
                 </div>
                 <Button className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all" type="submit" disabled={isLoading}>
                   {isLoading ? 'Masuk...' : 'Masuk Sekarang'}
