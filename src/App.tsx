@@ -57,6 +57,7 @@ export default function App() {
             <Route path="paket-soal" element={<GuruPaketSoal />} />
             <Route path="paket-soal/:paketId" element={<GuruSoalDetail />} />
             <Route path="hasil" element={<AdminHasil />} />
+            <Route path="cetak" element={<AdminCetak />} />
             <Route path="profil" element={<GuruProfil />} />
           </Route>
           <Route path="/guru/scan" element={<GuruScanLjk />} />
