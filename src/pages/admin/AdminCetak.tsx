@@ -483,7 +483,7 @@ export default function AdminCetak() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="p-8 flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition-all duration-300 border-slate-100/50 rounded-2xl group relative overflow-hidden" onClick={() => setIsKartuModalOpen(true)}>
            <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity"><CheckCircle className="w-5 h-5 text-blue-500" /></div>
            <div className="w-20 h-20 rounded-2xl bg-[#00d0f1] flex items-center justify-center mb-5 shadow-lg shadow-cyan-500/20 group-hover:scale-110 transition-transform"><CreditCard className="w-10 h-10 text-white" strokeWidth={1.5} /></div>
