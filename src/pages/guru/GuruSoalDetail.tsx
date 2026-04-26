@@ -46,8 +46,8 @@ export default function GuruSoalDetail() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024 * 2) { // 2MB Limit for safety with base64
-        return toast.error("Ukuran gambar maksimal 2MB");
+      if (file.size > 1024 * 500) { // 500KB Limit for firestore 1MB doc limit
+        return toast.error("Ukuran gambar maksimal 500KB");
       }
       const reader = new FileReader();
       reader.onloadend = () => {
