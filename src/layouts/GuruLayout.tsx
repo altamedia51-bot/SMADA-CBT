@@ -92,7 +92,7 @@ export default function GuruLayout() {
             </button>
          </div>
 
-         <div className="flex-1 overflow-auto bg-slate-50 relative pb-16 md:pb-0">
+         <div className="flex-1 overflow-auto bg-slate-50 relative pb-24 md:pb-0">
            <Outlet />
            
            <div className="p-6 text-center text-xs text-slate-400 font-medium tracking-widest uppercase mb-4">
@@ -101,7 +101,7 @@ export default function GuruLayout() {
          </div>
 
          {/* Mobile Bottom Navigation */}
-         <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 flex items-center justify-around z-50 pb-safe">
+         <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white border-t border-slate-200 flex items-center justify-around z-50">
            {navItems.map((item) => {
              const isActive = location.pathname === item.path || (item.path !== '/guru' && location.pathname.startsWith(item.path));
              const Icon = item.icon;
@@ -109,12 +109,12 @@ export default function GuruLayout() {
                <button
                  key={item.path}
                  onClick={() => navigate(item.path)}
-                 className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${
-                   isActive ? 'text-blue-600' : 'text-slate-500 hover:text-slate-900'
+                 className={`flex flex-col items-center justify-center w-full h-full gap-1 pt-1 ${
+                   isActive ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
                  }`}
                >
-                 <Icon className={`w-5 h-5 ${isActive ? 'stroke-[2.5px]' : ''}`} />
-                 <span className="text-[10px] font-medium">{item.label}</span>
+                 <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5px] drop-shadow-sm' : 'stroke-[2px]'}`} />
+                 <span className={`text-[10px] ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
                </button>
              );
            })}

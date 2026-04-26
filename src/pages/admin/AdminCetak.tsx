@@ -499,12 +499,12 @@ export default function AdminCetak() {
 
                     <div className="flex justify-between px-10 relative">
                        {/* Rotated ZIPGRADE text left */}
-                       <div className="absolute left-[-2rem] top-32 origin-left text-[20px] font-bold tracking-widest text-black" style={{transform: "rotate(-90deg) translateX(-100%)"}}>
+                       <div className="absolute -left-6 top-32 text-[20px] font-bold tracking-widest text-black" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)' }}>
                           ZIPGRADE.COM
                        </div>
 
                        {/* Rotated PSAS text right - FIXED POSITIONING */}
-                       <div className="absolute -right-4 top-12 origin-top-right text-[14px] font-semibold tracking-widest text-black whitespace-nowrap" style={{transform: "rotate(-90deg) translateX(100%)"}}>
+                       <div className="absolute -right-4 top-32 text-[14px] font-semibold tracking-widest text-black whitespace-nowrap" style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)' }}>
                           {printData?.ljkKop2?.split('(')[0]?.substring(0, 30) || 'PSAS'} ({printData?.ljkCode || '8596'})
                        </div>
 
