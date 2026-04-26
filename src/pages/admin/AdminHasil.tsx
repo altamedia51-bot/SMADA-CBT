@@ -570,8 +570,8 @@ export default function AdminHasil() {
               <table className="w-full text-sm text-left whitespace-nowrap">
                 <thead className="bg-slate-100/90 text-slate-600 font-bold border-b border-slate-200">
                   <tr>
-                    <th className="px-5 py-4 sticky left-0 z-20 bg-slate-100/95 shadow-[inset_-1px_0_0_#e2e8f0]">No</th>
-                    <th className="px-5 py-4 sticky left-[52px] z-20 bg-slate-100/95 shadow-[inset_-1px_0_0_#e2e8f0]">Nama Siswa</th>
+                    <th className="px-5 py-4 md:sticky left-0 z-20 bg-slate-100/95 md:shadow-[inset_-1px_0_0_#e2e8f0]">No</th>
+                    <th className="px-5 py-4 md:sticky left-[52px] z-20 bg-slate-100/95 md:shadow-[inset_-1px_0_0_#e2e8f0]">Nama Siswa</th>
                     {riwayatData.exams.map((ex, idx) => {
                        const pName = paketAll.find(p=>p.id === ex.paketId)?.title || "Paket";
                        return (
@@ -595,8 +595,8 @@ export default function AdminHasil() {
                     
                     return (
                       <tr key={siswa.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-5 py-3 sticky left-0 z-10 bg-white font-bold text-slate-400 shadow-[inset_-1px_0_0_#f1f5f9]">{idx + 1}</td>
-                        <td className="px-5 py-3 sticky left-[52px] z-10 bg-white shadow-[inset_-1px_0_0_#f1f5f9]">
+                        <td className="px-5 py-3 md:sticky left-0 z-10 bg-white font-bold text-slate-400 md:shadow-[inset_-1px_0_0_#f1f5f9]">{idx + 1}</td>
+                        <td className="px-5 py-3 md:sticky left-[52px] z-10 bg-white md:shadow-[inset_-1px_0_0_#f1f5f9]">
                           <p className="font-extrabold text-slate-800 text-[13px]">{siswa.name || siswa.displayName}</p>
                           <p className="text-[10px] text-slate-400 font-mono mt-0.5">{siswa.nis || '-'}</p>
                         </td>
