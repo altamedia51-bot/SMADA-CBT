@@ -23,6 +23,7 @@ export default function UjianSession() {
   const [marked, setMarked] = useState<number[]>([]);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [violations, setViolations] = useState(0);
+  const [lastResetCounter, setLastResetCounter] = useState(0);
 
   // Initialize
   useEffect(() => {
@@ -97,6 +98,7 @@ export default function UjianSession() {
           setAnswers(jData.answers || {});
           setMarked(jData.marked || []);
           setViolations(jData.violations || 0);
+          setLastResetCounter(jData.resetCounter || 0);
 
           if (jData.startTime) {
             const startSec = jData.startTime.seconds;
@@ -118,6 +120,22 @@ export default function UjianSession() {
 
     initExam();
   }, [ujianId, profile, navigate]);
+
+  // Listen for reset timer by guru
+  useEffect(() => {
+    if (!jawabanDocId || !ujianData) return;
+    const unsub = onSnapshot(doc(db, 'jawaban_siswa', jawabanDocId), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.resetCounter && data.resetCounter > lastResetCounter) {
+          setLastResetCounter(data.resetCounter);
+          setTimeLeft(ujianData.duration * 60);
+          toast.info("Waktu ujian Anda telah di-reset oleh guru.");
+        }
+      }
+    });
+    return () => unsub();
+  }, [jawabanDocId, ujianData, lastResetCounter]);
 
   // Handle timer & auto-submit
   useEffect(() => {

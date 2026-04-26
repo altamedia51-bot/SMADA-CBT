@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuthStore } from '../../store/auth.store';
-import { collection, query, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { db, auth } from '../../lib/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
@@ -71,7 +71,7 @@ export default function GuruDashboard() {
       await updateDoc(doc(db, 'jawaban_siswa', pesertaId), {
         startTime: serverTimestamp(),
         forceReset: true,
-        resetCounter: (pesertaId as any).resetCounter ? (pesertaId as any).resetCounter + 1 : 1
+        resetCounter: increment(1)
       });
       toast.success(`Timer ${siswaName} berhasil di-reset.`);
     } catch (err: any) {
