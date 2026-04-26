@@ -35,6 +35,11 @@ export default function AdminCetak() {
   const [mapelOverride, setMapelOverride] = useState('');
   const [logoSoal, setLogoSoal] = useState<string | null>(null);
 
+  // States for LJK specific info
+  const [ljkKop1, setLjkKop1] = useState('PANITIA');
+  const [ljkKop2, setLjkKop2] = useState('PENILAIAN SUMATIF AKHIR SEMESTER (PSAS)');
+  const [ljkCode, setLjkCode] = useState('8596');
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -130,7 +135,14 @@ export default function AdminCetak() {
 
   const handleGenerateLjk = () => {
      setIsLjkModalOpen(false);
-     setPrintData({ jumlahSoal: jumlahSoalLjk });
+     setPrintData({ 
+       jumlahSoal: jumlahSoalLjk,
+       ljkKop1,
+       ljkKop2,
+       ljkCode,
+       tahunPelajaran,
+       logo: logoSoal
+     });
      setPrintMode('ljk');
   };
 
@@ -448,10 +460,10 @@ export default function AdminCetak() {
                             </div>
                          </div>
                          <div className="pl-24 pr-4 w-full">
-                            <h2 className="text-xl font-bold font-serif uppercase tracking-wide">{config.kop1 || 'PANITIA'}</h2>
-                            <h3 className="text-[17px] font-bold font-serif uppercase tracking-wide mt-1">{config.kop2 || 'PENILAIAN SUMATIF AKHIR SEMESTER (PSAS)'}</h3>
+                            <h2 className="text-xl font-bold font-serif uppercase tracking-wide">{printData?.ljkKop1 || 'PANITIA'}</h2>
+                            <h3 className="text-[17px] font-bold font-serif uppercase tracking-wide mt-1">{printData?.ljkKop2 || 'PENILAIAN SUMATIF AKHIR SEMESTER (PSAS)'}</h3>
                             <h1 className="text-[22px] font-bold font-serif uppercase tracking-wider mt-1">{config.sekolah}</h1>
-                            <h4 className="text-base font-serif italic mt-1 pb-1">Tahun Pelajaran : 2025 / 2026</h4>
+                            <h4 className="text-base font-serif italic mt-1 pb-1">Tahun Pelajaran : {printData?.tahunPelajaran || '2025 / 2026'}</h4>
                          </div>
                       </div>
                     </div>
@@ -487,7 +499,7 @@ export default function AdminCetak() {
 
                        {/* Rotated PSAS text right */}
                        <div className="absolute right-[0rem] top-12 origin-left text-[14px] font-semibold tracking-widest text-black" style={{transform: "rotate(-90deg) translateX(0%)"}}>
-                          PSAS (8596)
+                          {printData?.ljkKop2?.split('(')[0] || 'PSAS'} ({printData?.ljkCode || '8596'})
                        </div>
 
                        {/* Column 1 */}
@@ -779,7 +791,47 @@ export default function AdminCetak() {
       </Dialog>
       
       <Dialog open={isLjkModalOpen} onOpenChange={setIsLjkModalOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Cetak LJK</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><div><label className="text-xs font-bold text-slate-500 mb-1 block">Jumlah Soal</label><Input type="number" min={10} max={100} value={jumlahSoalLjk} onChange={e=>setJumlahSoalLjk(parseInt(e.target.value)||50)} className="h-11" /></div><Button className="w-full bg-emerald-600 hover:bg-emerald-700 h-11 font-bold gap-2" onClick={handleGenerateLjk}><ScanLine className="w-4 h-4"/> Generate LJK</Button></div></DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Pengaturan Cetak LJK</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 mb-1 block">Jumlah Soal</label>
+                <Input type="number" min={10} max={100} value={jumlahSoalLjk} onChange={e=>setJumlahSoalLjk(parseInt(e.target.value)||50)} className="h-11" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 mb-1 block">Tahun Pelajaran</label>
+                <Input value={tahunPelajaran} onChange={e=>setTahunPelajaran(e.target.value)} placeholder="2025 / 2026" className="h-11" />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 mb-1 block">Kop 1 (Atas)</label>
+              <Input value={ljkKop1} onChange={e=>setLjkKop1(e.target.value)} placeholder="PANITIA" className="h-11" />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-500 mb-1 block">Kop 2 (Judul Ujian)</label>
+              <Input value={ljkKop2} onChange={e=>setLjkKop2(e.target.value)} placeholder="PENILAIAN SUMATIF AKHIR SEMESTER (PSAS)" className="h-11" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 mb-1 block">Kode LJK</label>
+                <Input value={ljkCode} onChange={e=>setLjkCode(e.target.value)} placeholder="8596" className="h-11" />
+              </div>
+              <div className="flex flex-col justify-end">
+                <p className="text-[10px] text-slate-400 mb-2 italic">Kode ini akan muncul di samping LJK.</p>
+              </div>
+            </div>
+
+            <Button className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 font-bold gap-2 mt-2 shadow-lg shadow-emerald-500/20" onClick={handleGenerateLjk}>
+              <ScanLine className="w-5 h-5"/> Generate LJK Sekarang
+            </Button>
+          </div>
+        </DialogContent>
       </Dialog>
     </div>
   );
