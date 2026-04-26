@@ -16,6 +16,8 @@ import GuruLayout from './layouts/GuruLayout';
 import GuruDashboard from './pages/guru/GuruDashboard';
 import GuruPaketSoal from './pages/guru/GuruPaketSoal';
 import GuruSoalDetail from './pages/guru/GuruSoalDetail';
+import GuruProfil from './pages/guru/GuruProfil';
+import GuruScanLjk from './pages/guru/GuruScanLjk';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
 import UjianSession from './pages/siswa/UjianSession';
 import { Toaster } from '@/components/ui/sonner';
@@ -55,7 +57,9 @@ export default function App() {
             <Route path="paket-soal" element={<GuruPaketSoal />} />
             <Route path="paket-soal/:paketId" element={<GuruSoalDetail />} />
             <Route path="hasil" element={<AdminHasil />} />
+            <Route path="profil" element={<GuruProfil />} />
           </Route>
+          <Route path="/guru/scan" element={<GuruScanLjk />} />
         </Route>
 
         {/* Siswa Routes */}

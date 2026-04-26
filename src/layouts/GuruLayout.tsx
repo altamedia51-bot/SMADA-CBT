@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, ClipboardCheck, BookOpen } from 'lucide-react';
+import { LogOut, LayoutDashboard, ClipboardCheck, BookOpen, ScanLine, UserRound } from 'lucide-react';
 import { useIdleLogout } from '../hooks/useIdleLogout';
 
 export default function GuruLayout() {
@@ -14,7 +14,9 @@ export default function GuruLayout() {
   const navItems = [
     { label: 'Dashboard', path: '/guru', icon: LayoutDashboard },
     { label: 'Paket Soal', path: '/guru/paket-soal', icon: BookOpen },
+    { label: 'SCAN LJK', path: '/guru/scan', icon: ScanLine },
     { label: 'Hasil Ujian', path: '/guru/hasil', icon: ClipboardCheck },
+    { label: 'Profil', path: '/guru/profil', icon: UserRound },
   ];
 
   return (
