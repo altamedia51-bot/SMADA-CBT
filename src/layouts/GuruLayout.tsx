@@ -78,23 +78,27 @@ export default function GuruLayout() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-          {/* Mobile Header */}
+          {/* Mobile Header (Modern White Theme) */}
           {location.pathname !== '/guru' && (
-            <div className="md:hidden h-16 bg-[#0E1726] text-white flex items-center px-4 justify-between shrink-0">
-               <div className="font-bold flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-xs">SMA</div>
-                  <span className="flex items-center gap-2">
-                    CBT System 
-                    <span className="bg-blue-600/30 text-blue-300 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase">Guru</span>
-                  </span>
+            <div className="md:hidden h-16 bg-white border-b border-slate-100 px-5 flex items-center justify-between shrink-0 sticky top-0 z-40">
+               <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#2563EB] rounded-lg shrink-0 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-100">
+                    <span className="text-[10px]">SMD</span>
+                  </div>
+                  <h1 className="text-base font-bold text-[#1E293B] tracking-tight">
+                    {navItems.find(item => location.pathname.startsWith(item.path))?.label || 'Detail'}
+                  </h1>
                </div>
-               <button onClick={() => auth.signOut()}>
-                 <LogOut className="w-5 h-5" />
+               <button 
+                 onClick={() => auth.signOut()}
+                 className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 bg-slate-50 hover:bg-rose-50 hover:text-rose-500 transition-colors"
+               >
+                 <LogOut className="w-4 h-4 ml-0.5" />
                </button>
             </div>
           )}
 
-         <div className="flex-1 overflow-auto bg-slate-50 relative pb-24 md:pb-0">
+         <div className="flex-1 overflow-auto bg-[#F8FAFC] relative pb-24 md:pb-0">
            <Outlet />
            
            <div className="p-6 text-center text-xs text-slate-400 font-medium tracking-widest uppercase mb-4">
@@ -102,8 +106,8 @@ export default function GuruLayout() {
            </div>
          </div>
 
-         {/* Mobile Bottom Navigation */}
-         <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white border-t border-slate-200 flex items-center justify-around z-50">
+         {/* Mobile Bottom Navigation (Saas 2025 Style) */}
+         <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white/95 backdrop-blur-md border-t border-slate-100 flex items-center justify-around z-50 px-2 shadow-[0_-5px_20px_rgba(0,0,0,0.02)]">
            {navItems.map((item) => {
              const isActive = location.pathname === item.path || (item.path !== '/guru' && location.pathname.startsWith(item.path));
              const Icon = item.icon;
@@ -111,12 +115,14 @@ export default function GuruLayout() {
                <button
                  key={item.path}
                  onClick={() => navigate(item.path)}
-                 className={`flex flex-col items-center justify-center w-full h-full gap-1 pt-1 ${
-                   isActive ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
+                 className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300 ${
+                   isActive ? 'text-[#2563EB]' : 'text-slate-300'
                  }`}
                >
-                 <Icon className={`w-6 h-6 ${isActive ? 'stroke-[2.5px] drop-shadow-sm' : 'stroke-[2px]'}`} />
-                 <span className={`text-[10px] ${isActive ? 'font-bold' : 'font-medium'}`}>{item.label}</span>
+                 <div className={`p-1.5 rounded-xl transition-all duration-300 ${isActive ? 'bg-blue-50' : 'bg-transparent'}`}>
+                    <Icon className={`w-6 h-6 transition-transform ${isActive ? 'stroke-[2.5px] scale-110' : 'stroke-[2px]'}`} />
+                 </div>
+                 <span className={`text-[10px] tracking-tight ${isActive ? 'font-bold' : 'font-semibold text-slate-400'}`}>{item.label}</span>
                </button>
              );
            })}
