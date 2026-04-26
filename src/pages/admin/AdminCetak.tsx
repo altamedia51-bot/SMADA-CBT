@@ -13,6 +13,7 @@ export default function AdminCetak() {
   const [kelasList, setKelasList] = useState<any[]>([]);
   const [ujianList, setUjianList] = useState<any[]>([]);
   const [paketList, setPaketList] = useState<any[]>([]);
+  const [mapelList, setMapelList] = useState<any[]>([]);
   
   const [isKartuModalOpen, setIsKartuModalOpen] = useState(false);
   const [isHadirModalOpen, setIsHadirModalOpen] = useState(false);
@@ -31,6 +32,7 @@ export default function AdminCetak() {
   const [hariTanggal, setHariTanggal] = useState('');
   const [kelasProgram, setKelasProgram] = useState('');
   const [waktuUjian, setWaktuUjian] = useState('90 Menit');
+  const [mapelOverride, setMapelOverride] = useState('');
   const [logoSoal, setLogoSoal] = useState<string | null>(null);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,15 +62,28 @@ export default function AdminCetak() {
     const savedConfig = localStorage.getItem('printConfig');
     if (savedConfig) setConfig(JSON.parse(savedConfig));
 
-    getDocs(query(collection(db, 'kelas'), orderBy('name'))).then(snap => {
+    const unsubKelas = onSnapshot(query(collection(db, 'kelas'), orderBy('name')), (snap) => {
        setKelasList(snap.docs.map(d => ({id: d.id, ...d.data()})));
     });
-    getDocs(query(collection(db, 'ujian'), orderBy('createdAt', 'desc'))).then(snap => {
+    
+    const unsubUjian = onSnapshot(query(collection(db, 'ujian'), orderBy('createdAt', 'desc')), (snap) => {
        setUjianList(snap.docs.map(d => ({id: d.id, ...d.data()})));
     });
-    getDocs(query(collection(db, 'paket_soal'))).then(snap => {
+    
+    const unsubPaket = onSnapshot(collection(db, 'paket_soal'), (snap) => {
        setPaketList(snap.docs.map(d => ({id: d.id, ...d.data()})));
     });
+    
+    const unsubMapel = onSnapshot(collection(db, 'mapel'), (snap) => {
+       setMapelList(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
+
+    return () => {
+      unsubKelas();
+      unsubUjian();
+      unsubPaket();
+      unsubMapel();
+    };
   }, []);
 
   const saveConfig = () => {
@@ -80,14 +95,27 @@ export default function AdminCetak() {
   const handleGenerateSoal = async () => {
     if (!selectedPaketId) { toast.error("Pilih paket soal terlebih dahulu"); return; }
     const paket = paketList.find(p => p.id === selectedPaketId);
+    
+    // Resolve Mapel Name properly
+    let mapelName = mapelOverride || ".....................";
+    if (!mapelOverride && paket?.mapelId) {
+      const foundMapel = mapelList.find(m => m.id === paket.mapelId);
+      if (foundMapel) {
+        mapelName = foundMapel.name;
+      } else {
+        // Fallback if mapelId is actually a name (backward compatibility) or still an ID
+        mapelName = paket.mapelId;
+      }
+    }
+    
     try {
        const snap = await getDocs(collection(db, `paket_soal/${selectedPaketId}/soal`));
        const soal = snap.docs.map(d => d.data());
        if (soal.length === 0) { toast.error("Paket soal belum memiliki soal"); return; }
        
        setPrintData({ 
-         judul: paket.title, 
-         mapel: paket.mapelId, 
+         judul: paket.title || 'Ujian', 
+         mapel: mapelName, 
          soal,
          tahunPelajaran,
          hariTanggal,
@@ -523,9 +551,25 @@ export default function AdminCetak() {
                   <SelectValue placeholder="Pilih Paket Soal" />
                 </SelectTrigger>
                 <SelectContent>
-                  {paketList.map(p => (<SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>))}
+                  {paketList.map(p => {
+                    const mName = mapelList.find(m => m.id === p.mapelId)?.name || '';
+                    return (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.title} {mName ? `(${mName})` : ''}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
+            </div>
+            
+            <div>
+              <label className="text-xs font-bold text-slate-500 mb-1 block">Mata Pelajaran (Override)</label>
+              <Input 
+                value={mapelOverride} 
+                onChange={e=>setMapelOverride(e.target.value)} 
+                placeholder="Kosongkan untuk otomatis dari Bank Soal" 
+              />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
