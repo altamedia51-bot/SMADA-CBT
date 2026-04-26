@@ -338,9 +338,9 @@ export default function UjianSession() {
               <div className="mb-8 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: activeSoalData?.content || activeSoalData?.question || '' }} />
 
               {/* Lampiran Gambar (Jika ada) */}
-              {activeSoalData?.imageUrl && (
+              {(activeSoalData?.imageUrl || activeSoalData?.image) && (
                 <div className="mb-8 rounded-xl overflow-hidden border-2 border-slate-100 bg-white">
-                  <img src={activeSoalData.imageUrl} alt="Lampiran Soal" className="max-h-[400px] w-full object-contain mx-auto" />
+                  <img src={activeSoalData.imageUrl || activeSoalData.image} alt="Lampiran Soal" className="max-h-[400px] w-full object-contain mx-auto" />
                 </div>
               )}
 

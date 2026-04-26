@@ -57,6 +57,11 @@ export default function AdminMasterData() {
   const [showFormSesi, setShowFormSesi] = useState(false);
   const [showFormJenis, setShowFormJenis] = useState(false);
 
+  const [editingRuang, setEditingRuang] = useState<any>(null);
+  const [editingSesi, setEditingSesi] = useState<any>(null);
+  const [editingMapel, setEditingMapel] = useState<any>(null);
+  const [editingJenisUjian, setEditingJenisUjian] = useState<any>(null);
+
   const [newMapelPrefix, setNewMapelPrefix] = useState('');
   const [jenjangMapel, setJenjangMapel] = useState('SMA');
   const [newKelasName, setNewKelasName] = useState('');
@@ -107,14 +112,23 @@ export default function AdminMasterData() {
     e.preventDefault();
     if (!newMapelPrefix) return;
     try {
-      await addDoc(collection(db, 'mapel'), {
-        name: newMapelPrefix,
-        jenjang: jenjangMapel
-      });
+      if (editingMapel) {
+        await updateDoc(doc(db, 'mapel', editingMapel.id), {
+          name: newMapelPrefix,
+          jenjang: jenjangMapel
+        });
+        setEditingMapel(null);
+        toast.success(`Mapel ${newMapelPrefix} berhasil diperbarui.`);
+      } else {
+        await addDoc(collection(db, 'mapel'), {
+          name: newMapelPrefix,
+          jenjang: jenjangMapel
+        });
+        toast('Berhasil!', { description: `Mapel ${newMapelPrefix} berhasil ditambah.`, icon: <AlertCircle className="w-4 h-4" /> });
+      }
       setNewMapelPrefix('');
-      toast('Berhasil!', { description: `Mapel ${newMapelPrefix} berhasil ditambah.`, icon: <AlertCircle className="w-4 h-4" /> });
     } catch (err: any) {
-      toast.error('Gagal menambahkan data: ' + err.message);
+      toast.error('Gagal menyimpan data: ' + err.message);
     }
   };
 
@@ -122,16 +136,25 @@ export default function AdminMasterData() {
     e.preventDefault();
     if (!newRuangName) return;
     try {
-      await addDoc(collection(db, 'ruang'), {
-        kode: newRuangKode,
-        name: newRuangName,
-        createdAt: serverTimestamp()
-      });
+      if (editingRuang) {
+        await updateDoc(doc(db, 'ruang', editingRuang.id), {
+          kode: newRuangKode,
+          name: newRuangName
+        });
+        setEditingRuang(null);
+        toast.success('Ruang berhasil diperbarui');
+      } else {
+        await addDoc(collection(db, 'ruang'), {
+          kode: newRuangKode,
+          name: newRuangName,
+          createdAt: serverTimestamp()
+        });
+        toast.success('Ruang berhasil ditambahkan');
+      }
       setNewRuangKode('');
       setNewRuangName('');
-      toast.success('Ruang berhasil ditambahkan');
     } catch (err: any) {
-      toast.error('Gagal menambah ruang: ' + err.message);
+      toast.error('Gagal menyimpan ruang: ' + err.message);
     }
   };
 
@@ -139,16 +162,25 @@ export default function AdminMasterData() {
     e.preventDefault();
     if (!newSesiName) return;
     try {
-      await addDoc(collection(db, 'sesi'), {
-        kode: newSesiKode,
-        name: newSesiName,
-        createdAt: serverTimestamp()
-      });
+      if (editingSesi) {
+        await updateDoc(doc(db, 'sesi', editingSesi.id), {
+          kode: newSesiKode,
+          name: newSesiName
+        });
+        setEditingSesi(null);
+        toast.success('Sesi berhasil diperbarui');
+      } else {
+        await addDoc(collection(db, 'sesi'), {
+          kode: newSesiKode,
+          name: newSesiName,
+          createdAt: serverTimestamp()
+        });
+        toast.success('Sesi berhasil ditambahkan');
+      }
       setNewSesiKode('');
       setNewSesiName('');
-      toast.success('Sesi berhasil ditambahkan');
     } catch (err: any) {
-      toast.error('Gagal menambah sesi: ' + err.message);
+      toast.error('Gagal menyimpan sesi: ' + err.message);
     }
   };
 
@@ -156,16 +188,25 @@ export default function AdminMasterData() {
     e.preventDefault();
     if (!newJenisUjianName) return;
     try {
-      await addDoc(collection(db, 'jenis_ujian'), {
-        kode: newJenisUjianKode,
-        name: newJenisUjianName,
-        createdAt: serverTimestamp()
-      });
+      if (editingJenisUjian) {
+        await updateDoc(doc(db, 'jenis_ujian', editingJenisUjian.id), {
+          kode: newJenisUjianKode,
+          name: newJenisUjianName
+        });
+        setEditingJenisUjian(null);
+        toast.success('Jenis Ujian berhasil diperbarui');
+      } else {
+        await addDoc(collection(db, 'jenis_ujian'), {
+          kode: newJenisUjianKode,
+          name: newJenisUjianName,
+          createdAt: serverTimestamp()
+        });
+        toast.success('Jenis Ujian berhasil ditambahkan');
+      }
       setNewJenisUjianKode('');
       setNewJenisUjianName('');
-      toast.success('Jenis Ujian berhasil ditambahkan');
     } catch (err: any) {
-      toast.error('Gagal menambah jenis ujian: ' + err.message);
+      toast.error('Gagal menyimpan jenis ujian: ' + err.message);
     }
   };
 
@@ -883,7 +924,7 @@ export default function AdminMasterData() {
         {currentTab === 'mapel' && (
         <div className="space-y-6">
           <Card className="p-6 bg-card">
-            <h3 className="font-semibold mb-4">Tambah Mata Pelajaran</h3>
+            <h3 className="font-semibold mb-4">{editingMapel ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran'}</h3>
             <form onSubmit={tanganiTambahMapel} className="flex gap-4 items-end">
               <div className="grid gap-2 flex-1">
                 <label className="text-sm font-medium">Nama Mapel</label>
@@ -901,7 +942,10 @@ export default function AdminMasterData() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit">Simpan Mapel</Button>
+              <div className="flex gap-2">
+                <Button type="submit">{editingMapel ? 'Simpan' : 'Simpan Mapel'}</Button>
+                {editingMapel && <Button type="button" variant="outline" onClick={() => { setEditingMapel(null); setNewMapelPrefix(''); setJenjangMapel('SMA'); }}>Batal</Button>}
+              </div>
             </form>
           </Card>
 
@@ -911,7 +955,7 @@ export default function AdminMasterData() {
                 <TableRow className="bg-muted/50">
                   <TableHead>Mata Pelajaran</TableHead>
                   <TableHead>Jenjang</TableHead>
-                  <TableHead className="w-[100px] text-center">Aksi</TableHead>
+                  <TableHead className="w-[120px] text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -923,9 +967,14 @@ export default function AdminMasterData() {
                       <TableCell className="font-semibold">{m.name}</TableCell>
                       <TableCell>{m.jenjang}</TableCell>
                       <TableCell className="text-center">
-                        <Button variant="ghost" size="sm" onClick={() => hapusData('mapel', m.id)} className="text-destructive hover:bg-destructive/10">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        <div className="flex justify-center gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => { setEditingMapel(m); setNewMapelPrefix(m.name); setJenjangMapel(m.jenjang || 'SMA'); }} className="text-blue-500 hover:bg-blue-50">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => hapusData('mapel', m.id)} className="text-destructive hover:bg-destructive/10">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -1158,14 +1207,17 @@ export default function AdminMasterData() {
           <Card className="p-0 border border-blue-100 overflow-hidden shadow-sm">
             <form onSubmit={tanganiTambahRuang} className="p-6 flex flex-wrap gap-4 items-end bg-white">
               <div className="grid gap-1.5 w-40">
-                <label className="text-xs font-bold text-slate-500 uppercase">KODE</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{editingRuang ? 'Edit KODE' : 'KODE'}</label>
                 <Input value={newRuangKode} onChange={e => setNewRuangKode(e.target.value)} placeholder="Contoh: R1" className="h-11 border-slate-200 uppercase font-bold" />
               </div>
               <div className="grid gap-1.5 flex-1 min-w-[240px]">
-                <label className="text-xs font-bold text-slate-500 uppercase">Nama Ruang</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{editingRuang ? 'Edit Nama Ruang' : 'Nama Ruang'}</label>
                 <Input value={newRuangName} onChange={e => setNewRuangName(e.target.value)} placeholder="Contoh: Ruang 1" className="h-11 border-slate-200 font-bold" />
               </div>
-              <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
+              <div className="flex gap-2">
+                <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
+                {editingRuang && <Button type="button" variant="outline" className="h-11 px-6 font-bold" onClick={() => { setEditingRuang(null); setNewRuangKode(''); setNewRuangName(''); setShowFormRuang(false); }}>Batal</Button>}
+              </div>
             </form>
           </Card>
           )}
@@ -1192,7 +1244,7 @@ export default function AdminMasterData() {
                            <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
                            <td className="py-5 px-6 text-right">
                               <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
+                                <button onClick={() => { setEditingRuang(item); setNewRuangKode(item.kode || ''); setNewRuangName(item.name || ''); setShowFormRuang(true); }} className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
                                 <button onClick={() => hapusData('ruang', item.id)} className="text-rose-400 hover:text-rose-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
                               </div>
                            </td>
@@ -1233,14 +1285,17 @@ export default function AdminMasterData() {
           <Card className="p-0 border border-blue-100 overflow-hidden shadow-sm">
             <form onSubmit={tanganiTambahSesi} className="p-6 flex flex-wrap gap-4 items-end bg-white">
               <div className="grid gap-1.5 w-40">
-                <label className="text-xs font-bold text-slate-500 uppercase">KODE</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{editingSesi ? 'Edit KODE' : 'KODE'}</label>
                 <Input value={newSesiKode} onChange={e => setNewSesiKode(e.target.value)} placeholder="S1" className="h-11 border-slate-200 uppercase font-bold" />
               </div>
               <div className="grid gap-1.5 flex-1 min-w-[240px]">
-                <label className="text-xs font-bold text-slate-500 uppercase">Nama Sesi</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{editingSesi ? 'Edit Nama Sesi' : 'Nama Sesi'}</label>
                 <Input value={newSesiName} onChange={e => setNewSesiName(e.target.value)} placeholder="Sesi 1" className="h-11 border-slate-200 font-bold" />
               </div>
-              <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
+              <div className="flex gap-2">
+                <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
+                {editingSesi && <Button type="button" variant="outline" className="h-11 px-6 font-bold" onClick={() => { setEditingSesi(null); setNewSesiKode(''); setNewSesiName(''); setShowFormSesi(false); }}>Batal</Button>}
+              </div>
             </form>
           </Card>
           )}
@@ -1267,7 +1322,7 @@ export default function AdminMasterData() {
                            <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
                            <td className="py-5 px-6 text-right">
                               <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
+                                <button onClick={() => { setEditingSesi(item); setNewSesiKode(item.kode || ''); setNewSesiName(item.name || ''); setShowFormSesi(true); }} className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
                                 <button onClick={() => hapusData('sesi', item.id)} className="text-rose-400 hover:text-rose-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
                               </div>
                            </td>
@@ -1308,14 +1363,17 @@ export default function AdminMasterData() {
           <Card className="p-0 border border-blue-100 overflow-hidden shadow-sm">
             <form onSubmit={tanganiTambahJenisUjian} className="p-6 flex flex-wrap gap-4 items-end bg-white">
               <div className="grid gap-1.5 w-40">
-                <label className="text-xs font-bold text-slate-500 uppercase">KODE</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{editingJenisUjian ? 'Edit KODE' : 'KODE'}</label>
                 <Input value={newJenisUjianKode} onChange={e => setNewJenisUjianKode(e.target.value)} placeholder="PTS" className="h-11 border-slate-200 uppercase font-bold" />
               </div>
               <div className="grid gap-1.5 flex-1 min-w-[240px]">
-                <label className="text-xs font-bold text-slate-500 uppercase">Jenis Ujian</label>
+                <label className="text-xs font-bold text-slate-500 uppercase">{editingJenisUjian ? 'Edit Jenis Ujian' : 'Jenis Ujian'}</label>
                 <Input value={newJenisUjianName} onChange={e => setNewJenisUjianName(e.target.value)} placeholder="Penilaian Tengah Semester" className="h-11 border-slate-200 font-bold" />
               </div>
-              <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
+              <div className="flex gap-2">
+                <Button type="submit" className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all">Simpan</Button>
+                {editingJenisUjian && <Button type="button" variant="outline" className="h-11 px-6 font-bold" onClick={() => { setEditingJenisUjian(null); setNewJenisUjianKode(''); setNewJenisUjianName(''); setShowFormJenis(false); }}>Batal</Button>}
+              </div>
             </form>
           </Card>
           )}
@@ -1342,7 +1400,7 @@ export default function AdminMasterData() {
                            <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
                            <td className="py-5 px-6 text-right">
                               <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
+                                <button onClick={() => { setEditingJenisUjian(item); setNewJenisUjianKode(item.kode || ''); setNewJenisUjianName(item.name || ''); setShowFormJenis(true); }} className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
                                 <button onClick={() => hapusData('jenis_ujian', item.id)} className="text-rose-400 hover:text-rose-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
                               </div>
                            </td>
