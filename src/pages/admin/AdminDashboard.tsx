@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuthStore } from '../../store/auth.store';
-import { collection, query, onSnapshot, doc, updateDoc, serverTimestamp, orderBy, increment } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, serverTimestamp, orderBy, increment, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [selectedUjian, setSelectedUjian] = useState<string>('');
   const [pesertaList, setPesertaList] = useState<any[]>([]);
   const [searchPeserta, setSearchPeserta] = useState('');
+  const [totalSiswa, setTotalSiswa] = useState(0);
 
   // 1. Fetch Ujian List
   useEffect(() => {
@@ -25,6 +26,15 @@ export default function AdminDashboard() {
     const unsub = onSnapshot(qUjian, (snap) => {
       // In real scenario, filter by status == 'aktif'
       setUjianList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, []);
+
+  // Fetch Total Siswa
+  useEffect(() => {
+    const qSiswa = query(collection(db, 'users'), where('role', '==', 'siswa'));
+    const unsub = onSnapshot(qSiswa, (snap) => {
+      setTotalSiswa(snap.docs.length);
     });
     return () => unsub();
   }, []);
@@ -74,7 +84,7 @@ export default function AdminDashboard() {
         {/* Stats Row */}
         <Card className="p-5 flex flex-col justify-center">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total Siswa</p>
-          <p className="text-2xl font-bold">1,248</p>
+          <p className="text-2xl font-bold">{totalSiswa}</p>
         </Card>
         <Card className="p-5 flex flex-col justify-center">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Ujian Aktif</p>
