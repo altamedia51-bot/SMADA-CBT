@@ -7,7 +7,7 @@ import { collection, query, onSnapshot, doc, updateDoc, serverTimestamp, orderBy
 import { db } from '../../lib/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { RefreshCcw, Search, Clock, Users } from 'lucide-react';
+import { RefreshCcw, Search, Clock, Users, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 export default function AdminDashboard() {
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
                           <th className="px-5 py-3">Nama Peserta</th>
                           <th className="px-5 py-3">Kelas / NIS</th>
                           <th className="px-5 py-3">Status / Jawaban</th>
-                          <th className="px-5 py-3">Viols</th>
+                          <th className="px-5 py-3">Pelanggaran</th>
                           <th className="px-5 py-3 text-right">Aksi Darurat</th>
                         </tr>
                       </thead>
@@ -188,9 +188,14 @@ export default function AdminDashboard() {
                                 {!isFinished && <span className="ml-2 text-xs text-muted-foreground">({Object.keys(p.answers || {}).length} dijawab)</span>}
                               </td>
                               <td className="px-5 py-3">
-                                <span className={`px-2 py-0.5 rounded text-xs font-bold ${p.violations > 0 ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-500'}`}>
-                                  {p.violations || 0}
-                                </span>
+                                {p.violations > 0 ? (
+                                   <div className="flex items-center gap-1.5 font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded border border-rose-200/50 w-fit">
+                                      <AlertTriangle className="w-3.5 h-3.5" />
+                                      <span>{p.violations} x</span>
+                                   </div>
+                                ) : (
+                                   <span className="text-slate-400 text-xs px-2 py-1 bg-slate-100 rounded">0</span>
+                                )}
                               </td>
                               <td className="px-5 py-3 text-right">
                                 <Button 
