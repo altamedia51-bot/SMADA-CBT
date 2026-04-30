@@ -26,6 +26,9 @@ export default function UjianSession() {
   const [violations, setViolations] = useState(0);
   const [lastResetCounter, setLastResetCounter] = useState(0);
   const [matchingPendingLeft, setMatchingPendingLeft] = useState<number | null>(null);
+  const [shuffledLeft, setShuffledLeft] = useState<{idx: number, text: string}[]>([]);
+  const [shuffledRight, setShuffledRight] = useState<{idx: number, text: string}[]>([]);
+  const activeSoalData = soalList[currentIndex];
 
   const matchingContainerRef = useRef<HTMLDivElement>(null);
   const leftItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
@@ -247,9 +250,30 @@ export default function UjianSession() {
   // Reset pending selection when changing question
   useEffect(() => {
     setMatchingPendingLeft(null);
+
+    if (activeSoalData?.type === 'menjodohkan' && activeSoalData.pairs) {
+      const left = activeSoalData.pairs.map((p: any, i: number) => ({ idx: i, text: p.left }));
+      const right = activeSoalData.pairs.map((p: any, i: number) => ({ idx: i, text: p.right }));
+      
+      const shuffle = (array: any[]) => {
+        const arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      };
+      
+      setShuffledLeft(shuffle(left));
+      setShuffledRight(shuffle(right));
+    } else {
+      setShuffledLeft([]);
+      setShuffledRight([]);
+    }
+
     // Trigger line redraw
     setTimeout(() => setUpdateTrigger(p => p + 1), 100);
-  }, [currentIndex]);
+  }, [currentIndex, activeSoalData?.id]);
 
   useEffect(() => {
     const handleResize = () => setUpdateTrigger(p => p + 1);
@@ -315,7 +339,7 @@ export default function UjianSession() {
     });
 
     return (
-      <svg className="absolute inset-0 pointer-events-none w-full h-full overflow-visible z-0">
+      <svg className="absolute inset-0 pointer-events-none w-full h-full overflow-visible z-30">
         {lines}
       </svg>
     );
@@ -392,8 +416,6 @@ export default function UjianSession() {
       </div>
     );
   }
-
-  const activeSoalData = soalList[currentIndex];
 
   return (
     <div className="h-screen bg-slate-100 flex flex-col select-none">
@@ -477,35 +499,38 @@ export default function UjianSession() {
                         </tr>
                       </thead>
                       <tbody>
-                        {activeSoalData.pairs?.map((pair: any, idx: number) => {
+                        {(shuffledLeft.length > 0 ? shuffledLeft : []).map((leftItem, idx) => {
+                          const rightItem = shuffledRight[idx];
+                          if (!rightItem) return null;
+
                           const currentMatches = answers[activeSoalData.id] || {};
                           
                           // Find if this left index is matched
-                          const matchedRightIdx = currentMatches[idx] !== undefined ? currentMatches[idx] : null;
+                          const matchedRightIdx = currentMatches[leftItem.idx] !== undefined ? currentMatches[leftItem.idx] : null;
 
-                          // Find if this right index is matched by ANY left index
+                          // Find if this right index (original) is matched by ANY left index
                           let matchedLeftIdxForRight: number | null = null;
                           Object.entries(currentMatches).forEach(([l, r]) => {
-                            if (Number(r) === idx) matchedLeftIdxForRight = Number(l);
+                            if (Number(r) === rightItem.idx) matchedLeftIdxForRight = Number(l);
                           });
 
                           return (
                             <tr key={idx} className="group">
                               {/* Left Text */}
                               <td className="p-4 border border-r-0 rounded-l-2xl text-sm font-bold text-slate-700 leading-tight bg-white group-hover:bg-slate-50 transition-colors">
-                                {pair.left}
+                                {leftItem.text}
                               </td>
 
                               {/* Left Selection Point */}
                               <td className="p-2 border border-l-0 border-r-0 text-center bg-white group-hover:bg-slate-50 transition-colors">
                                 <button
                                   type="button"
-                                  ref={el => leftItemsRef.current[idx] = el}
-                                  onClick={() => setMatchingPendingLeft(idx)}
+                                  ref={el => leftItemsRef.current[leftItem.idx] = el}
+                                  onClick={() => setMatchingPendingLeft(leftItem.idx)}
                                   className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 relative z-20 ${
                                     matchedRightIdx !== null 
-                                      ? colors[idx % colors.length] + ' text-white shadow-md ring-2 ring-white ring-offset-2'
-                                      : matchingPendingLeft === idx
+                                      ? colors[leftItem.idx % colors.length] + ' text-white shadow-md ring-2 ring-white ring-offset-2'
+                                      : matchingPendingLeft === leftItem.idx
                                         ? 'bg-blue-600 text-white ring-4 ring-blue-100 animate-pulse'
                                         : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
                                   }`}
@@ -517,7 +542,7 @@ export default function UjianSession() {
                               {/* Indicator */}
                               <td className="p-2 border border-l-0 border-r-0 text-center bg-slate-50/50">
                                 {matchedRightIdx !== null && (
-                                   <div className={`h-1.5 w-1.5 mx-auto rounded-full ${colors[idx % colors.length]} animate-in zoom-in duration-300`}></div>
+                                   <div className={`h-1.5 w-1.5 mx-auto rounded-full ${colors[leftItem.idx % colors.length]} animate-in zoom-in duration-300`}></div>
                                 )}
                               </td>
 
@@ -525,7 +550,7 @@ export default function UjianSession() {
                               <td className="p-2 border border-l-0 border-r-0 text-center bg-white group-hover:bg-slate-50 transition-colors">
                                 <button
                                   type="button"
-                                  ref={el => rightItemsRef.current[idx] = el}
+                                  ref={el => rightItemsRef.current[rightItem.idx] = el}
                                   disabled={matchingPendingLeft === null}
                                   onClick={() => {
                                     if (matchingPendingLeft !== null) {
@@ -533,10 +558,10 @@ export default function UjianSession() {
                                       
                                       // Remove any existing match for this right index (ensure 1-to-1)
                                       Object.keys(newMatches).forEach(key => {
-                                        if (newMatches[key] === idx) delete newMatches[key];
+                                        if (newMatches[key] === rightItem.idx) delete newMatches[key];
                                       });
                                       
-                                      newMatches[matchingPendingLeft] = idx;
+                                      newMatches[matchingPendingLeft] = rightItem.idx;
                                       handleAnswer(activeSoalData.id, newMatches);
                                       setMatchingPendingLeft(null);
                                       // Trigger update for line calculation
@@ -557,7 +582,7 @@ export default function UjianSession() {
 
                               {/* Right Text */}
                               <td className="p-4 border border-l-0 rounded-r-2xl text-sm font-bold text-slate-700 leading-tight text-right bg-white group-hover:bg-slate-50 transition-colors">
-                                {pair.right}
+                                {rightItem.text}
                               </td>
                             </tr>
                           );
