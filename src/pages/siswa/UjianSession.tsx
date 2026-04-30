@@ -463,11 +463,11 @@ export default function UjianSession() {
                     <table className="w-full border-separate border-spacing-y-2 relative z-10">
                        <thead>
                         <tr className="bg-slate-50">
-                          <th className="p-3 text-left text-[10px] font-black uppercase tracking-wider text-slate-400 border-b">Pernyataan (Kiri)</th>
+                          <th className="p-3 text-left text-[10px] font-black uppercase tracking-wider text-slate-400 border-b">{activeSoalData.leftTitle || 'Pernyataan (Kiri)'}</th>
                           <th className="p-3 text-center text-[10px] font-black uppercase tracking-wider text-slate-400 border-b w-16">Pilih</th>
                           <th className="p-3 text-center text-[10px] font-black uppercase tracking-wider text-slate-400 border-b w-12 italic">Cek</th>
                           <th className="p-3 text-center text-[10px] font-black uppercase tracking-wider text-slate-400 border-b w-16">Pilih</th>
-                          <th className="p-3 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 border-b">Jawaban (Kanan)</th>
+                          <th className="p-3 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 border-b">{activeSoalData.rightTitle || 'Jawaban (Kanan)'}</th>
                         </tr>
                       </thead>
                       <tbody>

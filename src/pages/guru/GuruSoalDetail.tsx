@@ -45,6 +45,8 @@ export default function GuruSoalDetail() {
   const [pgkKeys, setPgkKeys] = useState<string[]>([]); // Untuk PG Kompleks (multiple correct options)
   const [textAnswer, setTextAnswer] = useState(''); // Untuk Isian / Essay (Rubrik)
   const [pairs, setPairs] = useState([{ left: '', right: '' }]); // Untuk Menjodohkan
+  const [leftTitle, setLeftTitle] = useState('Pernyataan');
+  const [rightTitle, setRightTitle] = useState('Pasangan');
   const [imageContent, setImageContent] = useState<string | null>(null);
 
   const [editingSoalId, setEditingSoalId] = useState<string | null>(null);
@@ -181,6 +183,8 @@ CATATAN:
 
       if (soalType === 'menjodohkan') {
         payload.pairs = pairs;
+        payload.leftTitle = leftTitle;
+        payload.rightTitle = rightTitle;
       }
 
       if (editingSoalId) {
@@ -202,6 +206,7 @@ CATATAN:
       setOptA(''); setOptB(''); setOptC(''); setOptD(''); setOptE(''); 
       setCorrectKey('A'); setPgkKeys([]); setTextAnswer('');
       setPairs([{ left: '', right: '' }]);
+      setLeftTitle('Pernyataan'); setRightTitle('Pasangan');
       
     } catch(err: any) {
       toast.error('Gagal menyimpan soal: ' + err.message);
@@ -235,7 +240,9 @@ CATATAN:
     } else if (s.type === 'isian' || s.type === 'essay') {
       setTextAnswer(s.correctAnswer || '');
     } else if (s.type === 'menjodohkan') {
-      setPairs(s.pairs || s.correctAnswer || [{ left: '', right: '' }]);
+      setPairs(s.pairs || []);
+      setLeftTitle(s.leftTitle || 'Pernyataan');
+      setRightTitle(s.rightTitle || 'Pasangan');
     }
     
     // Switch to manual tab
@@ -607,7 +614,7 @@ CATATAN:
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                            <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
-                           <h4 className="font-bold text-slate-800 text-lg">Pasangkan Premis & Respon</h4>
+                           <h4 className="font-bold text-slate-800 text-lg">Input Jawaban Menjodohkan</h4>
                         </div>
                         <Button 
                           type="button" 
@@ -619,6 +626,28 @@ CATATAN:
                           <Plus className="w-4 h-4 mr-2" /> Tambah Baris
                         </Button>
                       </div>
+
+                      <div className="grid grid-cols-2 gap-4 bg-slate-100 p-4 rounded-xl mb-2">
+                         <div>
+                            <label className="text-[10px] font-black uppercase text-slate-500 ml-1 mb-1 block">Judul Kolom Kiri</label>
+                            <Input 
+                              value={leftTitle} 
+                              onChange={(e) => setLeftTitle(e.target.value)}
+                              placeholder="Contoh: Negara"
+                              className="bg-white border-slate-200 h-9 rounded-lg text-sm font-bold"
+                            />
+                         </div>
+                         <div>
+                            <label className="text-[10px] font-black uppercase text-slate-500 ml-1 mb-1 block">Judul Kolom Kanan</label>
+                            <Input 
+                              value={rightTitle} 
+                              onChange={(e) => setRightTitle(e.target.value)}
+                              placeholder="Contoh: Ibu Kota"
+                              className="bg-white border-slate-200 h-9 rounded-lg text-sm font-bold"
+                            />
+                         </div>
+                      </div>
+
                       <div className="space-y-3">
                         {pairs.map((pair, idx) => (
                           <div key={idx} className="flex gap-4 items-start bg-slate-50 p-4 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:border-blue-200 hover:shadow-md">
