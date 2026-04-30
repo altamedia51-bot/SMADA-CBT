@@ -4,7 +4,7 @@ import { db } from '../../lib/firebase';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Upload, Plus, ChevronLeft, Save, Download, FileType, Trash2, Edit2, BookOpen, CheckCircle2, GripVertical, HelpCircle, ImagePlus, Check, Info } from 'lucide-react';
+import { Upload, Plus, ChevronLeft, Save, Download, FileType, Trash2, Edit2, BookOpen, CheckCircle2, GripVertical, HelpCircle, ImagePlus, Check, Info, RotateCcw } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -43,8 +43,9 @@ export default function GuruSoalDetail() {
   // Jawaban untuk berbagai tipe
   const [correctKey, setCorrectKey] = useState('A'); // Untuk PG
   const [pgkKeys, setPgkKeys] = useState<string[]>([]); // Untuk PG Kompleks (multiple correct options)
-  const [textAnswer, setTextAnswer] = useState(''); // Untuk Isian / Essay (Rubrik)
+  const [textAnswer, setTextAnswer] = useState(''); 
   const [pairs, setPairs] = useState([{ left: '', right: '' }]); // Untuk Menjodohkan
+  const [benarSalahStatements, setBenarSalahStatements] = useState([{ statement: '', answer: 'Benar' }]); 
   const [leftTitle, setLeftTitle] = useState('Pernyataan');
   const [rightTitle, setRightTitle] = useState('Pasangan');
   const [imageContent, setImageContent] = useState<string | null>(null);
@@ -187,6 +188,10 @@ CATATAN:
         payload.rightTitle = rightTitle;
       }
 
+      if (soalType === 'benarSalah') {
+        payload.statements = benarSalahStatements;
+      }
+
       if (editingSoalId) {
         await updateDoc(doc(db, `paket_soal/${paketId}/soal`, editingSoalId), payload);
         toast.success('Soal berhasil diperbarui');
@@ -239,6 +244,7 @@ CATATAN:
       }
     } else if (s.type === 'isian' || s.type === 'benarSalah') {
       setTextAnswer(s.correctAnswer || '');
+      setBenarSalahStatements(s.statements || [{ statement: '', answer: 'Benar' }]);
     } else if (s.type === 'menjodohkan') {
       setPairs(s.pairs || []);
       setLeftTitle(s.leftTitle || 'Pernyataan');
@@ -747,41 +753,70 @@ CATATAN:
 
                   {(soalType === 'benarSalah') && (
                     <div className="bg-rose-50/50 p-6 rounded-2xl border border-rose-200">
-                      <label className="font-bold text-rose-900 mb-4 block flex items-center gap-2">
-                        <HelpCircle className="w-5 h-5 text-rose-600"/> Tentukan Jawaban Benar
-                      </label>
-                      <RadioGroup 
-                        value={textAnswer} 
-                        onValueChange={setTextAnswer}
-                        className="flex gap-4"
-                      >
-                        <div 
-                          className={`flex-1 flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${textAnswer === 'Benar' ? 'bg-emerald-50 border-emerald-500 shadow-md scale-[1.02]' : 'bg-white border-slate-200 hover:border-emerald-200'}`}
-                          onClick={() => setTextAnswer('Benar')}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${textAnswer === 'Benar' ? 'border-emerald-500' : 'border-slate-300'}`}>
-                              {textAnswer === 'Benar' && <div className="w-3 h-3 rounded-full bg-emerald-500" />}
-                            </div>
-                            <span className={`font-bold ${textAnswer === 'Benar' ? 'text-emerald-700' : 'text-slate-600'}`}>Benar</span>
-                          </div>
-                          <RadioGroupItem value="Benar" className="sr-only" />
-                        </div>
+                      <div className="flex items-center justify-between mb-4">
+                        <label className="font-bold text-rose-900 flex items-center gap-2">
+                          <HelpCircle className="w-5 h-5 text-rose-600"/> Daftar Pernyataan (Benar / Salah)
+                        </label>
+                        {benarSalahStatements.length < 5 && (
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm" 
+                            className="bg-white border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold"
+                            onClick={() => setBenarSalahStatements([...benarSalahStatements, { statement: '', answer: 'Benar' }])}
+                          >
+                            <Plus className="w-4 h-4 mr-1" /> Tambah Pernyataan
+                          </Button>
+                        )}
+                      </div>
 
-                        <div 
-                          className={`flex-1 flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${textAnswer === 'Salah' ? 'bg-rose-50 border-rose-500 shadow-md scale-[1.02]' : 'bg-white border-slate-200 hover:border-rose-200'}`}
-                          onClick={() => setTextAnswer('Salah')}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${textAnswer === 'Salah' ? 'border-rose-500' : 'border-slate-300'}`}>
-                              {textAnswer === 'Salah' && <div className="w-3 h-3 rounded-full bg-rose-500" />}
+                      <div className="space-y-4">
+                        {benarSalahStatements.map((item, idx) => (
+                          <div key={idx} className="bg-white p-4 rounded-xl border border-rose-100 shadow-sm space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Pernyataan #{idx + 1}</span>
+                              {benarSalahStatements.length > 1 && (
+                                <button 
+                                  type="button"
+                                  onClick={() => setBenarSalahStatements(benarSalahStatements.filter((_, i) => i !== idx))}
+                                  className="text-rose-400 hover:text-rose-600"
+                                >
+                                  <RotateCcw className="w-4 h-4 rotate-45" />
+                                </button>
+                              )}
                             </div>
-                            <span className={`font-bold ${textAnswer === 'Salah' ? 'text-rose-700' : 'text-slate-600'}`}>Salah</span>
+                            <Textarea 
+                              value={item.statement} 
+                              onChange={e => {
+                                const newStatements = [...benarSalahStatements];
+                                newStatements[idx].statement = e.target.value;
+                                setBenarSalahStatements(newStatements);
+                              }}
+                              placeholder="Ketik pernyataan di sini..."
+                              className="border-slate-200 focus:border-rose-400 min-h-[60px]"
+                            />
+                            <RadioGroup 
+                              value={item.answer} 
+                              onValueChange={val => {
+                                const newStatements = [...benarSalahStatements];
+                                newStatements[idx].answer = val;
+                                setBenarSalahStatements(newStatements);
+                              }}
+                              className="flex gap-4"
+                            >
+                              <div className="flex items-center gap-2">
+                                <RadioGroupItem value="Benar" id={`b-${idx}`} className="text-emerald-500 border-slate-300" />
+                                <label htmlFor={`b-${idx}`} className="text-sm font-bold text-slate-600 cursor-pointer">Benar</label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <RadioGroupItem value="Salah" id={`s-${idx}`} className="text-rose-500 border-slate-300" />
+                                <label htmlFor={`s-${idx}`} className="text-sm font-bold text-slate-600 cursor-pointer">Salah</label>
+                              </div>
+                            </RadioGroup>
                           </div>
-                          <RadioGroupItem value="Salah" className="sr-only" />
-                        </div>
-                      </RadioGroup>
-                      <p className="text-xs text-rose-700/70 mt-4 font-medium italic">* Pilih apakah pernyataan di atas bernilai Benar atau Salah.</p>
+                        ))}
+                      </div>
+                      <p className="text-xs text-rose-700/70 mt-4 font-medium italic">* Anda dapat menambahkan hingga 5 pernyataan.</p>
                     </div>
                   )}
                   

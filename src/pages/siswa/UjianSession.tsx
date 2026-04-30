@@ -663,42 +663,53 @@ export default function UjianSession() {
 
               {/* Benar Salah */}
               {activeSoalData?.type === 'benarSalah' && (
-                <div className="space-y-4 max-w-lg mx-auto py-4">
-                   <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider text-center mb-6">Pilih Pernyataan:</p>
-                   <div className="flex gap-4">
-                      <button 
-                        type="button"
-                        className={`flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-300 group ${
-                          answers[activeSoalData.id] === 'Benar'
-                            ? 'bg-emerald-50 border-emerald-500 shadow-lg scale-[1.05]'
-                            : 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/30'
-                        }`}
-                        onClick={() => handleAnswer(activeSoalData.id, 'Benar')}
-                      >
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-3 transition-colors ${
-                          answers[activeSoalData.id] === 'Benar' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-500'
-                        }`}>
-                          <Check className="w-8 h-8" />
-                        </div>
-                        <span className={`text-xl font-black ${answers[activeSoalData.id] === 'Benar' ? 'text-emerald-700' : 'text-slate-600'}`}>BENAR</span>
-                      </button>
+                <div className="space-y-4 py-2">
+                   <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Pilih Benar atau Salah untuk setiap pernyataan:</p>
+                   
+                   <div className="space-y-3">
+                     {(activeSoalData.statements || []).map((st: any, idx: number) => {
+                       const currentAnswers = answers[activeSoalData.id] || {};
+                       const studentChoice = currentAnswers[idx];
 
-                      <button 
-                        type="button"
-                        className={`flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-300 group ${
-                          answers[activeSoalData.id] === 'Salah'
-                            ? 'bg-rose-50 border-rose-500 shadow-lg scale-[1.05]'
-                            : 'bg-white border-slate-200 hover:border-rose-200 hover:bg-rose-50/30'
-                        }`}
-                        onClick={() => handleAnswer(activeSoalData.id, 'Salah')}
-                      >
-                        <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-3 transition-colors ${
-                          answers[activeSoalData.id] === 'Salah' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-rose-100 group-hover:text-rose-500'
-                        }`}>
-                          <RotateCcw className="w-8 h-8 rotate-45" />
-                        </div>
-                        <span className={`text-xl font-black ${answers[activeSoalData.id] === 'Salah' ? 'text-rose-700' : 'text-slate-600'}`}>SALAH</span>
-                      </button>
+                       return (
+                         <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="flex-1">
+                               <p className="text-slate-700 font-bold leading-relaxed">{st.statement}</p>
+                            </div>
+                            <div className="flex gap-2 shrink-0">
+                               <button 
+                                 type="button"
+                                 className={`px-6 py-2.5 rounded-xl border-2 font-black transition-all duration-200 flex items-center gap-2 ${
+                                   studentChoice === 'Benar'
+                                     ? 'bg-emerald-500 border-emerald-500 text-white shadow-md'
+                                     : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-200 hover:text-emerald-500'
+                                 }`}
+                                 onClick={() => {
+                                   const newAns = { ...currentAnswers, [idx]: 'Benar' };
+                                   handleAnswer(activeSoalData.id, newAns);
+                                 }}
+                               >
+                                 <Check className="w-4 h-4" /> BENAR
+                               </button>
+
+                               <button 
+                                 type="button"
+                                 className={`px-6 py-2.5 rounded-xl border-2 font-black transition-all duration-200 flex items-center gap-2 ${
+                                   studentChoice === 'Salah'
+                                     ? 'bg-rose-500 border-rose-500 text-white shadow-md'
+                                     : 'bg-white border-slate-200 text-slate-400 hover:border-rose-200 hover:text-rose-500'
+                                 }`}
+                                 onClick={() => {
+                                   const newAns = { ...currentAnswers, [idx]: 'Salah' };
+                                   handleAnswer(activeSoalData.id, newAns);
+                                 }}
+                               >
+                                 <RotateCcw className="w-4 h-4 rotate-45" /> SALAH
+                               </button>
+                            </div>
+                         </div>
+                       );
+                     })}
                    </div>
                 </div>
               )}
