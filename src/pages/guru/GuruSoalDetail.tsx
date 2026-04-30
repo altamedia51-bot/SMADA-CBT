@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, onSnapshot, addDoc, doc, getDoc, writeBatch, serverTimestamp, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, doc, getDoc, writeBatch, serverTimestamp, deleteDoc, updateDoc, orderBy } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -66,6 +66,7 @@ export default function GuruSoalDetail() {
 
     const qSoal = query(
       collection(db, `paket_soal/${paketId}/soal`),
+      orderBy('index', 'asc'),
       orderBy('createdAt', 'asc')
     );
     const unsubscribe = onSnapshot(qSoal, (snap) => {
@@ -91,14 +92,45 @@ export default function GuruSoalDetail() {
     XLSX.writeFile(wb, "Template_Soal_EduTest.xlsx");
   };
 
-  const downloadWordTemplate = () => { /* ... unchanged ... */
-    const guideText = `Sistem format file ini fokus ke PG Standar.\nUntuk soal tipe AKM (Stimulus/PGK), silakan gunakan form manual Builder AKM di web.`;
-    const blob = new Blob([guideText], { type: "text/plain" });
+  const downloadWordTemplate = () => {
+    const templateContent = `CONTOH FORMAT IMPORT SOAL WORD
+1. Siapa presiden pertama Indonesia?
+A. Soekarno
+B. Mohammad Hatta
+C. Soeharto
+D. B.J. Habibie
+Jawab: A
+
+2. Apa ibu kota Provisi Jawa Barat?
+A. Jakarta
+B. Bandung
+C. Surabaya
+D. Semarang
+Jawab: B
+
+3. Berapa hasil dari 10 x 5?
+A. 40
+B. 50
+C. 60
+D. 70
+Jawab: B
+
+CATATAN: 
+- Pastikan nomor soal diikuti tanda titik (.) atau kurung )
+- Pastikan pilihan A-E diikuti tanda titik (.) atau kurung )
+- Pastikan ada baris "Jawab: [Huruf]" untuk setiap soal
+- Simpan file ini sebagai .docx sebelum diunggah
+`;
+    const blob = new Blob([templateContent], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "Panduan_Word.txt";
+    link.download = "Template_Import_Soal.txt";
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Template format diunduh. Gunakan sebagai acuan di MS Word.');
   };
 
   const handleAddManual = async (e: React.FormEvent) => {
@@ -146,6 +178,7 @@ export default function GuruSoalDetail() {
         await addDoc(collection(db, `paket_soal/${paketId}/soal`), {
           ...payload,
           paketId,
+          index: soalList.length, // Add index for manual additions too
           createdAt: serverTimestamp()
         });
         toast.success('Soal berhasil ditambah ke paket');
@@ -246,6 +279,7 @@ export default function GuruSoalDetail() {
               content: content.toString(),
               options,
               correctAnswer,
+              index: count, // maintain order
               createdAt: serverTimestamp()
             });
             count++;
@@ -289,25 +323,31 @@ export default function GuruSoalDetail() {
         let currentSoal: any = null;
 
         lines.forEach(line => {
-          // Check for start of question (e.g. "1. " or "10) ")
-          const qMatch = line.match(/^(\d+)[.)]\s*(.*)/);
+          // Check for start of question (e.g. "1. " or "1) " or "10. ")
+          // Support variants like "1 ." or "1) "
+          const qMatch = line.match(/^(\d+)\s*[.)]\s*(.*)/);
           if (qMatch) {
             if (currentSoal && currentSoal.content && currentSoal.options.length >= 2) {
               importedSoal.push(currentSoal);
             }
-            currentSoal = { content: qMatch[2], options: [], correctAnswer: '' };
+            currentSoal = { 
+              content: qMatch[2].trim(), 
+              options: [], 
+              correctAnswer: '',
+              type: 'pg'
+            };
             return;
           }
 
-          // Check for options (e.g. "A. Option content")
-          const optMatch = line.match(/^([A-E])[.)]\s*(.*)/);
+          // Check for options (e.g. "A. Option content" or "A) content")
+          const optMatch = line.match(/^([A-E])\s*[.)]\s*(.*)/);
           if (optMatch && currentSoal) {
-            currentSoal.options.push(optMatch[2]);
+            currentSoal.options.push(optMatch[2].trim());
             return;
           }
 
-          // Check for key (e.g. "Jawab: A" or "Kunci: A" or "Ans: A")
-          const keyMatch = line.match(/^(Jawab|Kunci|Ans|Answer|Jawaban):\s*([A-E])/i);
+          // Check for key (e.g. "Jawab: A" or "Kunci: A" etc)
+          const keyMatch = line.match(/^(Jawab|Kunci|Ans|Answer|Jawaban|Key):\s*([A-E])/i);
           if (keyMatch && currentSoal) {
             const keyChar = keyMatch[2].toUpperCase();
             const keyIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(keyChar);
@@ -316,7 +356,8 @@ export default function GuruSoalDetail() {
           }
 
           // If it's just text and we have a current question, append to content
-          if (currentSoal && !currentSoal.correctAnswer && currentSoal.options.length === 0) {
+          // This handles multi-line questions
+          if (currentSoal && currentSoal.options.length === 0) {
             currentSoal.content += ' ' + line;
           }
         });
@@ -331,13 +372,14 @@ export default function GuruSoalDetail() {
         }
 
         const batch = writeBatch(db);
-        importedSoal.forEach(s => {
+        importedSoal.forEach((s, idx) => {
           const docRef = doc(collection(db, `paket_soal/${paketId}/soal`));
           batch.set(docRef, {
             ...s,
             paketId,
             type: 'pg',
             stimulus: '',
+            index: idx, // Add explicit index to maintain file order
             createdAt: serverTimestamp()
           });
         });
@@ -576,15 +618,20 @@ export default function GuruSoalDetail() {
           </TabsContent>
           <TabsContent value="word" className="mt-0 focus-visible:outline-none">
             <Card className="p-8 border-t-4 border-t-indigo-600 shadow-sm rounded-2xl">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-indigo-600"/>
+                <div className="flex items-center justify-between gap-4 mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 shadow-inner">
+                      <BookOpen className="w-6 h-6"/>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg text-slate-800">Impor Soal via MS Word</h3>
+                      <p className="text-sm text-slate-500 font-medium">Unggah file .docx dengan format standar</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={downloadWordTemplate} className="rounded-xl border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-bold h-10 px-4">
+                     <Download className="w-4 h-4 mr-2" /> Template Word
+                  </Button>
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg text-slate-800">Impor Soal via MS Word</h3>
-                  <p className="text-sm text-slate-500 font-medium">Unggah file .docx dengan format standar</p>
-                </div>
-              </div>
 
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6">
                 <h4 className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">

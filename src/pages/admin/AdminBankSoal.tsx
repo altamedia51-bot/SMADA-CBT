@@ -105,11 +105,11 @@ export default function AdminBankSoal() {
              className="w-full sm:w-64 h-11 bg-white border-slate-200"
           />
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
+            <DialogTrigger render={
               <Button className="w-full sm:w-auto h-11 px-6 bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20 rounded-full font-bold">
                 <Plus className="w-4 h-4 mr-2"/> Buat Paket Bank Soal
               </Button>
-            </DialogTrigger>
+            } />
             <DialogContent className="sm:max-w-[450px]">
               <DialogHeader>
                 <DialogTitle className="text-xl font-bold text-slate-800 flex items-center gap-2">

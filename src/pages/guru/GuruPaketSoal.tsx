@@ -80,9 +80,7 @@ export default function GuruPaketSoal() {
         </div>
 
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button><FileText className="w-4 h-4 mr-2"/> Buat Paket Baru</Button>
-          </DialogTrigger>
+          <DialogTrigger render={<Button><FileText className="w-4 h-4 mr-2"/> Buat Paket Baru</Button>} />
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Buat Paket Soal Baru</DialogTitle>
