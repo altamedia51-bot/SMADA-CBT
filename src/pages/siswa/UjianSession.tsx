@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, Clock, ChevronLeft, ChevronRight, Flag, Loader2, RotateCcw, Check } from 'lucide-react';
+import { AlertCircle, Clock, ChevronLeft, ChevronRight, Flag, Loader2, RotateCcw, Check, FileText, LayoutList } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp, setDoc, onSnapshot, getDocs } from 'firebase/firestore';
@@ -24,6 +24,7 @@ export default function UjianSession() {
   const [marked, setMarked] = useState<number[]>([]);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [violations, setViolations] = useState(0);
+  const [showPdf, setShowPdf] = useState(true);
   const [lastResetCounter, setLastResetCounter] = useState(0);
   const [matchingPendingLeft, setMatchingPendingLeft] = useState<number | null>(null);
   const [shuffledLeft, setShuffledLeft] = useState<{idx: number, text: string}[]>([]);
@@ -68,7 +69,12 @@ export default function UjianSession() {
           return navigate('/siswa');
         }
         
-        const dataUjian = ujianSnap.data();
+        const rawUjian = ujianSnap.data();
+        if (!rawUjian) return navigate('/siswa');
+        
+        const paketSnap = await getDoc(doc(db, 'paket_soal', rawUjian.paketId));
+        const dataUjian = { ...rawUjian, pdfUrl: paketSnap.exists() ? (paketSnap.data() as any).pdfUrl : null } as any;
+        
         if (dataUjian.status !== 'aktif') {
           toast.error('Ujian belum dimulai atau sudah ditutup!');
           return navigate('/siswa');
@@ -387,6 +393,9 @@ export default function UjianSession() {
     }
   };
 
+  // Header content change
+  const isPdfMode = !!ujianData?.pdfUrl;
+
   if (loading) {
     return (
       <div className="h-screen bg-slate-50 flex items-center justify-center flex-col text-slate-500">
@@ -408,49 +417,91 @@ export default function UjianSession() {
   return (
     <div className="h-screen bg-slate-100 flex flex-col select-none">
       {/* Header */}
-      <header className="bg-slate-900 text-white px-6 py-3 flex items-center justify-between shrink-0 shadow-md z-10">
-        <div>
-          <h1 className="font-bold">{ujianData?.title || 'Ujian CBT'}</h1>
-          <p className="text-xs text-slate-400">{profile?.displayName} | Pelanggaran: {violations}/5</p>
+      <header className="bg-slate-900 text-white px-6 py-3 flex items-center justify-between shrink-0 shadow-md z-20">
+        <div className="flex items-center gap-4">
+           {isPdfMode && (
+             <Button 
+               variant={showPdf ? "default" : "outline"} 
+               size="sm" 
+               className={`md:hidden h-8 px-2 text-[10px] uppercase font-black tracking-widest ${showPdf ? 'bg-blue-600 text-white border-blue-500' : 'text-slate-400 border-slate-700'}`}
+               onClick={() => setShowPdf(!showPdf)}
+             >
+               {showPdf ? <LayoutList className="w-3.5 h-3.5 mr-1" /> : <FileText className="w-3.5 h-3.5 mr-1" />}
+               {showPdf ? 'Tampil Soal' : 'Tampil PDF'}
+             </Button>
+           )}
+           <div>
+             <h1 className="font-bold text-sm md:text-base truncate max-w-[150px] md:max-w-none">{ujianData?.title || 'Ujian CBT'}</h1>
+             <p className="text-[10px] text-slate-400">{profile?.displayName?.split(' ')[0]} | Pelanggaran: {violations}/5</p>
+           </div>
         </div>
-        <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-mono text-xl font-bold tracking-wider ${timeLeft < 300 ? 'bg-red-500/20 text-red-100' : 'bg-slate-800'}`}>
-          <Clock className="w-5 h-5" />
+        <div className={`flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full font-mono text-lg md:text-xl font-bold tracking-wider ${timeLeft < 300 ? 'bg-red-500/20 text-red-100' : 'bg-slate-800'}`}>
+          <Clock className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
           {formatTime(timeLeft)}
         </div>
       </header>
 
       {/* Main Area */}
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden relative">
         
-        {/* Konten Soal */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
-          <Card className="max-w-4xl mx-auto shadow-sm">
-            <div className="flex justify-between items-center border-b px-6 py-4 bg-slate-50 rounded-t-xl">
-              <h2 className="font-bold text-lg text-slate-800">Soal No. {currentIndex + 1}</h2>
+        {/* PDF Viewer Pane (Side by side on desktop) */}
+        {isPdfMode && (
+          <div className={`${showPdf ? 'flex' : 'hidden'} md:flex flex-1 border-r border-slate-300 bg-slate-200 shadow-inner relative overflow-hidden transition-all duration-300`}>
+             <div className="absolute top-4 left-4 bg-slate-900/80 text-white px-3 py-1 rounded-full text-[10px] font-bold z-10 backdrop-blur-sm border border-white/10 uppercase tracking-widest pointer-events-none">
+                Modul Soal PDF
+             </div>
+             <iframe 
+                src={`${ujianData.pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`} 
+                className="w-full h-full border-none"
+                title="Modul Soal"
+             />
+          </div>
+        )}
+
+        {/* Konten Soal Pane */}
+        <div className={`flex-1 md:flex-none overflow-y-auto p-4 md:p-6 transition-all duration-300 ${isPdfMode ? (showPdf ? 'hidden md:block md:w-[400px] lg:w-[450px]' : 'w-full block') : 'flex-1 p-8'}`}>
+          <Card className={`mx-auto shadow-sm border-slate-200 rounded-2xl overflow-hidden ${isPdfMode ? 'w-full' : 'max-w-4xl'}`}>
+            <div className="flex justify-between items-center border-b px-5 py-3 bg-slate-50">
+              <h2 className="font-black text-slate-800">No. {currentIndex + 1}</h2>
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 size="sm" 
-                className={`gap-2 ${marked.includes(currentIndex) ? 'bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200' : 'hover:bg-slate-100'}`}
+                className={`h-8 px-2 text-[10px] font-black uppercase tracking-widest ${marked.includes(currentIndex) ? 'bg-amber-100 text-amber-700' : 'text-slate-400'}`}
                 onClick={toggleMark}
               >
-                <Flag className="w-4 h-4" />
-                {marked.includes(currentIndex) ? 'Ditandai Ragu-ragu' : 'Tandai Ragu-ragu'}
+                <Flag className="w-3.5 h-3.5 mr-1" />
+                {marked.includes(currentIndex) ? 'Ragu' : 'Tandai'}
               </Button>
             </div>
             
-            <CardContent className="p-6 md:p-8 text-lg text-slate-800">
+            <CardContent className={`${isPdfMode ? 'p-5' : 'p-6 md:p-8'} text-slate-800`}>
+              {/* PDF Instruction (Only in PDF Mode) */}
+              {activeSoalData?.type === 'pdf' && (
+                <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-4">
+                   <div className="w-12 h-12 bg-rose-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-rose-200">
+                      <FileText className="w-6 h-6" />
+                   </div>
+                   <div>
+                      <p className="font-black text-rose-900 text-sm">Lihat Pertanyaan di PDF</p>
+                      <p className="text-[11px] text-rose-700 font-medium leading-tight">Bacalah soal nomor <span className="font-bold underline">{currentIndex + 1}</span> pada dokumen di samping, lalu pilih jawaban di bawah.</p>
+                   </div>
+                </div>
+              )}
+
               {/* Stimulus / Wacana */}
-              {activeSoalData?.stimulus && (
+              {!isPdfMode && activeSoalData?.stimulus && (
                 <div className="mb-6 p-5 bg-blue-50/50 border border-blue-100 rounded-lg text-sm leading-relaxed">
                   <div dangerouslySetInnerHTML={{ __html: activeSoalData.stimulus }} />
                 </div>
               )}
 
               {/* Teks Soal */}
-              <div className="mb-8 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: activeSoalData?.content || activeSoalData?.question || '' }} />
+              {activeSoalData?.type !== 'pdf' && (
+                <div className={`mb-8 font-medium leading-relaxed ${isPdfMode ? 'text-base' : 'text-lg'}`} dangerouslySetInnerHTML={{ __html: activeSoalData?.content || activeSoalData?.question || '' }} />
+              )}
 
               {/* Lampiran Gambar (Jika ada) */}
-              {(activeSoalData?.imageUrl || activeSoalData?.image) && (
+              {activeSoalData?.type !== 'pdf' && (activeSoalData?.imageUrl || activeSoalData?.image) && (
                 <div className="mb-8 rounded-xl overflow-hidden border-2 border-slate-100 bg-white">
                   <img src={activeSoalData.imageUrl || activeSoalData.image} alt="Lampiran Soal" className="max-h-[400px] w-full object-contain mx-auto" />
                 </div>
@@ -460,17 +511,17 @@ export default function UjianSession() {
               {activeSoalData?.type === 'menjodohkan' && (
                 <div className="mt-4 animate-in fade-in duration-500">
                   <div className="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <p className="text-sm font-bold text-slate-600 flex items-center gap-2">
-                       <AlertCircle className="w-4 h-4 text-blue-500" />
-                       Pilih item di kiri lalu pasangkan ke kanan
+                    <p className="text-[10px] md:text-sm font-bold text-slate-600 flex items-center gap-2">
+                       <AlertCircle className="w-3 h-3 md:w-4 md:h-4 text-blue-500" />
+                       Klik kiri lalu ke kanan
                     </p>
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="text-rose-600 hover:bg-rose-50 font-bold gap-2 h-8 px-3 rounded-lg"
+                      className="text-rose-600 hover:bg-rose-50 font-bold gap-1 h-7 px-2 rounded-lg text-[10px]"
                       onClick={() => handleAnswer(activeSoalData.id, {})}
                     >
-                      <RotateCcw className="w-3.5 h-3.5" /> Reset
+                      <RotateCcw className="w-3 h-3" /> Reset
                     </Button>
                   </div>
 
@@ -479,11 +530,10 @@ export default function UjianSession() {
                     <table className="w-full border-separate border-spacing-y-2 relative z-10">
                        <thead>
                         <tr className="bg-slate-50">
-                          <th className="p-3 text-left text-[10px] font-black uppercase tracking-wider text-slate-400 border-b">{activeSoalData.leftTitle || 'Pernyataan (Kiri)'}</th>
-                          <th className="p-3 text-center text-[10px] font-black uppercase tracking-wider text-slate-400 border-b w-16">Pilih</th>
-                          <th className="p-3 text-center text-[10px] font-black uppercase tracking-wider text-slate-400 border-b w-12 italic">Cek</th>
-                          <th className="p-3 text-center text-[10px] font-black uppercase tracking-wider text-slate-400 border-b w-16">Pilih</th>
-                          <th className="p-3 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 border-b">{activeSoalData.rightTitle || 'Jawaban (Kanan)'}</th>
+                          <th className="p-2 text-left text-[9px] font-black uppercase tracking-wider text-slate-400 border-b">{activeSoalData.leftTitle || 'Pernyataan'}</th>
+                          <th className="p-2 text-center text-[9px] font-black uppercase tracking-wider text-slate-400 border-b w-8">L</th>
+                          <th className="p-2 text-center text-[9px] font-black uppercase tracking-wider text-slate-400 border-b w-8">R</th>
+                          <th className="p-2 text-right text-[9px] font-black uppercase tracking-wider text-slate-400 border-b">{activeSoalData.rightTitle || 'Jawaban'}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -505,7 +555,7 @@ export default function UjianSession() {
                           return (
                             <tr key={idx} className="group">
                               {/* Left Text */}
-                              <td className="p-4 border border-r-0 rounded-l-2xl text-sm font-bold text-slate-700 leading-tight bg-white group-hover:bg-slate-50 transition-colors">
+                              <td className={`p-3 border border-r-0 rounded-l-xl text-[11px] font-bold text-slate-700 leading-tight bg-white group-hover:bg-slate-50 transition-colors ${isPdfMode ? 'max-w-[120px]' : ''}`}>
                                 {leftItem.text}
                               </td>
 
@@ -515,23 +565,16 @@ export default function UjianSession() {
                                   type="button"
                                   ref={el => leftItemsRef.current[leftItem.idx] = el}
                                   onClick={() => setMatchingPendingLeft(leftItem.idx)}
-                                  className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 relative z-20 ${
+                                  className={`w-8 h-8 md:w-10 md:h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 relative z-20 ${
                                     matchedRightIdx !== null 
-                                      ? colors[leftItem.idx % colors.length] + ' text-white shadow-md ring-2 ring-white ring-offset-2'
+                                      ? colors[leftItem.idx % colors.length] + ' text-white shadow-md'
                                       : matchingPendingLeft === leftItem.idx
                                         ? 'bg-blue-600 text-white ring-4 ring-blue-100 animate-pulse'
                                         : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
                                   }`}
                                 >
-                                  {matchedRightIdx !== null ? <Check className="w-5 h-5" /> : <span className="text-[10px] font-black">{idx + 1}</span>}
+                                  {matchedRightIdx !== null ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : <span className="text-[9px] md:text-[10px] font-black">{idx + 1}</span>}
                                 </button>
-                              </td>
-
-                              {/* Indicator */}
-                              <td className="p-2 border border-l-0 border-r-0 text-center bg-slate-50/50">
-                                {matchedRightIdx !== null && (
-                                   <div className={`h-1.5 w-1.5 mx-auto rounded-full ${colors[leftItem.idx % colors.length]} animate-in zoom-in duration-300`}></div>
-                                )}
                               </td>
 
                               {/* Right Selection Point */}
@@ -543,33 +586,29 @@ export default function UjianSession() {
                                   onClick={() => {
                                     if (matchingPendingLeft !== null) {
                                       const newMatches = { ...currentMatches };
-                                      
-                                      // Remove any existing match for this right index (ensure 1-to-1)
                                       Object.keys(newMatches).forEach(key => {
                                         if (newMatches[key] === rightItem.idx) delete newMatches[key];
                                       });
-                                      
                                       newMatches[matchingPendingLeft] = rightItem.idx;
                                       handleAnswer(activeSoalData.id, newMatches);
                                       setMatchingPendingLeft(null);
-                                      // Trigger update for line calculation
                                       setUpdateTrigger(p => p + 1);
                                     }
                                   }}
-                                  className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 relative z-20 ${
+                                  className={`w-8 h-8 md:w-10 md:h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 relative z-20 ${
                                     matchedLeftIdxForRight !== null
-                                      ? colors[matchedLeftIdxForRight % colors.length] + ' text-white shadow-md ring-2 ring-white ring-offset-2'
+                                      ? colors[matchedLeftIdxForRight % colors.length] + ' text-white shadow-md'
                                       : matchingPendingLeft !== null
                                         ? 'bg-white border-2 border-dashed border-blue-400 text-blue-500 hover:border-solid hover:bg-blue-50 animate-bounce'
                                         : 'bg-slate-50 text-slate-300 cursor-not-allowed'
                                   }`}
                                 >
-                                  {matchedLeftIdxForRight !== null ? <Check className="w-5 h-5" /> : null}
+                                  {matchedLeftIdxForRight !== null ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : null}
                                 </button>
                               </td>
 
                               {/* Right Text */}
-                              <td className="p-4 border border-l-0 rounded-r-2xl text-sm font-bold text-slate-700 leading-tight text-right bg-white group-hover:bg-slate-50 transition-colors">
+                              <td className={`p-3 border border-l-0 rounded-r-xl text-[11px] font-bold text-slate-700 leading-tight text-right bg-white group-hover:bg-slate-50 transition-colors ${isPdfMode ? 'max-w-[120px]' : ''}`}>
                                 {rightItem.text}
                               </td>
                             </tr>
@@ -581,27 +620,31 @@ export default function UjianSession() {
                 </div>
               )}
 
-              {activeSoalData?.type === 'pg' && activeSoalData.options && (
-                <div className="space-y-3">
+              {(activeSoalData?.type === 'pg' || activeSoalData?.type === 'pdf') && activeSoalData.options && (
+                <div className={`space-y-3 ${isPdfMode ? 'grid grid-cols-1 gap-2' : ''}`}>
                   {activeSoalData.options.map((opt: string, i: number) => {
                     const alphabet = String.fromCharCode(65 + i); // A, B, C, D...
                     const isSelected = answers[activeSoalData.id] === alphabet;
                     return (
                       <div 
                         key={i} 
-                        className={`flex items-start p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                        className={`flex items-start p-3 md:p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
                           isSelected 
-                            ? 'border-blue-500 bg-blue-50 shadow-[0_0_0_2px_rgba(59,130,246,0.1)]' 
-                            : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
+                            ? 'border-blue-500 bg-blue-50 shadow-md shadow-blue-500/10' 
+                            : 'border-slate-100 bg-slate-50/50 hover:border-blue-200 hover:bg-slate-100/50'
                         }`}
                         onClick={() => handleAnswer(activeSoalData.id, alphabet)}
                       >
-                        <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold shrink-0 mr-4 ${
-                          isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-300 text-slate-500'
+                        <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl border-2 flex items-center justify-center font-black shrink-0 mr-4 transition-all ${
+                          isSelected ? 'bg-blue-600 border-blue-600 text-white scale-105 shadow-inner' : 'bg-white border-slate-200 text-slate-400'
                         }`}>
                           {alphabet}
                         </div>
-                        <div className="mt-1 flex-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: opt }} />
+                        {activeSoalData.type !== 'pdf' ? (
+                           <div className="mt-1 flex-1 leading-relaxed text-sm md:text-base font-medium" dangerouslySetInnerHTML={{ __html: opt }} />
+                        ) : (
+                           <div className="mt-1 flex-1 font-black text-slate-800 text-sm md:text-base">JAWABAN {alphabet}</div>
+                        )}
                       </div>
                     );
                   })}
@@ -611,7 +654,7 @@ export default function UjianSession() {
               {/* Soal PG Kompleks (PGK) */}
               {activeSoalData?.type === 'pgk' && activeSoalData.options && (
                 <div className="space-y-3">
-                  <p className="text-xs font-bold text-blue-600 mb-4 bg-blue-50 px-3 py-1 rounded-full w-fit">Pilih satu atau lebih jawaban benar:</p>
+                  <p className="text-[10px] font-black text-blue-600 mb-3 bg-blue-50 px-3 py-1 rounded-full w-fit uppercase tracking-wider">Pilih 1 atau lebih:</p>
                   {activeSoalData.options.map((opt: string, i: number) => {
                     const alphabet = String.fromCharCode(65 + i);
                     const currentAnswers = Array.isArray(answers[activeSoalData.id]) ? answers[activeSoalData.id] : [];
@@ -737,11 +780,11 @@ export default function UjianSession() {
         </div>
 
         {/* Sidebar Navigasi Soal */}
-        <div className="w-80 bg-white border-l flex flex-col shrink-0 shadow-[-4px_0_15px_rgba(0,0,0,0.02)]">
+        <div className={`${(isPdfMode && showPdf) ? 'hidden' : 'flex'} md:flex w-full md:w-80 bg-white border-l flex-col shrink-0 shadow-[-4px_0_15px_rgba(0,0,0,0.02)] relative z-10`}>
           <div className="p-4 border-b bg-slate-50">
             <h3 className="font-bold text-slate-800">Navigasi Soal</h3>
-            <p className="text-sm text-slate-500 mt-1">
-              Terjawab: <span className="font-bold text-emerald-600">{Object.keys(answers).length}</span> / {soalList.length}
+            <p className="text-xs text-slate-500 mt-1 uppercase font-black tracking-widest">
+              Terjawab: <span className="text-emerald-600">{Object.keys(answers).length}</span> / {soalList.length}
             </p>
           </div>
           <div className="flex-1 overflow-y-auto p-4 content-start">
