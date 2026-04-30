@@ -15,20 +15,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import * as XLSX from 'xlsx';
 // @ts-ignore
 import mammoth from 'mammoth';
-import * as pdfjs from 'pdfjs-dist';
-
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export default function GuruSoalDetail() {
   const { paketId } = useParams();
   const navigate = useNavigate();
   const [paketInfo, setPaketInfo] = useState<any>(null);
-  const [paketPdfUrl, setPaketPdfUrl] = useState<string | null>(null);
   const [soalList, setSoalList] = useState<any[]>([]);
   const excelInputRef = useRef<HTMLInputElement>(null);
   const wordInputRef = useRef<HTMLInputElement>(null);
-  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   // Form states untuk soal baru (Termasuk AKM)
   const [soalType, setSoalType] = useState('pg'); // pg, pgk, isian, benarSalah, menjodohkan
@@ -74,7 +68,6 @@ export default function GuruSoalDetail() {
       if(d.exists()) {
         const data = d.data();
         setPaketInfo({ id: d.id, ...data });
-        setPaketPdfUrl(data.pdfUrl || null);
       }
     });
 
@@ -97,7 +90,7 @@ export default function GuruSoalDetail() {
     );
   };
 
-  const downloadExcelTemplate = () => { /* ... unchanged ... */
+  const downloadExcelTemplate = () => {
     const ws = XLSX.utils.json_to_sheet([
       { Pertanyaan: "Siapa penemu gravitasi?", "Opsi A": "Einstein", "Opsi B": "Newton", "Opsi C": "Tesla", "Opsi D": "Galileo", "Opsi E": "Edison", Jawaban: "B" }
     ]);
@@ -106,96 +99,19 @@ export default function GuruSoalDetail() {
     XLSX.writeFile(wb, "Template_Soal_EduTest.xlsx");
   };
 
-  const downloadWordTemplate = () => {
-    const templateContent = `CONTOH FORMAT IMPORT SOAL WORD
-1. Siapa presiden pertama Indonesia?
-A. Soekarno
-B. Mohammad Hatta
-C. Soeharto
-D. B.J. Habibie
-Jawab: A
-
-2. Apa ibu kota Provisi Jawa Barat?
-A. Jakarta
-B. Bandung
-C. Surabaya
-D. Semarang
-Jawab: B
-
-3. Berapa hasil dari 10 x 5?
-A. 40
-B. 50
-C. 60
-D. 70
-Jawab: B
-
-CATATAN: 
-- Pastikan nomor soal diikuti tanda titik (.) atau kurung )
-- Pastikan pilihan A-E diikuti tanda titik (.) atau kurung )
-- Pastikan ada baris "Jawab: [Huruf]" untuk setiap soal
-- Simpan file ini sebagai .docx sebelum diunggah
-`;
-    const blob = new Blob([templateContent], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "Template_Import_Soal.txt";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success('Template format diunduh. Gunakan sebagai acuan di MS Word.');
-  };
-
-  const handlePacketPdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !paketId) return;
-    
-    // In search of actually using a PDF viewer, we store locally or cloud storage.
-    // Since we don't have storage integration here, we use Base64 for demo purposes 
-    // or assume it's handled via external storage if available.
-    // For now, let's use base64 if it's small or just a mock if big.
-    // Realistically we'd use Firebase Storage.
-    
-    if (file.size > 1024 * 1024 * 2) { // 2MB limit for base64 in firestore
-        return toast.error("Ukuran PDF maksimal 2MB untuk mode ini");
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result as string;
-      try {
-        await updateDoc(doc(db, 'paket_soal', paketId), { pdfUrl: base64 });
-        setPaketPdfUrl(base64);
-        toast.success('PDF Materi berhasil diunggah');
-      } catch (err: any) {
-        toast.error('Gagal simpan PDF: ' + err.message);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleAddManual = async (e: React.FormEvent) => {
     e.preventDefault();
     
     let finalContent = content;
-    if (soalType === 'pdf') {
-       finalContent = `Soal Nomor ${soalList.length + 1}`;
-    }
-
-    if (!finalContent && soalType !== 'pdf') return toast.error('Pertanyaan tidak boleh kosong');
+    if (!finalContent) return toast.error('Pertanyaan tidak boleh kosong');
     
     let options: string[] = [];
     let finalAnswer: any = '';
 
-    if (soalType === 'pg' || soalType === 'pgk' || soalType === 'pdf') {
+    if (soalType === 'pg' || soalType === 'pgk') {
       options = [optA, optB, optC, optD, optE].filter(val => val.trim() !== '');
       
-      if (soalType === 'pdf') {
-        // PDF type only needs correct key, options are just placeholders A-E
-        options = ['A', 'B', 'C', 'D', 'E'];
-        finalAnswer = correctKey;
-      } else if (soalType === 'pg') {
+      if (soalType === 'pg') {
          if(options.length < 2) return toast.error('Untuk soal pilihan, minimal 2 opsi wajib disi!');
          finalAnswer = correctKey;
       } else {
@@ -274,26 +190,18 @@ CATATAN:
     setContent(s.content || '');
     setImageContent(s.imageUrl || null);
     
-    if (s.type === 'pg' || s.type === 'pgk' || s.type === 'pdf') {
-      if (s.type === 'pdf') {
-        setCorrectKey(s.correctAnswer || 'A');
+    if (s.type === 'pg' || s.type === 'pgk') {
+      setOptA(s.options?.[0] || '');
+      setOptB(s.options?.[1] || '');
+      setOptC(s.options?.[2] || '');
+      setOptD(s.options?.[3] || '');
+      setOptE(s.options?.[4] || '');
+      
+      if (s.type === 'pg') {
+         const idx = ['A','B','C','D','E'].indexOf(s.correctAnswer);
+         if (idx >= 0) setCorrectKey(['A','B','C','D','E'][idx]);
       } else {
-        setOptA(s.options?.[0] || '');
-        setOptB(s.options?.[1] || '');
-        setOptC(s.options?.[2] || '');
-        setOptD(s.options?.[3] || '');
-        setOptE(s.options?.[4] || '');
-        
-        if (s.type === 'pg') {
-           const idx = s.options?.indexOf(s.correctAnswer);
-           if (idx >= 0) setCorrectKey(['A','B','C','D','E'][idx]);
-        } else {
-           const keys = Array.isArray(s.correctAnswer) ? s.correctAnswer.map(ans => {
-             const idx = s.options?.indexOf(ans);
-             return idx >= 0 ? ['A','B','C','D','E'][idx] : null;
-           }).filter(Boolean) : [];
-           setPgkKeys(keys);
-        }
+         setPgkKeys(s.correctAnswer || []);
       }
     } else if (s.type === 'isian' || s.type === 'benarSalah') {
       setTextAnswer(s.correctAnswer || '');
@@ -401,36 +309,6 @@ CATATAN:
     if (wordInputRef.current) wordInputRef.current.value = '';
   };
 
-  const handleImportPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !paketId) return;
-
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const arrayBuffer = evt.target?.result as ArrayBuffer;
-        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-        const pdf = await loadingTask.promise;
-        
-        let fullText = "";
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(' ');
-          fullText += pageText + "\n";
-        }
-        
-        await processFlexibleText(fullText);
-      } catch (err: any) {
-        toast.error('Gagal membaca PDF: ' + err.message);
-      }
-    };
-    reader.readAsArrayBuffer(file);
-    if (pdfInputRef.current) pdfInputRef.current.value = '';
-  };
-
   const processFlexibleText = async (text: string) => {
     // Enhanced Regex Based Parser
     // - Supports lowercase/uppercase questions and options
@@ -535,7 +413,6 @@ CATATAN:
     switch(type) {
       case 'pg': return <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">PG Sederhana</span>;
       case 'pgk': return <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">PG Kompleks</span>;
-      case 'pdf': return <span className="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Kunci PDF</span>;
       case 'isian': return <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Isian Singkat</span>;
       case 'benarSalah': return <span className="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Benar / Salah</span>;
       case 'menjodohkan': return <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Menjodohkan</span>;
@@ -562,19 +439,16 @@ CATATAN:
 
         <Tabs defaultValue="manual" className="w-full">
           <Card className="p-1.5 mb-6 bg-white border border-slate-200 shadow-sm rounded-xl">
-            <TabsList className="grid w-full grid-cols-4 bg-slate-50 rounded-lg">
+            <TabsList className="grid w-full grid-cols-3 bg-slate-50 rounded-lg">
               <TabsTrigger value="manual" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 font-semibold text-slate-600">Builder Utama</TabsTrigger>
-              <TabsTrigger value="pdf" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-rose-600 font-semibold text-slate-600">Impor PDF</TabsTrigger>
               <TabsTrigger value="word" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-600 font-semibold text-slate-600">Impor Word</TabsTrigger>
               <TabsTrigger value="excel" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-emerald-600 font-semibold text-slate-600">Pelengkap Excel</TabsTrigger>
             </TabsList>
           </Card>
 
           <TabsContent value="manual" className="mt-0 focus-visible:outline-none">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
-              {/* Form Editor */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm shadow-slate-200/50 overflow-hidden relative">
-                 <div className="bg-gradient-to-r from-blue-50/80 to-white px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm shadow-slate-200/50 overflow-hidden relative">
+               <div className="bg-gradient-to-r from-blue-50/80 to-white px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div className="flex items-center gap-3">
                      <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center border border-blue-200/50 shadow-inner">
                         <FileType className="text-blue-600 w-5 h-5"/>
@@ -592,7 +466,6 @@ CATATAN:
                         <SelectContent className="rounded-xl font-medium">
                           <SelectItem value="pg">Pilihan Ganda (1 Benar)</SelectItem>
                           <SelectItem value="pgk">PG Kompleks (Banyak Benar)</SelectItem>
-                          <SelectItem value="pdf">Soal PDF (Hanya Kunci Jawaban)</SelectItem>
                           <SelectItem value="menjodohkan">Menjodohkan (Matching)</SelectItem>
                           <SelectItem value="isian">Isian Singkat</SelectItem>
                           <SelectItem value="benarSalah">Benar / Salah</SelectItem>
@@ -621,8 +494,7 @@ CATATAN:
                      />
                   </div>
 
-                  {/* Isi Pertanyaan */}
-                  {soalType !== 'pdf' && (
+                   {/* Isi Pertanyaan */}
                     <div className="relative">
                        <div className="flex items-start gap-2 mb-2">
                           <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
@@ -637,63 +509,8 @@ CATATAN:
                           className="text-base min-h-[120px] bg-white border-slate-300 focus:border-blue-500 focus:ring-blue-500/20 shadow-sm rounded-xl resize-y transition-all duration-200 p-4" 
                        />
                     </div>
-                  )}
-
-                  {soalType === 'pdf' && (
-                    <div className="bg-rose-50 border border-rose-200 p-5 rounded-2xl space-y-3">
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center font-bold">
-                             <FileType className="w-5 h-5" />
-                          </div>
-                          <div>
-                             <p className="font-bold text-rose-900">Mode Soal PDF</p>
-                             <p className="text-xs text-rose-700">Pertanyaan akan diambil langsung dari PDF Paket. Cukup tentukan kunci jawaban di bawah.</p>
-                          </div>
-                       </div>
-                       <div className="text-xs p-3 bg-white/50 border border-rose-100 rounded-lg text-rose-800 italic">
-                          Catatan: Pastikan Anda sudah mengunggah File PDF pada tab <b>Impor PDF</b> untuk mode ini.
-                       </div>
-                       <Input value={`Soal Nomor ${soalList.length + 1}`} disabled className="bg-white border-rose-200 text-rose-700 font-bold" />
-                       {/* Hidden content for system index */}
-                       <input type="hidden" value={`Soal Nomor ${soalList.length + 1}`} onChange={() => {}} />
-                    </div>
-                  )}
 
                   {/* Upload Image */}
-                  {soalType !== 'pdf' && (
-                    <div>
-                      <label className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
-                         <ImagePlus className="w-4 h-4 text-slate-400" />
-                         Lampiran Gambar (Opsional)
-                      </label>
-                      <div className="border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-2xl p-6 bg-slate-50 relative group transition-all duration-200 hover:bg-slate-50/50">
-                         <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*" onChange={handleImageUpload} />
-                         
-                         {!imageContent ? (
-                            <div className="flex flex-col items-center justify-center text-center">
-                               <div className="w-16 h-16 bg-white rounded-full border border-slate-200 shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
-                                  <Upload className="w-7 h-7 text-blue-500" />
-                               </div>
-                               <p className="text-sm font-bold text-slate-700">Tarik & Lepas, atau Klik untuk Upload</p>
-                               <p className="text-xs text-slate-500 mt-1 max-w-[250px] mx-auto">Format didukung: JPG, PNG, WEBP. Ukuran maksimal 500KB.</p>
-                            </div>
-                         ) : (
-                            <div className="flex gap-6 items-center">
-                               <div className="relative z-20 group/img">
-                                  <img src={imageContent} alt="Preview Lampiran" className="w-32 h-32 object-cover rounded-xl border border-slate-200 shadow-sm" />
-                                  <button type="button" onClick={() => setImageContent(null)} className="absolute -top-3 -right-3 bg-rose-500 hover:bg-rose-600 text-white p-1.5 rounded-full shadow-lg transition-transform hover:scale-110">
-                                     <Trash2 className="w-4 h-4" />
-                                  </button>
-                               </div>
-                               <div className="z-20 text-sm">
-                                  <p className="font-bold text-emerald-600 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4"/> Gambar siap diunggah</p>
-                                  <p className="text-slate-500 text-xs mt-1 max-w-[200px]">Gambar akan dilampirkan tepat di bawah teks pertanyaan ujian.</p>
-                               </div>
-                            </div>
-                         )}
-                      </div>
-                    </div>
-                  )}
                 
                   {/* Dynamic Input based on Type */}
                   {soalType === 'menjodohkan' && (
@@ -785,13 +602,11 @@ CATATAN:
                     </div>
                   )}
 
-                  {(soalType === 'pg' || soalType === 'pgk' || soalType === 'pdf') && (
+                  {(soalType === 'pg' || soalType === 'pgk') && (
                     <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner">
                        <div className="flex items-center gap-2 mb-4">
                           <Check className="w-5 h-5 text-slate-400" />
-                          <label className="font-bold text-slate-800 text-sm">
-                             {soalType === 'pdf' ? 'Tentukan Kunci Jawaban' : 'Pilihan Jawaban'}
-                          </label>
+                          <label className="font-bold text-slate-800 text-sm">Pilihan Jawaban</label>
                        </div>
                        
                        <div className="space-y-4">
@@ -803,7 +618,7 @@ CATATAN:
                              { opt: 'E', val: optE, set: setOptE }
                           ].map((item) => (
                              <div key={item.opt} className="flex gap-3">
-                                {soalType === 'pg' || soalType === 'pdf' ? (
+                                {soalType === 'pg' ? (
                                    <div className={`shrink-0 w-11 h-11 flex items-center justify-center rounded-xl cursor-pointer border-2 transition-all ${correctKey === item.opt ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-slate-300 text-slate-500 hover:border-blue-400'}`} onClick={() => setCorrectKey(item.opt)}>
                                       <span className="font-bold text-sm">{item.opt}</span>
                                    </div>
@@ -812,20 +627,13 @@ CATATAN:
                                       <span className="font-bold text-sm">{item.opt}</span>
                                    </div>
                                 )}
-                                {soalType !== 'pdf' && (
-                                  <Input 
-                                     value={item.val} 
-                                     onChange={e=>item.set(e.target.value)} 
-                                     placeholder={`Opsi ${item.opt} ${['A','B'].includes(item.opt) ? '(Wajib)' : ''}`} 
-                                     required={['A','B'].includes(item.opt)} 
-                                     className={`h-11 rounded-xl transition-all bg-white shadow-sm focus:ring-2 focus:ring-offset-1 ${soalType === 'pg' && correctKey === item.opt ? 'border-blue-300 focus:border-blue-500 focus:ring-blue-500/20' : soalType === 'pgk' && pgkKeys.includes(item.opt) ? 'border-purple-300 focus:border-purple-500 focus:ring-purple-500/20' : 'border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-400/20'}`}
-                                  />
-                                )}
-                                {soalType === 'pdf' && (
-                                  <div className={`flex-1 h-11 rounded-xl border border-slate-100 flex items-center px-4 font-bold text-sm transition-colors ${correctKey === item.opt ? 'bg-blue-50 text-blue-700' : 'bg-slate-50 text-slate-400'}`}>
-                                     Jawaban {item.opt}
-                                  </div>
-                                )}
+                                <Input 
+                                   value={item.val} 
+                                   onChange={e=>item.set(e.target.value)} 
+                                   placeholder={`Opsi ${item.opt} ${['A','B'].includes(item.opt) ? '(Wajib)' : ''}`} 
+                                   required={['A','B'].includes(item.opt)} 
+                                   className={`h-11 rounded-xl transition-all bg-white shadow-sm focus:ring-2 focus:ring-offset-1 ${soalType === 'pg' && correctKey === item.opt ? 'border-blue-300 focus:border-blue-500 focus:ring-blue-500/20' : soalType === 'pgk' && pgkKeys.includes(item.opt) ? 'border-purple-300 focus:border-purple-500 focus:ring-purple-500/20' : 'border-slate-200 hover:border-slate-300 focus:border-slate-400 focus:ring-slate-400/20'}`}
+                                />
                              </div>
                           ))}
                        </div>
@@ -927,37 +735,6 @@ CATATAN:
                   </div>
                </form>
             </div>
-
-            {/* Column 2: PDF Viewer */}
-            <div className="sticky top-24 hidden xl:block">
-               {paketPdfUrl ? (
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm shadow-slate-200/50 overflow-hidden flex flex-col h-[calc(100vh-160px)]">
-                     <div className="bg-slate-900 text-white px-5 py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                           <FileType className="w-4 h-4 text-rose-400" />
-                           <span className="font-bold text-sm text-white">Pratampilan Modul Soal</span>
-                        </div>
-                        <div className="text-[10px] bg-white/10 px-2 py-0.5 rounded uppercase font-black tracking-widest text-slate-300">
-                           Sinkronisasi Aktif
-                        </div>
-                     </div>
-                     <iframe 
-                        src={`${paketPdfUrl}#toolbar=1&navpanes=0`} 
-                        className="w-full h-full border-none"
-                        title="PDF Builder Preview"
-                     />
-                  </div>
-               ) : (
-                  <div className="h-[400px] rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center text-center p-8">
-                     <div className="w-16 h-16 bg-white rounded-full border border-slate-200 shadow-sm flex items-center justify-center mb-4">
-                        <FileType className="w-8 h-8 text-slate-300" />
-                     </div>
-                     <h4 className="font-bold text-slate-400">PDF Materi Belum Tersedia</h4>
-                     <p className="text-xs text-slate-400 mt-2 max-w-[200px]">Unggah file di tab <b>Impor PDF</b> untuk melihat pratampilan soal di sini.</p>
-                  </div>
-               )}
-            </div>
-          </div>
           </TabsContent>
 
           {/* ... Excel & Word Tab Content Omitted for brevity ... */}
@@ -974,79 +751,6 @@ CATATAN:
                 <div className="mt-4"><Input ref={excelInputRef} type="file" onChange={handleImportExcel} accept=".xlsx" /></div>
             </Card>
           </TabsContent>
-          <TabsContent value="pdf" className="mt-0 focus-visible:outline-none">
-            <Card className="p-8 border-t-4 border-t-rose-600 shadow-sm rounded-2xl">
-                <div className="flex items-center justify-between gap-4 mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shadow-inner">
-                      <FileType className="w-6 h-6"/>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg text-slate-800">Impor Soal via PDF</h3>
-                      <p className="text-sm text-slate-500 font-medium">Unggah file .pdf (Teks) dengan format standar</p>
-                    </div>
-                  </div>
-                </div>
-
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6">
-                <h4 className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
-                   <Info className="w-4 h-4 text-blue-500"/> Informasi Penting:
-                </h4>
-                <div className="mt-4 space-y-2">
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight font-bold text-rose-600">• Pastikan PDF berisi teks yang dapat disalin (Bukan hasil scan gambar).</p>
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Gunakan format yang sama dengan Word (Angka untuk soal, Huruf untuk pilihan).</p>
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Sistem akan mencoba mendeteksi pola soal & jawaban secara cerdas.</p>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                 <div>
-                    <h4 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2">
-                       <FileType className="w-5 h-5 text-rose-500" />
-                       1. Unggah Modul PDF Utama (Untuk Tampilan Siswa)
-                    </h4>
-                    <div className="border-2 border-dashed border-rose-200 rounded-2xl p-6 bg-rose-50/20 text-center relative group hover:bg-rose-50/50 transition-all">
-                       <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept=".pdf" onChange={handlePacketPdfUpload} />
-                       {paketPdfUrl ? (
-                         <div className="flex items-center justify-center gap-3">
-                            <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
-                               <Check className="w-6 h-6" />
-                            </div>
-                            <div className="text-left">
-                               <p className="text-sm font-bold text-emerald-700">PDF Materi Aktif</p>
-                               <p className="text-xs text-slate-500">Klik atau geser untuk mengganti PDF</p>
-                            </div>
-                         </div>
-                       ) : (
-                         <div className="flex flex-col items-center">
-                           <Upload className="w-6 h-6 text-rose-400 mb-2" />
-                           <p className="text-sm font-bold text-slate-700 leading-tight">Unggah PDF Materi Utama</p>
-                           <p className="text-[10px] text-slate-500 mt-1 uppercase font-black tracking-widest">Wajib untuk mode soal PDF</p>
-                         </div>
-                       )}
-                    </div>
-                 </div>
-
-                 <div>
-                    <h4 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2">
-                       <Download className="w-5 h-5 text-blue-500" />
-                       2. Ekstrak Teks dari PDF (Opsional)
-                    </h4>
-                    <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 bg-slate-50 text-center relative group hover:bg-slate-50/50 transition-all">
-                      <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept=".pdf" onChange={handleImportPdf} />
-                      <div className="flex flex-col items-center">
-                        <div className="w-12 h-12 bg-white rounded-full border border-slate-200 shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-                          <Upload className="w-5 h-5 text-rose-500" />
-                        </div>
-                        <p className="text-sm font-bold text-slate-700">Ekstrak Soal dari PDF</p>
-                        <p className="text-xs text-slate-500 mt-1">Hanya mendukung PDF berbasis teks</p>
-                      </div>
-                    </div>
-                 </div>
-              </div>
-            </Card>
-          </TabsContent>
-          
           <TabsContent value="word" className="mt-0 focus-visible:outline-none">
             <Card className="p-8 border-t-4 border-t-indigo-600 shadow-sm rounded-2xl">
                 <div className="flex items-center justify-between gap-4 mb-6">
@@ -1180,18 +884,6 @@ CATATAN:
                         {s.options?.length > 3 && (
                            <div className="text-[10px] text-center text-slate-400 font-bold tracking-widest pt-1">+ {s.options.length - 3} OPSI LAINNYA</div>
                         )}
-                      </div>
-                    )}
-
-                    {s.type === 'pdf' && (
-                      <div className="mt-2 bg-rose-50 border border-rose-100 rounded-lg p-3 flex items-center justify-between">
-                         <div className="flex items-center gap-2">
-                            <FileType className="w-4 h-4 text-rose-500" />
-                            <span className="text-xs font-bold text-rose-700 italic">Refer PDF</span>
-                         </div>
-                         <div className="w-8 h-8 rounded-full bg-rose-600 text-white flex items-center justify-center font-black text-xs shadow-sm">
-                            {s.correctAnswer}
-                         </div>
                       </div>
                     )}
 

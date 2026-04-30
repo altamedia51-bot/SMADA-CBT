@@ -24,7 +24,6 @@ export default function UjianSession() {
   const [marked, setMarked] = useState<number[]>([]);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [violations, setViolations] = useState(0);
-  const [showPdf, setShowPdf] = useState(true);
   const [lastResetCounter, setLastResetCounter] = useState(0);
   const [matchingPendingLeft, setMatchingPendingLeft] = useState<number | null>(null);
   const [shuffledLeft, setShuffledLeft] = useState<{idx: number, text: string}[]>([]);
@@ -73,7 +72,7 @@ export default function UjianSession() {
         if (!rawUjian) return navigate('/siswa');
         
         const paketSnap = await getDoc(doc(db, 'paket_soal', rawUjian.paketId));
-        const dataUjian = { ...rawUjian, pdfUrl: paketSnap.exists() ? (paketSnap.data() as any).pdfUrl : null } as any;
+        const dataUjian = { ...rawUjian } as any;
         
         if (dataUjian.status !== 'aktif') {
           toast.error('Ujian belum dimulai atau sudah ditutup!');
@@ -394,8 +393,6 @@ export default function UjianSession() {
   };
 
   // Header content change
-  const isPdfMode = !!ujianData?.pdfUrl;
-
   if (loading) {
     return (
       <div className="h-screen bg-slate-50 flex items-center justify-center flex-col text-slate-500">
@@ -417,91 +414,49 @@ export default function UjianSession() {
   return (
     <div className="h-screen bg-slate-100 flex flex-col select-none">
       {/* Header */}
-      <header className="bg-slate-900 text-white px-6 py-3 flex items-center justify-between shrink-0 shadow-md z-20">
-        <div className="flex items-center gap-4">
-           {isPdfMode && (
-             <Button 
-               variant={showPdf ? "default" : "outline"} 
-               size="sm" 
-               className={`md:hidden h-8 px-2 text-[10px] uppercase font-black tracking-widest ${showPdf ? 'bg-blue-600 text-white border-blue-500' : 'text-slate-400 border-slate-700'}`}
-               onClick={() => setShowPdf(!showPdf)}
-             >
-               {showPdf ? <LayoutList className="w-3.5 h-3.5 mr-1" /> : <FileText className="w-3.5 h-3.5 mr-1" />}
-               {showPdf ? 'Tampil Soal' : 'Tampil PDF'}
-             </Button>
-           )}
-           <div>
-             <h1 className="font-bold text-sm md:text-base truncate max-w-[150px] md:max-w-none">{ujianData?.title || 'Ujian CBT'}</h1>
-             <p className="text-[10px] text-slate-400">{profile?.displayName?.split(' ')[0]} | Pelanggaran: {violations}/5</p>
-           </div>
+      <header className="bg-slate-900 text-white px-6 py-3 flex items-center justify-between shrink-0 shadow-md z-10">
+        <div>
+          <h1 className="font-bold">{ujianData?.title || 'Ujian CBT'}</h1>
+          <p className="text-xs text-slate-400">{profile?.displayName} | Pelanggaran: {violations}/5</p>
         </div>
-        <div className={`flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full font-mono text-lg md:text-xl font-bold tracking-wider ${timeLeft < 300 ? 'bg-red-500/20 text-red-100' : 'bg-slate-800'}`}>
-          <Clock className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+        <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-mono text-xl font-bold tracking-wider ${timeLeft < 300 ? 'bg-red-500/20 text-red-100' : 'bg-slate-800'}`}>
+          <Clock className="w-5 h-5" />
           {formatTime(timeLeft)}
         </div>
       </header>
 
       {/* Main Area */}
-      <main className="flex-1 flex overflow-hidden relative">
+      <main className="flex-1 flex overflow-hidden">
         
-        {/* PDF Viewer Pane (Side by side on desktop) */}
-        {isPdfMode && (
-          <div className={`${showPdf ? 'flex' : 'hidden'} md:flex flex-1 border-r border-slate-300 bg-slate-200 shadow-inner relative overflow-hidden transition-all duration-300`}>
-             <div className="absolute top-4 left-4 bg-slate-900/80 text-white px-3 py-1 rounded-full text-[10px] font-bold z-10 backdrop-blur-sm border border-white/10 uppercase tracking-widest pointer-events-none">
-                Modul Soal PDF
-             </div>
-             <iframe 
-                src={`${ujianData.pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`} 
-                className="w-full h-full border-none"
-                title="Modul Soal"
-             />
-          </div>
-        )}
-
-        {/* Konten Soal Pane */}
-        <div className={`flex-1 md:flex-none overflow-y-auto p-4 md:p-6 transition-all duration-300 ${isPdfMode ? (showPdf ? 'hidden md:block md:w-[400px] lg:w-[450px]' : 'w-full block') : 'flex-1 p-8'}`}>
-          <Card className={`mx-auto shadow-sm border-slate-200 rounded-2xl overflow-hidden ${isPdfMode ? 'w-full' : 'max-w-4xl'}`}>
-            <div className="flex justify-between items-center border-b px-5 py-3 bg-slate-50">
-              <h2 className="font-black text-slate-800">No. {currentIndex + 1}</h2>
+        {/* Konten Soal */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+          <Card className="max-w-4xl mx-auto shadow-sm">
+            <div className="flex justify-between items-center border-b px-6 py-4 bg-slate-50 rounded-t-xl">
+              <h2 className="font-bold text-lg text-slate-800">Soal No. {currentIndex + 1}</h2>
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm" 
-                className={`h-8 px-2 text-[10px] font-black uppercase tracking-widest ${marked.includes(currentIndex) ? 'bg-amber-100 text-amber-700' : 'text-slate-400'}`}
+                className={`gap-2 ${marked.includes(currentIndex) ? 'bg-amber-100 text-amber-700 border-amber-300 hover:bg-amber-200' : 'hover:bg-slate-100'}`}
                 onClick={toggleMark}
               >
-                <Flag className="w-3.5 h-3.5 mr-1" />
-                {marked.includes(currentIndex) ? 'Ragu' : 'Tandai'}
+                <Flag className="w-4 h-4" />
+                {marked.includes(currentIndex) ? 'Ditandai Ragu-ragu' : 'Tandai Ragu-ragu'}
               </Button>
             </div>
             
-            <CardContent className={`${isPdfMode ? 'p-5' : 'p-6 md:p-8'} text-slate-800`}>
-              {/* PDF Instruction (Only in PDF Mode) */}
-              {activeSoalData?.type === 'pdf' && (
-                <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center gap-4">
-                   <div className="w-12 h-12 bg-rose-500 text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-rose-200">
-                      <FileText className="w-6 h-6" />
-                   </div>
-                   <div>
-                      <p className="font-black text-rose-900 text-sm">Lihat Pertanyaan di PDF</p>
-                      <p className="text-[11px] text-rose-700 font-medium leading-tight">Bacalah soal nomor <span className="font-bold underline">{currentIndex + 1}</span> pada dokumen di samping, lalu pilih jawaban di bawah.</p>
-                   </div>
-                </div>
-              )}
-
+            <CardContent className="p-6 md:p-8 text-lg text-slate-800">
               {/* Stimulus / Wacana */}
-              {!isPdfMode && activeSoalData?.stimulus && (
+              {activeSoalData?.stimulus && (
                 <div className="mb-6 p-5 bg-blue-50/50 border border-blue-100 rounded-lg text-sm leading-relaxed">
                   <div dangerouslySetInnerHTML={{ __html: activeSoalData.stimulus }} />
                 </div>
               )}
 
               {/* Teks Soal */}
-              {activeSoalData?.type !== 'pdf' && (
-                <div className={`mb-8 font-medium leading-relaxed ${isPdfMode ? 'text-base' : 'text-lg'}`} dangerouslySetInnerHTML={{ __html: activeSoalData?.content || activeSoalData?.question || '' }} />
-              )}
+              <div className="mb-8 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: activeSoalData?.content || activeSoalData?.question || '' }} />
 
               {/* Lampiran Gambar (Jika ada) */}
-              {activeSoalData?.type !== 'pdf' && (activeSoalData?.imageUrl || activeSoalData?.image) && (
+              {(activeSoalData?.imageUrl || activeSoalData?.image) && (
                 <div className="mb-8 rounded-xl overflow-hidden border-2 border-slate-100 bg-white">
                   <img src={activeSoalData.imageUrl || activeSoalData.image} alt="Lampiran Soal" className="max-h-[400px] w-full object-contain mx-auto" />
                 </div>
@@ -555,7 +510,7 @@ export default function UjianSession() {
                           return (
                             <tr key={idx} className="group">
                               {/* Left Text */}
-                              <td className={`p-3 border border-r-0 rounded-l-xl text-[11px] font-bold text-slate-700 leading-tight bg-white group-hover:bg-slate-50 transition-colors ${isPdfMode ? 'max-w-[120px]' : ''}`}>
+                              <td className="p-3 border border-r-0 rounded-l-xl text-[11px] font-bold text-slate-700 leading-tight bg-white group-hover:bg-slate-50 transition-colors">
                                 {leftItem.text}
                               </td>
 
@@ -608,7 +563,7 @@ export default function UjianSession() {
                               </td>
 
                               {/* Right Text */}
-                              <td className={`p-3 border border-l-0 rounded-r-xl text-[11px] font-bold text-slate-700 leading-tight text-right bg-white group-hover:bg-slate-50 transition-colors ${isPdfMode ? 'max-w-[120px]' : ''}`}>
+                              <td className="p-3 border border-l-0 rounded-r-xl text-[11px] font-bold text-slate-700 leading-tight text-right bg-white group-hover:bg-slate-50 transition-colors">
                                 {rightItem.text}
                               </td>
                             </tr>
@@ -620,8 +575,8 @@ export default function UjianSession() {
                 </div>
               )}
 
-              {(activeSoalData?.type === 'pg' || activeSoalData?.type === 'pdf') && activeSoalData.options && (
-                <div className={`space-y-3 ${isPdfMode ? 'grid grid-cols-1 gap-2' : ''}`}>
+              {activeSoalData?.type === 'pg' && activeSoalData.options && (
+                <div className="space-y-3">
                   {activeSoalData.options.map((opt: string, i: number) => {
                     const alphabet = String.fromCharCode(65 + i); // A, B, C, D...
                     const isSelected = answers[activeSoalData.id] === alphabet;
@@ -640,11 +595,7 @@ export default function UjianSession() {
                         }`}>
                           {alphabet}
                         </div>
-                        {activeSoalData.type !== 'pdf' ? (
-                           <div className="mt-1 flex-1 leading-relaxed text-sm md:text-base font-medium" dangerouslySetInnerHTML={{ __html: opt }} />
-                        ) : (
-                           <div className="mt-1 flex-1 font-black text-slate-800 text-sm md:text-base">JAWABAN {alphabet}</div>
-                        )}
+                        <div className="mt-1 flex-1 leading-relaxed text-sm md:text-base font-medium" dangerouslySetInnerHTML={{ __html: opt }} />
                       </div>
                     );
                   })}
@@ -780,11 +731,11 @@ export default function UjianSession() {
         </div>
 
         {/* Sidebar Navigasi Soal */}
-        <div className={`${(isPdfMode && showPdf) ? 'hidden' : 'flex'} md:flex w-full md:w-80 bg-white border-l flex-col shrink-0 shadow-[-4px_0_15px_rgba(0,0,0,0.02)] relative z-10`}>
+        <div className="w-80 bg-white border-l flex flex-col shrink-0 shadow-[-4px_0_15px_rgba(0,0,0,0.02)]">
           <div className="p-4 border-b bg-slate-50">
             <h3 className="font-bold text-slate-800">Navigasi Soal</h3>
-            <p className="text-xs text-slate-500 mt-1 uppercase font-black tracking-widest">
-              Terjawab: <span className="text-emerald-600">{Object.keys(answers).length}</span> / {soalList.length}
+            <p className="text-sm text-slate-500 mt-1">
+              Terjawab: <span className="font-bold text-emerald-600">{Object.keys(answers).length}</span> / {soalList.length}
             </p>
           </div>
           <div className="flex-1 overflow-y-auto p-4 content-start">
