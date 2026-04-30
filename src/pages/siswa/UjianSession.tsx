@@ -661,17 +661,45 @@ export default function UjianSession() {
                 </div>
               )}
 
-              {/* Soal Essay */}
-              {activeSoalData?.type === 'essay' && (
-                <div className="space-y-3">
-                   <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Uraian / Essay:</p>
-                   <textarea 
-                     rows={6}
-                     className="w-full p-4 border-2 border-slate-200 focus:border-blue-500 rounded-xl outline-none transition-all resize-none"
-                     placeholder="Ketik uraian jawaban terperinci Anda disini..."
-                     value={answers[activeSoalData.id] || ''}
-                     onChange={(e) => handleAnswer(activeSoalData.id, e.target.value)}
-                   />
+              {/* Benar Salah */}
+              {activeSoalData?.type === 'benarSalah' && (
+                <div className="space-y-4 max-w-lg mx-auto py-4">
+                   <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider text-center mb-6">Pilih Pernyataan:</p>
+                   <div className="flex gap-4">
+                      <button 
+                        type="button"
+                        className={`flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-300 group ${
+                          answers[activeSoalData.id] === 'Benar'
+                            ? 'bg-emerald-50 border-emerald-500 shadow-lg scale-[1.05]'
+                            : 'bg-white border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/30'
+                        }`}
+                        onClick={() => handleAnswer(activeSoalData.id, 'Benar')}
+                      >
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-3 transition-colors ${
+                          answers[activeSoalData.id] === 'Benar' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-500'
+                        }`}>
+                          <Check className="w-8 h-8" />
+                        </div>
+                        <span className={`text-xl font-black ${answers[activeSoalData.id] === 'Benar' ? 'text-emerald-700' : 'text-slate-600'}`}>BENAR</span>
+                      </button>
+
+                      <button 
+                        type="button"
+                        className={`flex-1 flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all duration-300 group ${
+                          answers[activeSoalData.id] === 'Salah'
+                            ? 'bg-rose-50 border-rose-500 shadow-lg scale-[1.05]'
+                            : 'bg-white border-slate-200 hover:border-rose-200 hover:bg-rose-50/30'
+                        }`}
+                        onClick={() => handleAnswer(activeSoalData.id, 'Salah')}
+                      >
+                        <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-3 transition-colors ${
+                          answers[activeSoalData.id] === 'Salah' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-rose-100 group-hover:text-rose-500'
+                        }`}>
+                          <RotateCcw className="w-8 h-8 rotate-45" />
+                        </div>
+                        <span className={`text-xl font-black ${answers[activeSoalData.id] === 'Salah' ? 'text-rose-700' : 'text-slate-600'}`}>SALAH</span>
+                      </button>
+                   </div>
                 </div>
               )}
             </CardContent>

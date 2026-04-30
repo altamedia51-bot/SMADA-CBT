@@ -30,7 +30,7 @@ export default function GuruSoalDetail() {
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
   // Form states untuk soal baru (Termasuk AKM)
-  const [soalType, setSoalType] = useState('pg'); // pg, pgk, isian, essay, menjodohkan
+  const [soalType, setSoalType] = useState('pg'); // pg, pgk, isian, benarSalah, menjodohkan
   const [stimulus, setStimulus] = useState(''); // Text wacana (AKM)
   const [content, setContent] = useState('');
   
@@ -163,8 +163,8 @@ CATATAN:
            return options[i] || '';
          }).filter(Boolean);
       }
-    } else if (soalType === 'isian' || soalType === 'essay') {
-      if(!textAnswer) return toast.error('Kunci / Kriteria jawaban wajib diisi');
+    } else if (soalType === 'isian' || soalType === 'benarSalah') {
+      if(!textAnswer) return toast.error('Jawaban benar wajib dipilih');
       finalAnswer = textAnswer;
     } else if (soalType === 'menjodohkan') {
       if (pairs.some(p => !p.left || !p.right)) return toast.error('Semua pasangan menjodohkan wajib diisi');
@@ -237,7 +237,7 @@ CATATAN:
          }).filter(Boolean) : [];
          setPgkKeys(keys);
       }
-    } else if (s.type === 'isian' || s.type === 'essay') {
+    } else if (s.type === 'isian' || s.type === 'benarSalah') {
       setTextAnswer(s.correctAnswer || '');
     } else if (s.type === 'menjodohkan') {
       setPairs(s.pairs || []);
@@ -477,7 +477,7 @@ CATATAN:
       case 'pg': return <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">PG Sederhana</span>;
       case 'pgk': return <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">PG Kompleks</span>;
       case 'isian': return <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Isian Singkat</span>;
-      case 'essay': return <span className="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Uraian / Essay</span>;
+      case 'benarSalah': return <span className="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Benar / Salah</span>;
       case 'menjodohkan': return <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Menjodohkan</span>;
       default: return null;
     }
@@ -532,7 +532,7 @@ CATATAN:
                           <SelectItem value="pgk">PG Kompleks (Banyak Benar)</SelectItem>
                           <SelectItem value="menjodohkan">Menjodohkan (Matching)</SelectItem>
                           <SelectItem value="isian">Isian Singkat</SelectItem>
-                          <SelectItem value="essay">Uraian / Essay</SelectItem>
+                          <SelectItem value="benarSalah">Benar / Salah</SelectItem>
                         </SelectContent>
                      </Select>
                   </div>
@@ -745,11 +745,43 @@ CATATAN:
                     </div>
                   )}
 
-                  {(soalType === 'essay') && (
+                  {(soalType === 'benarSalah') && (
                     <div className="bg-rose-50/50 p-6 rounded-2xl border border-rose-200">
-                      <label className="font-bold text-rose-900 mb-2 block flex items-center gap-2"><HelpCircle className="w-5 h-5 text-rose-600"/> Rubrik Penilaian / Kriteria (Uraian)</label>
-                      <p className="text-xs text-rose-700/70 mb-4 font-medium">Panduan pengkoreksian ini tidak dapat dilihat siswa. Hanya dapat dilihat guru saat review.</p>
-                      <Textarea value={textAnswer} onChange={e=>setTextAnswer(e.target.value)} rows={4} placeholder="Tuliskan kata kunci yang wajib dijawab siswa, contoh: harus mencakup Proklamasi..." required className="border-rose-300 focus:border-rose-500 focus:ring-rose-500/30 bg-white rounded-xl shadow-sm text-base p-4 resize-y" />
+                      <label className="font-bold text-rose-900 mb-4 block flex items-center gap-2">
+                        <HelpCircle className="w-5 h-5 text-rose-600"/> Tentukan Jawaban Benar
+                      </label>
+                      <RadioGroup 
+                        value={textAnswer} 
+                        onValueChange={setTextAnswer}
+                        className="flex gap-4"
+                      >
+                        <div 
+                          className={`flex-1 flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${textAnswer === 'Benar' ? 'bg-emerald-50 border-emerald-500 shadow-md scale-[1.02]' : 'bg-white border-slate-200 hover:border-emerald-200'}`}
+                          onClick={() => setTextAnswer('Benar')}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${textAnswer === 'Benar' ? 'border-emerald-500' : 'border-slate-300'}`}>
+                              {textAnswer === 'Benar' && <div className="w-3 h-3 rounded-full bg-emerald-500" />}
+                            </div>
+                            <span className={`font-bold ${textAnswer === 'Benar' ? 'text-emerald-700' : 'text-slate-600'}`}>Benar</span>
+                          </div>
+                          <RadioGroupItem value="Benar" className="sr-only" />
+                        </div>
+
+                        <div 
+                          className={`flex-1 flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${textAnswer === 'Salah' ? 'bg-rose-50 border-rose-500 shadow-md scale-[1.02]' : 'bg-white border-slate-200 hover:border-rose-200'}`}
+                          onClick={() => setTextAnswer('Salah')}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${textAnswer === 'Salah' ? 'border-rose-500' : 'border-slate-300'}`}>
+                              {textAnswer === 'Salah' && <div className="w-3 h-3 rounded-full bg-rose-500" />}
+                            </div>
+                            <span className={`font-bold ${textAnswer === 'Salah' ? 'text-rose-700' : 'text-slate-600'}`}>Salah</span>
+                          </div>
+                          <RadioGroupItem value="Salah" className="sr-only" />
+                        </div>
+                      </RadioGroup>
+                      <p className="text-xs text-rose-700/70 mt-4 font-medium italic">* Pilih apakah pernyataan di atas bernilai Benar atau Salah.</p>
                     </div>
                   )}
                   
