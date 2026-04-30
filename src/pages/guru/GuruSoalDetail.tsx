@@ -30,7 +30,7 @@ export default function GuruSoalDetail() {
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
   // Form states untuk soal baru (Termasuk AKM)
-  const [soalType, setSoalType] = useState('pg'); // pg, pgk, isian, essay
+  const [soalType, setSoalType] = useState('pg'); // pg, pgk, isian, essay, menjodohkan
   const [stimulus, setStimulus] = useState(''); // Text wacana (AKM)
   const [content, setContent] = useState('');
   
@@ -39,11 +39,12 @@ export default function GuruSoalDetail() {
   const [optC, setOptC] = useState('');
   const [optD, setOptD] = useState('');
   const [optE, setOptE] = useState('');
-  
+
   // Jawaban untuk berbagai tipe
   const [correctKey, setCorrectKey] = useState('A'); // Untuk PG
   const [pgkKeys, setPgkKeys] = useState<string[]>([]); // Untuk PG Kompleks (multiple correct options)
   const [textAnswer, setTextAnswer] = useState(''); // Untuk Isian / Essay (Rubrik)
+  const [pairs, setPairs] = useState([{ left: '', right: '' }]); // Untuk Menjodohkan
   const [imageContent, setImageContent] = useState<string | null>(null);
 
   const [editingSoalId, setEditingSoalId] = useState<string | null>(null);
@@ -163,10 +164,13 @@ CATATAN:
     } else if (soalType === 'isian' || soalType === 'essay') {
       if(!textAnswer) return toast.error('Kunci / Kriteria jawaban wajib diisi');
       finalAnswer = textAnswer;
+    } else if (soalType === 'menjodohkan') {
+      if (pairs.some(p => !p.left || !p.right)) return toast.error('Semua pasangan menjodohkan wajib diisi');
+      finalAnswer = pairs;
     }
 
     try {
-      const payload = {
+      const payload: any = {
         type: soalType,
         stimulus,
         content,
@@ -174,6 +178,10 @@ CATATAN:
         correctAnswer: finalAnswer,
         imageUrl: imageContent || ''
       };
+
+      if (soalType === 'menjodohkan') {
+        payload.pairs = pairs;
+      }
 
       if (editingSoalId) {
         await updateDoc(doc(db, `paket_soal/${paketId}/soal`, editingSoalId), payload);
@@ -193,6 +201,7 @@ CATATAN:
       setContent(''); setStimulus(''); setImageContent(null);
       setOptA(''); setOptB(''); setOptC(''); setOptD(''); setOptE(''); 
       setCorrectKey('A'); setPgkKeys([]); setTextAnswer('');
+      setPairs([{ left: '', right: '' }]);
       
     } catch(err: any) {
       toast.error('Gagal menyimpan soal: ' + err.message);
@@ -223,8 +232,10 @@ CATATAN:
          }).filter(Boolean) : [];
          setPgkKeys(keys);
       }
-    } else {
+    } else if (s.type === 'isian' || s.type === 'essay') {
       setTextAnswer(s.correctAnswer || '');
+    } else if (s.type === 'menjodohkan') {
+      setPairs(s.pairs || s.correctAnswer || [{ left: '', right: '' }]);
     }
     
     // Switch to manual tab
@@ -460,6 +471,7 @@ CATATAN:
       case 'pgk': return <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">PG Kompleks</span>;
       case 'isian': return <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Isian Singkat</span>;
       case 'essay': return <span className="bg-rose-100 text-rose-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Uraian / Essay</span>;
+      case 'menjodohkan': return <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">Menjodohkan</span>;
       default: return null;
     }
   }
@@ -511,6 +523,7 @@ CATATAN:
                         <SelectContent className="rounded-xl font-medium">
                           <SelectItem value="pg">Pilihan Ganda (1 Benar)</SelectItem>
                           <SelectItem value="pgk">PG Kompleks (Banyak Benar)</SelectItem>
+                          <SelectItem value="menjodohkan">Menjodohkan (Matching)</SelectItem>
                           <SelectItem value="isian">Isian Singkat</SelectItem>
                           <SelectItem value="essay">Uraian / Essay</SelectItem>
                         </SelectContent>
@@ -589,6 +602,73 @@ CATATAN:
                   </div>
                 
                   {/* Dynamic Input based on Type */}
+                  {soalType === 'menjodohkan' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                           <div className="w-1.5 h-6 bg-indigo-500 rounded-full"></div>
+                           <h4 className="font-bold text-slate-800 text-lg">Pasangkan Premis & Respon</h4>
+                        </div>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setPairs([...pairs, { left: '', right: '' }])}
+                          className="rounded-xl border-slate-200 text-blue-600 hover:bg-blue-50 font-bold"
+                        >
+                          <Plus className="w-4 h-4 mr-2" /> Tambah Baris
+                        </Button>
+                      </div>
+                      <div className="space-y-3">
+                        {pairs.map((pair, idx) => (
+                          <div key={idx} className="flex gap-4 items-start bg-slate-50 p-4 rounded-2xl border border-slate-100 group transition-all hover:bg-white hover:border-blue-200 hover:shadow-md">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs shrink-0 mt-1">
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1 space-y-3">
+                              <Input 
+                                placeholder={`Premis / Sisi Kiri ${idx + 1}`} 
+                                value={pair.left} 
+                                onChange={(e) => {
+                                  const newPairs = [...pairs];
+                                  newPairs[idx].left = e.target.value;
+                                  setPairs(newPairs);
+                                }}
+                                className="bg-white border-slate-200 focus:ring-indigo-500 h-10 rounded-xl font-medium"
+                              />
+                              <Input 
+                                placeholder={`Jawaban / Sisi Kanan ${idx + 1}`} 
+                                value={pair.right} 
+                                onChange={(e) => {
+                                  const newPairs = [...pairs];
+                                  newPairs[idx].right = e.target.value;
+                                  setPairs(newPairs);
+                                }}
+                                className="bg-white border-slate-200 focus:ring-emerald-500 h-10 rounded-xl font-medium"
+                              />
+                            </div>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => {
+                                if (pairs.length > 1) {
+                                  setPairs(pairs.filter((_, i) => i !== idx));
+                                }
+                              }}
+                              className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg mt-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-slate-500 italic bg-amber-50 p-3 rounded-lg border border-amber-100">
+                        * Siswa akan diminta menghubungkan butir di sisi kiri (premis) ke butir yang sesuai di sisi kanan (respon/jawaban).
+                      </p>
+                    </div>
+                  )}
+
                   {(soalType === 'pg' || soalType === 'pgk') && (
                     <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner">
                        <div className="flex items-center gap-2 mb-4">
@@ -653,6 +733,7 @@ CATATAN:
                       <Button type="button" variant="outline" className="h-12 md:h-14 text-base font-bold px-8 rounded-xl border-slate-300 text-slate-600 hover:bg-slate-100 transition-all" onClick={() => {
                           setEditingSoalId(null);
                           setContent(''); setStimulus(''); setOptA(''); setOptB(''); setOptC(''); setOptD(''); setOptE(''); setCorrectKey('A'); setPgkKeys([]); setTextAnswer('');
+                          setPairs([{ left: '', right: '' }]);
                       }}>
                         Batal
                       </Button>
@@ -878,6 +959,21 @@ CATATAN:
                        <div className="text-xs bg-rose-50 text-rose-800 rounded-lg p-2.5 border border-rose-200 mt-2 font-medium">
                          <span className="font-bold mr-1 opacity-70">Rubrik:</span> 
                          <span className="truncate inline-block max-w-[200px] align-bottom">{s.correctAnswer}</span>
+                       </div>
+                    )}
+
+                    {s.type === 'menjodohkan' && (
+                       <div className="space-y-1 mt-2">
+                         {(s.pairs || []).slice(0, 3).map((pair: any, pIdx: number) => (
+                           <div key={pIdx} className="text-[10px] bg-indigo-50/50 border border-indigo-100 rounded p-1.5 flex justify-between gap-2 overflow-hidden">
+                             <span className="font-bold text-indigo-700 truncate max-w-[45%]">{pair.left}</span>
+                             <span className="text-slate-400">↔</span>
+                             <span className="font-bold text-emerald-700 truncate max-w-[45%]">{pair.right}</span>
+                           </div>
+                         ))}
+                         {(s.pairs || []).length > 3 && (
+                            <div className="text-[9px] text-center text-slate-400 font-bold">+ {(s.pairs).length - 3} PASANGAN LAGI</div>
+                         )}
                        </div>
                     )}
                   </div>
