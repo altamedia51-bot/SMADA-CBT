@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, Clock, ChevronLeft, ChevronRight, Flag, Loader2 } from 'lucide-react';
+import { AlertCircle, Clock, ChevronLeft, ChevronRight, Flag, Loader2, RotateCcw, Check } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp, setDoc, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -24,6 +24,13 @@ export default function UjianSession() {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [violations, setViolations] = useState(0);
   const [lastResetCounter, setLastResetCounter] = useState(0);
+  const [matchingPendingLeft, setMatchingPendingLeft] = useState<number | null>(null);
+
+  const colors = [
+    'bg-blue-500', 'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 
+    'bg-indigo-500', 'bg-cyan-500', 'bg-purple-500', 'bg-orange-500',
+    'bg-teal-500', 'bg-pink-500'
+  ];
 
   // Initialize
   useEffect(() => {
@@ -218,6 +225,11 @@ export default function UjianSession() {
     };
   }, [loading, jawabanDocId, violations]);
 
+  // Reset pending selection when changing question
+  useEffect(() => {
+    setMatchingPendingLeft(null);
+  }, [currentIndex]);
+
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -345,6 +357,122 @@ export default function UjianSession() {
               )}
 
               {/* Opsi / Field Jawaban */}
+              {activeSoalData?.type === 'menjodohkan' && (
+                <div className="mt-4 animate-in fade-in duration-500">
+                  <div className="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <p className="text-sm font-bold text-slate-600 flex items-center gap-2">
+                       <AlertCircle className="w-4 h-4 text-blue-500" />
+                       Pilih item di kiri lalu pasangkan ke kanan
+                    </p>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-rose-600 hover:bg-rose-50 font-bold gap-2 h-8 px-3 rounded-lg"
+                      onClick={() => handleAnswer(activeSoalData.id, {})}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Reset
+                    </Button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-separate border-spacing-y-2">
+                       <thead>
+                        <tr className="bg-slate-50">
+                          <th className="p-3 text-left text-[10px] font-black uppercase tracking-wider text-slate-400 border-b">Pernyataan (Kiri)</th>
+                          <th className="p-3 text-center text-[10px] font-black uppercase tracking-wider text-slate-400 border-b w-16">Pilih</th>
+                          <th className="p-3 text-center text-[10px] font-black uppercase tracking-wider text-slate-400 border-b w-12 italic">Cek</th>
+                          <th className="p-3 text-center text-[10px] font-black uppercase tracking-wider text-slate-400 border-b w-16">Pilih</th>
+                          <th className="p-3 text-right text-[10px] font-black uppercase tracking-wider text-slate-400 border-b">Jawaban (Kanan)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeSoalData.pairs?.map((pair: any, idx: number) => {
+                          const currentMatches = answers[activeSoalData.id] || {};
+                          
+                          // Find if this left index is matched
+                          const matchedRightIdx = currentMatches[idx] !== undefined ? currentMatches[idx] : null;
+
+                          // Find if this right index is matched by ANY left index
+                          let matchedLeftIdxForRight: number | null = null;
+                          Object.entries(currentMatches).forEach(([l, r]) => {
+                            if (Number(r) === idx) matchedLeftIdxForRight = Number(l);
+                          });
+
+                          return (
+                            <tr key={idx} className="group">
+                              {/* Left Text */}
+                              <td className="p-4 border border-r-0 rounded-l-2xl text-sm font-bold text-slate-700 leading-tight bg-white group-hover:bg-slate-50 transition-colors">
+                                {pair.left}
+                              </td>
+
+                              {/* Left Selection Point */}
+                              <td className="p-2 border border-l-0 border-r-0 text-center bg-white group-hover:bg-slate-50 transition-colors">
+                                <button
+                                  type="button"
+                                  onClick={() => setMatchingPendingLeft(idx)}
+                                  className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 relative ${
+                                    matchedRightIdx !== null 
+                                      ? colors[idx % colors.length] + ' text-white shadow-md ring-2 ring-white ring-offset-2'
+                                      : matchingPendingLeft === idx
+                                        ? 'bg-blue-600 text-white ring-4 ring-blue-100 animate-pulse'
+                                        : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                  }`}
+                                >
+                                  {matchedRightIdx !== null ? <Check className="w-5 h-5" /> : <span className="text-[10px] font-black">{idx + 1}</span>}
+                                </button>
+                              </td>
+
+                              {/* Indicator */}
+                              <td className="p-2 border border-l-0 border-r-0 text-center bg-slate-50/50">
+                                {matchedRightIdx !== null && (
+                                   <div className={`h-1.5 w-1.5 mx-auto rounded-full ${colors[idx % colors.length]} animate-in zoom-in duration-300`}></div>
+                                )}
+                              </td>
+
+                              {/* Right Selection Point */}
+                              <td className="p-2 border border-l-0 border-r-0 text-center bg-white group-hover:bg-slate-50 transition-colors">
+                                <button
+                                  type="button"
+                                  disabled={matchingPendingLeft === null}
+                                  onClick={() => {
+                                    if (matchingPendingLeft !== null) {
+                                      const newMatches = { ...currentMatches };
+                                      
+                                      // Remove any existing match for this right index (ensure 1-to-1)
+                                      Object.keys(newMatches).forEach(key => {
+                                        if (newMatches[key] === idx) delete newMatches[key];
+                                      });
+                                      
+                                      newMatches[matchingPendingLeft] = idx;
+                                      handleAnswer(activeSoalData.id, newMatches);
+                                      setMatchingPendingLeft(null);
+                                    }
+                                  }}
+                                  className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
+                                    matchedLeftIdxForRight !== null
+                                      ? colors[matchedLeftIdxForRight % colors.length] + ' text-white shadow-md ring-2 ring-white ring-offset-2'
+                                      : matchingPendingLeft !== null
+                                        ? 'bg-white border-2 border-dashed border-blue-400 text-blue-500 hover:border-solid hover:bg-blue-50 animate-bounce'
+                                        : 'bg-slate-50 text-slate-300 cursor-not-allowed'
+                                  }`}
+                                >
+                                  {matchedLeftIdxForRight !== null ? <Check className="w-5 h-5" /> : null}
+                                </button>
+                              </td>
+
+                              {/* Right Text */}
+                              <td className="p-4 border border-l-0 rounded-r-2xl text-sm font-bold text-slate-700 leading-tight text-right bg-white group-hover:bg-slate-50 transition-colors">
+                                {pair.right}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {activeSoalData?.type === 'pg' && activeSoalData.options && (
                 <div className="space-y-3">
                   {activeSoalData.options.map((opt: string, i: number) => {
@@ -364,6 +492,45 @@ export default function UjianSession() {
                           isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-300 text-slate-500'
                         }`}>
                           {alphabet}
+                        </div>
+                        <div className="mt-1 flex-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: opt }} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Soal PG Kompleks (PGK) */}
+              {activeSoalData?.type === 'pgk' && activeSoalData.options && (
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-blue-600 mb-4 bg-blue-50 px-3 py-1 rounded-full w-fit">Pilih satu atau lebih jawaban benar:</p>
+                  {activeSoalData.options.map((opt: string, i: number) => {
+                    const alphabet = String.fromCharCode(65 + i);
+                    const currentAnswers = Array.isArray(answers[activeSoalData.id]) ? answers[activeSoalData.id] : [];
+                    const isSelected = currentAnswers.includes(alphabet);
+                    
+                    return (
+                      <div 
+                        key={i} 
+                        className={`flex items-start p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                          isSelected 
+                            ? 'border-purple-500 bg-purple-50 shadow-[0_0_0_2px_rgba(168,85,247,0.1)]' 
+                            : 'border-slate-200 hover:border-purple-300 hover:bg-slate-50'
+                        }`}
+                        onClick={() => {
+                          let next: string[];
+                          if (isSelected) {
+                            next = currentAnswers.filter((a: string) => a !== alphabet);
+                          } else {
+                            next = [...currentAnswers, alphabet];
+                          }
+                          handleAnswer(activeSoalData.id, next);
+                        }}
+                      >
+                        <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center font-bold shrink-0 mr-4 transition-colors ${
+                          isSelected ? 'bg-purple-500 border-purple-500 text-white' : 'border-slate-300 text-slate-500'
+                        }`}>
+                          {isSelected ? <Check className="w-5 h-5" /> : alphabet}
                         </div>
                         <div className="mt-1 flex-1 leading-relaxed" dangerouslySetInnerHTML={{ __html: opt }} />
                       </div>
@@ -435,7 +602,10 @@ export default function UjianSession() {
               {soalList.map((soal, index) => {
                 const isActive = currentIndex === index;
                 const isMarked = marked.includes(index);
-                const hasAnswer = answers[soal.id] !== undefined && answers[soal.id] !== '';
+                const rawAnswer = answers[soal.id];
+                const hasAnswer = (soal.type === 'menjodohkan' || soal.type === 'pgk')
+                  ? (rawAnswer && Object.keys(rawAnswer).length > 0)
+                  : (rawAnswer !== undefined && rawAnswer !== '');
 
                 let btnClass = "h-11 w-full font-semibold border-2 transition-all p-0 ";
                 
