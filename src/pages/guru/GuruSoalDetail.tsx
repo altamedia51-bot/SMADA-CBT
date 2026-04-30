@@ -164,9 +164,14 @@ CATATAN:
            return options[i] || '';
          }).filter(Boolean);
       }
-    } else if (soalType === 'isian' || soalType === 'benarSalah') {
+    } else if (soalType === 'isian') {
       if(!textAnswer) return toast.error('Jawaban benar wajib dipilih');
       finalAnswer = textAnswer;
+    } else if (soalType === 'benarSalah') {
+      if (benarSalahStatements.some(s => !s.statement.trim())) {
+        return toast.error('Semua teks pernyataan wajib diisi');
+      }
+      finalAnswer = 'multi-statement'; // Placeholder logic
     } else if (soalType === 'menjodohkan') {
       if (pairs.some(p => !p.left || !p.right)) return toast.error('Semua pasangan menjodohkan wajib diisi');
       finalAnswer = pairs;
@@ -211,6 +216,7 @@ CATATAN:
       setOptA(''); setOptB(''); setOptC(''); setOptD(''); setOptE(''); 
       setCorrectKey('A'); setPgkKeys([]); setTextAnswer('');
       setPairs([{ left: '', right: '' }]);
+      setBenarSalahStatements([{ statement: '', answer: 'Benar' }]);
       setLeftTitle('Pernyataan'); setRightTitle('Pasangan');
       
     } catch(err: any) {
