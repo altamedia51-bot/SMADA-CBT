@@ -15,6 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import * as XLSX from 'xlsx';
 // @ts-ignore
 import mammoth from 'mammoth';
+import * as pdfjs from 'pdfjs-dist';
+
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 export default function GuruSoalDetail() {
   const { paketId } = useParams();
@@ -23,6 +27,7 @@ export default function GuruSoalDetail() {
   const [soalList, setSoalList] = useState<any[]>([]);
   const excelInputRef = useRef<HTMLInputElement>(null);
   const wordInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   // Form states untuk soal baru (Termasuk AKM)
   const [soalType, setSoalType] = useState('pg'); // pg, pgk, isian, essay
@@ -310,114 +315,143 @@ CATATAN:
         const arrayBuffer = evt.target?.result as ArrayBuffer;
         const result = await mammoth.extractRawText({ arrayBuffer });
         const text = result.value;
-
-        // Enhanced Regex Based Parser
-        // - Supports lowercase/uppercase questions and options
-        // - Detects multiple options on a single line
-        // - More intelligent question numbering detection
-        
-        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        const importedSoal: any[] = [];
-        let currentSoal: any = null;
-        let lastQNum = 0;
-
-        lines.forEach(line => {
-          // 1. Detect Question Number (e.g., "1. " or "1) " at start of line)
-          const qMatch = line.match(/^(\d{1,3})\s*[.)]\s*(.*)/);
-          if (qMatch) {
-            const qNum = parseInt(qMatch[1]);
-            
-            // Heuristic for new question:
-            // - Normal sequence (1, 2, 3...)
-            // - Or we have current question with options and a new number appears
-            let isNewQ = false;
-            if (lastQNum === 0) {
-              isNewQ = true;
-            } else if (qNum === lastQNum + 1) {
-              isNewQ = true;
-            } else if (currentSoal && currentSoal.options.length > 0 && qNum > 0) {
-              isNewQ = true;
-            } else if (qNum > lastQNum && qNum < lastQNum + 5) {
-              isNewQ = true;
-            }
-
-            if (isNewQ) {
-              if (currentSoal && currentSoal.content) {
-                importedSoal.push(currentSoal);
-              }
-              currentSoal = { 
-                content: qMatch[2].trim(), 
-                options: [], 
-                correctAnswer: '',
-                type: 'pg'
-              };
-              lastQNum = qNum;
-              return;
-            }
-          }
-
-          // 2. Detect Options (Handles multiple options per line, e.g. "a. Opt A  b. Opt B")
-          // Matches "a. " or "A) " and captures until next marker or line end
-          const optRegex = /([a-eA-E])\s*[.)]\s*(.*?)(?=\s+[a-eA-E]\s*[.)]\s*|$)/g;
-          let match;
-          let foundOpt = false;
-          while ((match = optRegex.exec(line)) !== null) {
-            if (currentSoal) {
-              currentSoal.options.push(match[2].trim());
-              foundOpt = true;
-            }
-          }
-
-          if (foundOpt) return;
-
-          // 3. Detect Answer Key (e.g. "Jawab: A" or "Kunci: B")
-          const keyMatch = line.match(/^(Jawab|Kunci|Ans|Answer|Jawaban|Key|Kunci Jawaban):\s*([A-Ea-e])/i);
-          if (keyMatch && currentSoal) {
-            const keyChar = keyMatch[2].toUpperCase();
-            const keyIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(keyChar);
-            if (keyIdx !== -1) {
-              currentSoal.correctAnswer = currentSoal.options[keyIdx] || '';
-            }
-            return;
-          }
-
-          // 4. Append text to content if we are in a question before options
-          if (currentSoal && currentSoal.options.length === 0) {
-            currentSoal.content += ' ' + line;
-          }
-        });
-
-        // Finalize last question
-        if (currentSoal && currentSoal.content) {
-          importedSoal.push(currentSoal);
-        }
-
-        if (importedSoal.length === 0) {
-          return toast.error('Format Word tidak dikenali. Pastikan soal dimulai dengan angka dan pilihan dengan huruf a-e.');
-        }
-
-        const batch = writeBatch(db);
-        importedSoal.forEach((s, idx) => {
-          const docRef = doc(collection(db, `paket_soal/${paketId}/soal`));
-          batch.set(docRef, {
-            ...s,
-            paketId,
-            type: 'pg',
-            stimulus: '',
-            index: idx,
-            createdAt: serverTimestamp()
-          });
-        });
-
-        await batch.commit();
-        toast.success(`Berhasil mengimpor ${importedSoal.length} soal secara fleksibel!`);
-
+        await processFlexibleText(text);
       } catch (err: any) {
         toast.error('Gagal membaca Word: ' + err.message);
       }
     };
     reader.readAsArrayBuffer(file);
     if (wordInputRef.current) wordInputRef.current.value = '';
+  };
+
+  const handleImportPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !paketId) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const arrayBuffer = evt.target?.result as ArrayBuffer;
+        const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+        const pdf = await loadingTask.promise;
+        
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item: any) => item.str)
+            .join(' ');
+          fullText += pageText + "\n";
+        }
+        
+        await processFlexibleText(fullText);
+      } catch (err: any) {
+        toast.error('Gagal membaca PDF: ' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    if (pdfInputRef.current) pdfInputRef.current.value = '';
+  };
+
+  const processFlexibleText = async (text: string) => {
+    // Enhanced Regex Based Parser
+    // - Supports lowercase/uppercase questions and options
+    // - Detects multiple options on a single line
+    // - More intelligent question numbering detection
+    
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const importedSoal: any[] = [];
+    let currentSoal: any = null;
+    let lastQNum = 0;
+
+    lines.forEach(line => {
+      // 1. Detect Question Number (e.g., "1. " or "1) " at start of line)
+      const qMatch = line.match(/^(\d{1,3})\s*[.)]\s*(.*)/);
+      if (qMatch) {
+        const qNum = parseInt(qMatch[1]);
+        
+        // Heuristic for new question:
+        let isNewQ = false;
+        if (lastQNum === 0) {
+          isNewQ = true;
+        } else if (qNum === lastQNum + 1) {
+          isNewQ = true;
+        } else if (currentSoal && currentSoal.options.length > 0 && qNum > 0) {
+          isNewQ = true;
+        } else if (qNum > lastQNum && qNum < lastQNum + 5) {
+          isNewQ = true;
+        }
+
+        if (isNewQ) {
+          if (currentSoal && currentSoal.content) {
+            importedSoal.push(currentSoal);
+          }
+          currentSoal = { 
+            content: qMatch[2].trim(), 
+            options: [], 
+            correctAnswer: '',
+            type: 'pg'
+          };
+          lastQNum = qNum;
+          return;
+        }
+      }
+
+      // 2. Detect Options (Handles multiple options per line, e.g. "a. Opt A  b. Opt B")
+      const optRegex = /([a-eA-E])\s*[.)]\s*(.*?)(?=\s+[a-eA-E]\s*[.)]\s*|$)/g;
+      let match;
+      let foundOpt = false;
+      while ((match = optRegex.exec(line)) !== null) {
+        if (currentSoal) {
+          currentSoal.options.push(match[2].trim());
+          foundOpt = true;
+        }
+      }
+
+      if (foundOpt) return;
+
+      // 3. Detect Answer Key (e.g. "Jawab: A" or "Kunci: B")
+      const keyMatch = line.match(/^(Jawab|Kunci|Ans|Answer|Jawaban|Key|Kunci Jawaban):\s*([A-Ea-e])/i);
+      if (keyMatch && currentSoal) {
+        const keyChar = keyMatch[2].toUpperCase();
+        const keyIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(keyChar);
+        if (keyIdx !== -1) {
+          currentSoal.correctAnswer = currentSoal.options[keyIdx] || '';
+        }
+        return;
+      }
+
+      // 4. Append text to content if we are in a question before options
+      if (currentSoal && currentSoal.options.length === 0) {
+        currentSoal.content += ' ' + line;
+      }
+    });
+
+    // Finalize last question
+    if (currentSoal && currentSoal.content) {
+      importedSoal.push(currentSoal);
+    }
+
+    if (importedSoal.length === 0) {
+      throw new Error('Format dokumen tidak dikenali. Pastikan soal dimulai dengan angka dan pilihan dengan huruf a-e.');
+    }
+
+    const batch = writeBatch(db);
+    importedSoal.forEach((s, idx) => {
+      const docRef = doc(collection(db, `paket_soal/${paketId}/soal`));
+      batch.set(docRef, {
+        ...s,
+        paketId,
+        type: 'pg',
+        stimulus: '',
+        index: idx,
+        createdAt: serverTimestamp()
+      });
+    });
+
+    await batch.commit();
+    toast.success(`Berhasil mengimpor ${importedSoal.length} soal secara fleksibel!`);
   };
 
   const getBadgeFormat = (type: string) => {
@@ -449,10 +483,11 @@ CATATAN:
 
         <Tabs defaultValue="manual" className="w-full">
           <Card className="p-1.5 mb-6 bg-white border border-slate-200 shadow-sm rounded-xl">
-            <TabsList className="grid w-full grid-cols-3 bg-slate-50 rounded-lg">
+            <TabsList className="grid w-full grid-cols-4 bg-slate-50 rounded-lg">
               <TabsTrigger value="manual" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 font-semibold text-slate-600">Builder Utama</TabsTrigger>
-              <TabsTrigger value="excel" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-emerald-600 font-semibold text-slate-600">Impor Excel</TabsTrigger>
+              <TabsTrigger value="pdf" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-rose-600 font-semibold text-slate-600">Impor PDF</TabsTrigger>
               <TabsTrigger value="word" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-indigo-600 font-semibold text-slate-600">Impor Word</TabsTrigger>
+              <TabsTrigger value="excel" className="rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-emerald-600 font-semibold text-slate-600">Pelengkap Excel</TabsTrigger>
             </TabsList>
           </Card>
 
@@ -641,6 +676,44 @@ CATATAN:
                 <div className="mt-4"><Input ref={excelInputRef} type="file" onChange={handleImportExcel} accept=".xlsx" /></div>
             </Card>
           </TabsContent>
+          <TabsContent value="pdf" className="mt-0 focus-visible:outline-none">
+            <Card className="p-8 border-t-4 border-t-rose-600 shadow-sm rounded-2xl">
+                <div className="flex items-center justify-between gap-4 mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shadow-inner">
+                      <FileType className="w-6 h-6"/>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg text-slate-800">Impor Soal via PDF</h3>
+                      <p className="text-sm text-slate-500 font-medium">Unggah file .pdf (Teks) dengan format standar</p>
+                    </div>
+                  </div>
+                </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6">
+                <h4 className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
+                   <Info className="w-4 h-4 text-blue-500"/> Informasi Penting:
+                </h4>
+                <div className="mt-4 space-y-2">
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight font-bold text-rose-600">• Pastikan PDF berisi teks yang dapat disalin (Bukan hasil scan gambar).</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Gunakan format yang sama dengan Word (Angka untuk soal, Huruf untuk pilihan).</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Sistem akan mencoba mendeteksi pola soal & jawaban secara cerdas.</p>
+                </div>
+              </div>
+
+              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 bg-rose-50/30 text-center relative group hover:bg-rose-50/50 transition-all">
+                <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept=".pdf" onChange={handleImportPdf} />
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-white rounded-full border border-slate-200 shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <Upload className="w-7 h-7 text-rose-500" />
+                  </div>
+                  <p className="text-base font-bold text-slate-700">Pilih File PDF (.pdf)</p>
+                  <p className="text-sm text-slate-500 mt-1">Hanya mendukung PDF berbasis teks</p>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+          
           <TabsContent value="word" className="mt-0 focus-visible:outline-none">
             <Card className="p-8 border-t-4 border-t-indigo-600 shadow-sm rounded-2xl">
                 <div className="flex items-center justify-between gap-4 mb-6">
