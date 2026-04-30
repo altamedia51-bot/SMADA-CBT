@@ -4,7 +4,7 @@ import { db } from '../../lib/firebase';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Upload, Plus, ChevronLeft, Save, Download, FileType, Trash2, Edit2, BookOpen, CheckCircle2, GripVertical, HelpCircle, ImagePlus, Check } from 'lucide-react';
+import { Upload, Plus, ChevronLeft, Save, Download, FileType, Trash2, Edit2, BookOpen, CheckCircle2, GripVertical, HelpCircle, ImagePlus, Check, Info } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -64,7 +64,10 @@ export default function GuruSoalDetail() {
       if(d.exists()) setPaketInfo({ id: d.id, ...d.data() });
     });
 
-    const qSoal = query(collection(db, `paket_soal/${paketId}/soal`));
+    const qSoal = query(
+      collection(db, `paket_soal/${paketId}/soal`),
+      orderBy('createdAt', 'asc')
+    );
     const unsubscribe = onSnapshot(qSoal, (snap) => {
       setSoalList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
@@ -287,7 +290,7 @@ export default function GuruSoalDetail() {
 
         lines.forEach(line => {
           // Check for start of question (e.g. "1. " or "10) ")
-          const qMatch = line.match(/^(\d+)[.)]\s+(.*)/);
+          const qMatch = line.match(/^(\d+)[.)]\s*(.*)/);
           if (qMatch) {
             if (currentSoal && currentSoal.content && currentSoal.options.length >= 2) {
               importedSoal.push(currentSoal);
@@ -297,7 +300,7 @@ export default function GuruSoalDetail() {
           }
 
           // Check for options (e.g. "A. Option content")
-          const optMatch = line.match(/^([A-E])[.)]\s+(.*)/);
+          const optMatch = line.match(/^([A-E])[.)]\s*(.*)/);
           if (optMatch && currentSoal) {
             currentSoal.options.push(optMatch[2]);
             return;
@@ -571,17 +574,59 @@ export default function GuruSoalDetail() {
                 <div className="mt-4"><Input ref={excelInputRef} type="file" onChange={handleImportExcel} accept=".xlsx" /></div>
             </Card>
           </TabsContent>
-          <TabsContent value="word">
-            <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold">Notice</h3>
-                  <Button variant="outline" size="sm" onClick={downloadWordTemplate}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Panduan Format
-                  </Button>
+          <TabsContent value="word" className="mt-0 focus-visible:outline-none">
+            <Card className="p-8 border-t-4 border-t-indigo-600 shadow-sm rounded-2xl">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center">
+                  <BookOpen className="w-6 h-6 text-indigo-600"/>
                 </div>
-                <p className="text-sm text-muted-foreground">Fungsionalitas Word saat ini dioptimalkan untuk mengekstrak Pilihan Ganda. Untuk soal bernarasi AKM, gunakan tab Manual AKM.</p>
-                <div className="mt-4"><Input ref={wordInputRef} type="file" onChange={handleImportWord} accept=".docx" /></div>
+                <div>
+                  <h3 className="font-bold text-lg text-slate-800">Impor Soal via MS Word</h3>
+                  <p className="text-sm text-slate-500 font-medium">Unggah file .docx dengan format standar</p>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6">
+                <h4 className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
+                   <Info className="w-4 h-4 text-blue-500"/> Contoh format Word yang benar:
+                </h4>
+                <div className="bg-white border rounded-lg p-4 font-mono text-xs leading-relaxed text-slate-600 shadow-inner">
+                  1. Siapa presiden pertama Indonesia? <br/>
+                  A. Soekarno <br/>
+                  B. Mohammad Hatta <br/>
+                  C. Soeharto <br/>
+                  D. B.J. Habibie <br/>
+                  Jawab: A <br/>
+                  <br/>
+                  2. Apa ibu kota Jawa Barat? <br/>
+                  A. Jakarta <br/>
+                  B. Bandung <br/>
+                  C. Surabaya <br/>
+                  Jawab: B
+                </div>
+                <div className="mt-4 space-y-2">
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Gunakan angka diikuti titik atau kurung (1. atau 1) untuk nomor soal.</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Gunakan huruf A-E diikuti titik atau kurung untuk pilihan jawaban.</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Pastikan ada baris "Jawab: [Huruf]" di setiap akhir soal.</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Hindari tabel atau objek gambar di dalam Word untuk hasil akurat.</p>
+                </div>
+              </div>
+
+              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 bg-indigo-50/30 text-center relative group hover:bg-indigo-50/50 transition-all">
+                <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept=".docx" onChange={handleImportWord} />
+                <div className="flex flex-col items-center">
+                  <div className="w-16 h-16 bg-white rounded-full border border-slate-200 shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                    <Download className="w-7 h-7 text-indigo-500" />
+                  </div>
+                  <p className="text-base font-bold text-slate-700">Pilih File MS Word (.docx)</p>
+                  <p className="text-sm text-slate-500 mt-1">Sistem akan mengekstrak soal secara otomatis</p>
+                </div>
+              </div>
+              
+              <div className="mt-6 flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700 leading-relaxed font-medium">Fungsionalitas Word saat ini dioptimalkan untuk mengekstrak Pilihan Ganda. Untuk soal AKM kompleks atau wacana stimulus, gunakan tab <b>Builder Utama</b>.</p>
+              </div>
             </Card>
           </TabsContent>
         </Tabs>
