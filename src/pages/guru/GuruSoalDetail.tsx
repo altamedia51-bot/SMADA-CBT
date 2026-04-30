@@ -99,6 +99,10 @@ export default function GuruSoalDetail() {
     XLSX.writeFile(wb, "Template_Soal_EduTest.xlsx");
   };
 
+  const downloadWordTemplate = () => {
+    toast.info("Fitur template Word: Silakan gunakan berkas .docx biasa dengan format: [Nomor]. [Pertanyaan], diikuti [A]. [Opsi], dan diakhiri [Kunci: A]");
+  };
+
   const handleAddManual = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -495,7 +499,7 @@ export default function GuruSoalDetail() {
                   </div>
 
                    {/* Isi Pertanyaan */}
-                    <div className="relative">
+                     <div className="relative">
                        <div className="flex items-start gap-2 mb-2">
                           <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
                           <label className="font-black text-slate-800 text-base md:text-lg">Isi Pertanyaan <span className="text-rose-500">*</span></label>
@@ -510,7 +514,39 @@ export default function GuruSoalDetail() {
                        />
                     </div>
 
-                  {/* Upload Image */}
+                  {/* Upload Image Section */}
+                  <div className="bg-slate-50 border border-dashed border-slate-300 p-6 rounded-2xl flex flex-col items-center gap-4 transition-all hover:bg-slate-100/50">
+                    {imageContent ? (
+                      <div className="relative group w-full max-w-[300px]">
+                        <img src={imageContent} alt="Preview" className="rounded-xl shadow-md w-full object-contain bg-white" />
+                        <button 
+                          type="button"
+                          onClick={() => setImageContent(null)}
+                          className="absolute -top-3 -right-3 bg-rose-500 text-white p-2 rounded-full shadow-lg hover:bg-rose-600 transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-slate-400 mb-3 border border-slate-200 shadow-sm group-hover:scale-110 transition-transform">
+                          <ImagePlus className="w-6 h-6" />
+                        </div>
+                        <p className="text-sm font-bold text-slate-700">Lampirkan Gambar</p>
+                        <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-bold">Maksimal 500KB</p>
+                        <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" id="soal-image" />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => document.getElementById('soal-image')?.click()}
+                          className="mt-4 rounded-xl border-slate-200 bg-white font-bold h-9 px-5 shadow-sm"
+                        >
+                          Pilih Gambar
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 
                   {/* Dynamic Input based on Type */}
                   {soalType === 'menjodohkan' && (
