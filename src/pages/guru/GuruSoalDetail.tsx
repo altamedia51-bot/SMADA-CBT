@@ -177,7 +177,13 @@ CATATAN:
 
   const handleAddManual = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content) return toast.error('Pertanyaan tidak boleh kosong');
+    
+    let finalContent = content;
+    if (soalType === 'pdf') {
+       finalContent = `Soal Nomor ${soalList.length + 1}`;
+    }
+
+    if (!finalContent && soalType !== 'pdf') return toast.error('Pertanyaan tidak boleh kosong');
     
     let options: string[] = [];
     let finalAnswer: any = '';
@@ -191,16 +197,11 @@ CATATAN:
         finalAnswer = correctKey;
       } else if (soalType === 'pg') {
          if(options.length < 2) return toast.error('Untuk soal pilihan, minimal 2 opsi wajib disi!');
-         const idx = ['A', 'B', 'C', 'D', 'E'].indexOf(correctKey);
-         finalAnswer = options[idx] || options[0];
+         finalAnswer = correctKey;
       } else {
          if(options.length < 2) return toast.error('Untuk soal pilihan, minimal 2 opsi wajib disi!');
          if(pgkKeys.length === 0) return toast.error('Pilih minimal 1 jawaban benar untuk PG Kompleks');
-         // Convert 'A', 'B' to actual string value
-         finalAnswer = pgkKeys.map(k => {
-           const i = ['A', 'B', 'C', 'D', 'E'].indexOf(k);
-           return options[i] || '';
-         }).filter(Boolean);
+         finalAnswer = pgkKeys;
       }
     } else if (soalType === 'isian') {
       if(!textAnswer) return toast.error('Jawaban benar wajib dipilih');
@@ -223,7 +224,7 @@ CATATAN:
       const payload: any = {
         type: soalType,
         stimulus,
-        content,
+        content: finalContent,
         options,
         correctAnswer: finalAnswer,
         imageUrl: imageContent || ''
@@ -570,8 +571,10 @@ CATATAN:
           </Card>
 
           <TabsContent value="manual" className="mt-0 focus-visible:outline-none">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm shadow-slate-200/50 overflow-hidden relative">
-               <div className="bg-gradient-to-r from-blue-50/80 to-white px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+              {/* Form Editor */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm shadow-slate-200/50 overflow-hidden relative">
+                 <div className="bg-gradient-to-r from-blue-50/80 to-white px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div className="flex items-center gap-3">
                      <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center border border-blue-200/50 shadow-inner">
                         <FileType className="text-blue-600 w-5 h-5"/>
@@ -924,6 +927,37 @@ CATATAN:
                   </div>
                </form>
             </div>
+
+            {/* Column 2: PDF Viewer */}
+            <div className="sticky top-24 hidden xl:block">
+               {paketPdfUrl ? (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm shadow-slate-200/50 overflow-hidden flex flex-col h-[calc(100vh-160px)]">
+                     <div className="bg-slate-900 text-white px-5 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                           <FileType className="w-4 h-4 text-rose-400" />
+                           <span className="font-bold text-sm text-white">Pratampilan Modul Soal</span>
+                        </div>
+                        <div className="text-[10px] bg-white/10 px-2 py-0.5 rounded uppercase font-black tracking-widest text-slate-300">
+                           Sinkronisasi Aktif
+                        </div>
+                     </div>
+                     <iframe 
+                        src={`${paketPdfUrl}#toolbar=1&navpanes=0`} 
+                        className="w-full h-full border-none"
+                        title="PDF Builder Preview"
+                     />
+                  </div>
+               ) : (
+                  <div className="h-[400px] rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center text-center p-8">
+                     <div className="w-16 h-16 bg-white rounded-full border border-slate-200 shadow-sm flex items-center justify-center mb-4">
+                        <FileType className="w-8 h-8 text-slate-300" />
+                     </div>
+                     <h4 className="font-bold text-slate-400">PDF Materi Belum Tersedia</h4>
+                     <p className="text-xs text-slate-400 mt-2 max-w-[200px]">Unggah file di tab <b>Impor PDF</b> untuk melihat pratampilan soal di sini.</p>
+                  </div>
+               )}
+            </div>
+          </div>
           </TabsContent>
 
           {/* ... Excel & Word Tab Content Omitted for brevity ... */}
