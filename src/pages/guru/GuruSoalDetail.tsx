@@ -311,64 +311,89 @@ CATATAN:
         const result = await mammoth.extractRawText({ arrayBuffer });
         const text = result.value;
 
-        // Simple Regex Based Parser for standard CBT format:
-        // [Number]. [Question]
-        // A. [Opt]
-        // B. [Opt]
-        // ...
-        // Jawab: A
+        // Enhanced Regex Based Parser
+        // - Supports lowercase/uppercase questions and options
+        // - Detects multiple options on a single line
+        // - More intelligent question numbering detection
         
         const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
         const importedSoal: any[] = [];
         let currentSoal: any = null;
+        let lastQNum = 0;
 
         lines.forEach(line => {
-          // Check for start of question (e.g. "1. " or "1) " or "10. ")
-          // Support variants like "1 ." or "1) "
-          const qMatch = line.match(/^(\d+)\s*[.)]\s*(.*)/);
+          // 1. Detect Question Number (e.g., "1. " or "1) " at start of line)
+          const qMatch = line.match(/^(\d{1,3})\s*[.)]\s*(.*)/);
           if (qMatch) {
-            if (currentSoal && currentSoal.content && currentSoal.options.length >= 2) {
-              importedSoal.push(currentSoal);
+            const qNum = parseInt(qMatch[1]);
+            
+            // Heuristic for new question:
+            // - Normal sequence (1, 2, 3...)
+            // - Or we have current question with options and a new number appears
+            let isNewQ = false;
+            if (lastQNum === 0) {
+              isNewQ = true;
+            } else if (qNum === lastQNum + 1) {
+              isNewQ = true;
+            } else if (currentSoal && currentSoal.options.length > 0 && qNum > 0) {
+              isNewQ = true;
+            } else if (qNum > lastQNum && qNum < lastQNum + 5) {
+              isNewQ = true;
             }
-            currentSoal = { 
-              content: qMatch[2].trim(), 
-              options: [], 
-              correctAnswer: '',
-              type: 'pg'
-            };
-            return;
+
+            if (isNewQ) {
+              if (currentSoal && currentSoal.content) {
+                importedSoal.push(currentSoal);
+              }
+              currentSoal = { 
+                content: qMatch[2].trim(), 
+                options: [], 
+                correctAnswer: '',
+                type: 'pg'
+              };
+              lastQNum = qNum;
+              return;
+            }
           }
 
-          // Check for options (e.g. "A. Option content" or "A) content")
-          const optMatch = line.match(/^([A-E])\s*[.)]\s*(.*)/);
-          if (optMatch && currentSoal) {
-            currentSoal.options.push(optMatch[2].trim());
-            return;
+          // 2. Detect Options (Handles multiple options per line, e.g. "a. Opt A  b. Opt B")
+          // Matches "a. " or "A) " and captures until next marker or line end
+          const optRegex = /([a-eA-E])\s*[.)]\s*(.*?)(?=\s+[a-eA-E]\s*[.)]\s*|$)/g;
+          let match;
+          let foundOpt = false;
+          while ((match = optRegex.exec(line)) !== null) {
+            if (currentSoal) {
+              currentSoal.options.push(match[2].trim());
+              foundOpt = true;
+            }
           }
 
-          // Check for key (e.g. "Jawab: A" or "Kunci: A" etc)
-          const keyMatch = line.match(/^(Jawab|Kunci|Ans|Answer|Jawaban|Key):\s*([A-E])/i);
+          if (foundOpt) return;
+
+          // 3. Detect Answer Key (e.g. "Jawab: A" or "Kunci: B")
+          const keyMatch = line.match(/^(Jawab|Kunci|Ans|Answer|Jawaban|Key|Kunci Jawaban):\s*([A-Ea-e])/i);
           if (keyMatch && currentSoal) {
             const keyChar = keyMatch[2].toUpperCase();
             const keyIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(keyChar);
-            currentSoal.correctAnswer = currentSoal.options[keyIdx] || '';
+            if (keyIdx !== -1) {
+              currentSoal.correctAnswer = currentSoal.options[keyIdx] || '';
+            }
             return;
           }
 
-          // If it's just text and we have a current question, append to content
-          // This handles multi-line questions
+          // 4. Append text to content if we are in a question before options
           if (currentSoal && currentSoal.options.length === 0) {
             currentSoal.content += ' ' + line;
           }
         });
 
-        // Push last one
-        if (currentSoal && currentSoal.content && currentSoal.options.length >= 2) {
+        // Finalize last question
+        if (currentSoal && currentSoal.content) {
           importedSoal.push(currentSoal);
         }
 
         if (importedSoal.length === 0) {
-          return toast.error('Format Word tidak dikenali. Pastikan format: 1. Soal? A. Opsi... Jawab: A');
+          return toast.error('Format Word tidak dikenali. Pastikan soal dimulai dengan angka dan pilihan dengan huruf a-e.');
         }
 
         const batch = writeBatch(db);
@@ -379,13 +404,13 @@ CATATAN:
             paketId,
             type: 'pg',
             stimulus: '',
-            index: idx, // Add explicit index to maintain file order
+            index: idx,
             createdAt: serverTimestamp()
           });
         });
 
         await batch.commit();
-        toast.success(`Berhasil mengimpor ${importedSoal.length} soal dari Word!`);
+        toast.success(`Berhasil mengimpor ${importedSoal.length} soal secara fleksibel!`);
 
       } catch (err: any) {
         toast.error('Gagal membaca Word: ' + err.message);
@@ -635,27 +660,23 @@ CATATAN:
 
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6">
                 <h4 className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
-                   <Info className="w-4 h-4 text-blue-500"/> Contoh format Word yang benar:
+                   <Info className="w-4 h-4 text-blue-500"/> Contoh format Word yang didukung:
                 </h4>
-                <div className="bg-white border rounded-lg p-4 font-mono text-xs leading-relaxed text-slate-600 shadow-inner">
-                  1. Siapa presiden pertama Indonesia? <br/>
-                  A. Soekarno <br/>
-                  B. Mohammad Hatta <br/>
-                  C. Soeharto <br/>
-                  D. B.J. Habibie <br/>
+                <div className="bg-white border rounded-lg p-4 font-mono text-[11px] leading-relaxed text-slate-700 shadow-inner overflow-x-auto">
+                  2. Berdasarkan narasi di atas... <br/>
+                  a. Syarah &nbsp; c. Aqidah &nbsp; e. tajwid <br/>
+                  b. Khasiyah &nbsp; d. Matan <br/>
                   Jawab: A <br/>
                   <br/>
-                  2. Apa ibu kota Jawa Barat? <br/>
-                  A. Jakarta <br/>
-                  B. Bandung <br/>
-                  C. Surabaya <br/>
-                  Jawab: B
+                  3. Secara umum tujuan pengajian... <br/>
+                  a. Ilmu shorof &nbsp;&nbsp; c. Ilmu nahwu <br/>
+                  b. Ilmu mantiq &nbsp;&nbsp; d. Ilmu aqidah <br/>
                 </div>
                 <div className="mt-4 space-y-2">
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Gunakan angka diikuti titik atau kurung (1. atau 1) untuk nomor soal.</p>
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Gunakan huruf A-E diikuti titik atau kurung untuk pilihan jawaban.</p>
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Pastikan ada baris "Jawab: [Huruf]" di setiap akhir soal.</p>
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Hindari tabel atau objek gambar di dalam Word untuk hasil akurat.</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Mendukung opsi menyamping (kolom) atau menurun.</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Mendukung huruf kecil (a, b, c) atau besar (A, B, C) untuk pilihan.</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Sertakan "Jawab: [Huruf]" untuk kunci otomatis (opsional).</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight font-bold text-indigo-600">Terdeteksi Fleksibel: Sistem akan mencoba membedah teks berdasarkan pola angka dan huruf.</p>
                 </div>
               </div>
 
