@@ -660,23 +660,27 @@ CATATAN:
 
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6">
                 <h4 className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
-                   <Info className="w-4 h-4 text-blue-500"/> Contoh format Word yang didukung:
+                   <Info className="w-4 h-4 text-blue-500"/> Contoh format Word yang benar:
                 </h4>
                 <div className="bg-white border rounded-lg p-4 font-mono text-[11px] leading-relaxed text-slate-700 shadow-inner overflow-x-auto">
-                  2. Berdasarkan narasi di atas... <br/>
-                  a. Syarah &nbsp; c. Aqidah &nbsp; e. tajwid <br/>
-                  b. Khasiyah &nbsp; d. Matan <br/>
+                  1. Siapa presiden pertama Indonesia? <br/>
+                  A. Soekarno <br/>
+                  B. Mohammad Hatta <br/>
+                  C. Soeharto <br/>
+                  D. B.J. Habibie <br/>
                   Jawab: A <br/>
                   <br/>
-                  3. Secara umum tujuan pengajian... <br/>
-                  a. Ilmu shorof &nbsp;&nbsp; c. Ilmu nahwu <br/>
-                  b. Ilmu mantiq &nbsp;&nbsp; d. Ilmu aqidah <br/>
+                  2. Apa ibu kota Jawa Barat? <br/>
+                  A. Jakarta <br/>
+                  B. Bandung <br/>
+                  C. Surabaya <br/>
+                  Jawab: B
                 </div>
                 <div className="mt-4 space-y-2">
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Mendukung opsi menyamping (kolom) atau menurun.</p>
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Mendukung huruf kecil (a, b, c) atau besar (A, B, C) untuk pilihan.</p>
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Sertakan "Jawab: [Huruf]" untuk kunci otomatis (opsional).</p>
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight font-bold text-indigo-600">Terdeteksi Fleksibel: Sistem akan mencoba membedah teks berdasarkan pola angka dan huruf.</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Gunakan angka diikuti titik atau kurung (1. atau 1) untuk nomor soal.</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Gunakan huruf A-E diikuti titik atau kurung untuk pilihan jawaban.</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Pastikan ada baris "Jawab: [Huruf]" di setiap akhir soal.</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Hindari tabel atau objek gambar di dalam Word untuk hasil akurat.</p>
                 </div>
               </div>
 
