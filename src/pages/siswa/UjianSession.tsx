@@ -285,23 +285,29 @@ export default function UjianSession() {
         const colorClass = colors[Number(lIdx) % colors.length];
         const color = colorMap[colorClass] || '#cbd5e1';
 
+        // Use a Bezier curve for a smoother, professional look
+        // Control points are halfway between X1 and X2 to create an "S" shape
+        const controlOffset = Math.abs(x2 - x1) * 0.4;
+        const pathData = `M ${x1} ${y1} C ${x1 + controlOffset} ${y1}, ${x2 - controlOffset} ${y2}, ${x2 - offsetX} ${y2 - offsetY}`;
+
         lines.push(
           <React.Fragment key={`${lIdx}-${rIdx}`}>
             <defs>
-              <marker id={`arrow-${lIdx}`} markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                <path d="M0,0 L6,3 L0,6 Z" fill={color} />
+              <marker id={`arrow-${lIdx}`} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill={color} />
               </marker>
             </defs>
-            <motion.line 
+            <motion.path 
               initial={{ pathLength: 0, opacity: 0 }}
               animate={{ pathLength: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              x1={x1} y1={y1} x2={x2 - offsetX} y2={y2 - offsetY}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              d={pathData}
+              fill="transparent"
               stroke={color}
-              strokeWidth="3"
+              strokeWidth="4"
               strokeLinecap="round"
               markerEnd={`url(#arrow-${lIdx})`}
-              className="drop-shadow-sm"
+              className="drop-shadow-[0_2px_2px_rgba(0,0,0,0.1)]"
             />
           </React.Fragment>
         );
