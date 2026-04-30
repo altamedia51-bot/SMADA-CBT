@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, Clock, ChevronLeft, ChevronRight, Flag, Loader2, RotateCcw, Check } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp, setDoc, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuthStore } from '../../store/auth.store';
@@ -26,11 +27,29 @@ export default function UjianSession() {
   const [lastResetCounter, setLastResetCounter] = useState(0);
   const [matchingPendingLeft, setMatchingPendingLeft] = useState<number | null>(null);
 
+  const matchingContainerRef = useRef<HTMLDivElement>(null);
+  const leftItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const rightItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const [, setUpdateTrigger] = useState(0);
+
   const colors = [
     'bg-blue-500', 'bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 
     'bg-indigo-500', 'bg-cyan-500', 'bg-purple-500', 'bg-orange-500',
     'bg-teal-500', 'bg-pink-500'
   ];
+
+  const colorMap: Record<string, string> = {
+    'bg-blue-500': '#3b82f6',
+    'bg-rose-500': '#f43f5e',
+    'bg-amber-500': '#f59e0b',
+    'bg-emerald-500': '#10b981',
+    'bg-indigo-500': '#6366f1',
+    'bg-cyan-500': '#06b6d4',
+    'bg-purple-500': '#a855f7',
+    'bg-orange-500': '#f97316',
+    'bg-teal-500': '#14b8a6',
+    'bg-pink-500': '#ec4899'
+  };
 
   // Initialize
   useEffect(() => {
@@ -228,8 +247,73 @@ export default function UjianSession() {
   // Reset pending selection when changing question
   useEffect(() => {
     setMatchingPendingLeft(null);
+    // Trigger line redraw
+    setTimeout(() => setUpdateTrigger(p => p + 1), 100);
   }, [currentIndex]);
 
+  useEffect(() => {
+    const handleResize = () => setUpdateTrigger(p => p + 1);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const renderMatchingLines = () => {
+    if (!activeSoalData || activeSoalData.type !== 'menjodohkan' || !matchingContainerRef.current) return null;
+    
+    const currentMatches = answers[activeSoalData.id] || {};
+    const lines: React.ReactNode[] = [];
+    const containerRect = matchingContainerRef.current.getBoundingClientRect();
+
+    Object.entries(currentMatches).forEach(([lIdx, rIdx]) => {
+      const leftBtn = leftItemsRef.current[Number(lIdx)];
+      const rightBtn = rightItemsRef.current[Number(rIdx)];
+
+      if (leftBtn && rightBtn) {
+        const lRect = leftBtn.getBoundingClientRect();
+        const rRect = rightBtn.getBoundingClientRect();
+
+        const x1 = lRect.left + lRect.width / 2 - containerRect.left;
+        const y1 = lRect.top + lRect.height / 2 - containerRect.top;
+        const x2 = rRect.left + rRect.width / 2 - containerRect.left;
+        const y2 = rRect.top + rRect.height / 2 - containerRect.top;
+
+        // Calculate offset to not end exactly in middle (so arrow is visible)
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const offsetX = Math.cos(angle) * 20;
+        const offsetY = Math.sin(angle) * 20;
+
+        const colorClass = colors[Number(lIdx) % colors.length];
+        const color = colorMap[colorClass] || '#cbd5e1';
+
+        lines.push(
+          <React.Fragment key={`${lIdx}-${rIdx}`}>
+            <defs>
+              <marker id={`arrow-${lIdx}`} markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill={color} />
+              </marker>
+            </defs>
+            <motion.line 
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              x1={x1} y1={y1} x2={x2 - offsetX} y2={y2 - offsetY}
+              stroke={color}
+              strokeWidth="3"
+              strokeLinecap="round"
+              markerEnd={`url(#arrow-${lIdx})`}
+              className="drop-shadow-sm"
+            />
+          </React.Fragment>
+        );
+      }
+    });
+
+    return (
+      <svg className="absolute inset-0 pointer-events-none w-full h-full overflow-visible z-0">
+        {lines}
+      </svg>
+    );
+  };
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
@@ -374,8 +458,9 @@ export default function UjianSession() {
                     </Button>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-separate border-spacing-y-2">
+                  <div className="overflow-x-auto relative" ref={matchingContainerRef}>
+                    {renderMatchingLines()}
+                    <table className="w-full border-separate border-spacing-y-2 relative z-10">
                        <thead>
                         <tr className="bg-slate-50">
                           <th className="p-3 text-left text-[10px] font-black uppercase tracking-wider text-slate-400 border-b">Pernyataan (Kiri)</th>
@@ -409,8 +494,9 @@ export default function UjianSession() {
                               <td className="p-2 border border-l-0 border-r-0 text-center bg-white group-hover:bg-slate-50 transition-colors">
                                 <button
                                   type="button"
+                                  ref={el => leftItemsRef.current[idx] = el}
                                   onClick={() => setMatchingPendingLeft(idx)}
-                                  className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 relative ${
+                                  className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 relative z-20 ${
                                     matchedRightIdx !== null 
                                       ? colors[idx % colors.length] + ' text-white shadow-md ring-2 ring-white ring-offset-2'
                                       : matchingPendingLeft === idx
@@ -433,6 +519,7 @@ export default function UjianSession() {
                               <td className="p-2 border border-l-0 border-r-0 text-center bg-white group-hover:bg-slate-50 transition-colors">
                                 <button
                                   type="button"
+                                  ref={el => rightItemsRef.current[idx] = el}
                                   disabled={matchingPendingLeft === null}
                                   onClick={() => {
                                     if (matchingPendingLeft !== null) {
@@ -446,9 +533,11 @@ export default function UjianSession() {
                                       newMatches[matchingPendingLeft] = idx;
                                       handleAnswer(activeSoalData.id, newMatches);
                                       setMatchingPendingLeft(null);
+                                      // Trigger update for line calculation
+                                      setUpdateTrigger(p => p + 1);
                                     }
                                   }}
-                                  className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
+                                  className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300 relative z-20 ${
                                     matchedLeftIdxForRight !== null
                                       ? colors[matchedLeftIdxForRight % colors.length] + ' text-white shadow-md ring-2 ring-white ring-offset-2'
                                       : matchingPendingLeft !== null
