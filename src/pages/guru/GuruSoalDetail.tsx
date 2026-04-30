@@ -100,7 +100,62 @@ export default function GuruSoalDetail() {
   };
 
   const downloadWordTemplate = () => {
-    toast.info("Fitur template Word: Silakan gunakan berkas .docx biasa dengan format: [Nomor]. [Pertanyaan], diikuti [A]. [Opsi], dan diakhiri [Kunci: A]");
+    const templateText = `PANDUAN FORMAT IMPOR SOAL WORD (CBTSYSTEM)
+=========================================
+
+1. PILIHAN GANDA (PG)
+Cukup tulis nomor, pertanyaan, pilihan A-E, dan Kunci.
+---
+1. Apa warna bendera Indonesia?
+A. Merah Putih
+B. Biru Putih
+C. Hijau Kuning
+D. Hitam Putih
+E. Coklat Tua
+Kunci: A
+
+2. PILIHAN GANDA KOMPLEKS (PGK)
+Gunakan tag [PGK] di awal soal. Kunci jawaban dipisah koma.
+---
+2. [PGK] Mana yang merupakan hewan mamalia?
+A. Kucing
+B. Ikan Mas
+C. Paus
+D. Elang
+E. Gajah
+Kunci: A, C, E
+
+3. BENAR / SALAH (BS)
+Gunakan tag [BS] di awal soal. Sertakan pilihan Benar/Salah (opsional) namun Kunci wajib ada.
+---
+3. [BS] Matahari terbit dari arah timur.
+A. Benar
+B. Salah
+Kunci: Benar
+
+4. ISIAN SINGKAT (ISIAN)
+Gunakan tag [ISIAN] di awal soal.
+---
+4. [ISIAN] Siapakah penemu bola lampu?
+Kunci: Thomas Alva Edison
+
+5. MENJODOHKAN (JODOH)
+Gunakan tag [JODOH] di awal soal. Tuliskan pasangan dengan pemisah | atau :
+---
+5. [JODOH] Pasangkan negara dengan ibukotanya.
+- Indonesia : Jakarta
+- Jepang : Tokyo
+- Malaysia : Kuala Lumpur
+Kunci: Indonesia:Jakarta, Jepang:Tokyo, Malaysia:Kuala Lumpur
+`;
+    const blob = new Blob([templateText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = "Format_Impor_Soal.txt";
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Panduan format berhasil diunduh!");
   };
 
   const handleAddManual = async (e: React.FormEvent) => {
@@ -314,11 +369,6 @@ export default function GuruSoalDetail() {
   };
 
   const processFlexibleText = async (text: string) => {
-    // Enhanced Regex Based Parser
-    // - Supports lowercase/uppercase questions and options
-    // - Detects multiple options on a single line
-    // - More intelligent question numbering detection
-    
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     const importedSoal: any[] = [];
     let currentSoal: any = null;
@@ -329,60 +379,90 @@ export default function GuruSoalDetail() {
       const qMatch = line.match(/^(\d{1,3})\s*[.)]\s*(.*)/);
       if (qMatch) {
         const qNum = parseInt(qMatch[1]);
+        const questionBody = qMatch[2].trim();
         
-        // Heuristic for new question:
-        let isNewQ = false;
-        if (lastQNum === 0) {
-          isNewQ = true;
-        } else if (qNum === lastQNum + 1) {
-          isNewQ = true;
-        } else if (currentSoal && currentSoal.options.length > 0 && qNum > 0) {
-          isNewQ = true;
-        } else if (qNum > lastQNum && qNum < lastQNum + 5) {
-          isNewQ = true;
+        let type = 'pg';
+        if (questionBody.toUpperCase().startsWith('[PGK]')) type = 'pgk';
+        else if (questionBody.toUpperCase().startsWith('[BS]')) type = 'benarSalah';
+        else if (questionBody.toUpperCase().startsWith('[ISIAN]')) type = 'isian';
+        else if (questionBody.toUpperCase().startsWith('[JODOH]')) type = 'menjodohkan';
+
+        // Clean tag from content
+        const cleanContent = questionBody.replace(/^\[(PGK|BS|ISIAN|JODOH|PG)\]\s*/i, '');
+
+        if (currentSoal && currentSoal.content) {
+          importedSoal.push(currentSoal);
         }
 
-        if (isNewQ) {
-          if (currentSoal && currentSoal.content) {
-            importedSoal.push(currentSoal);
-          }
-          currentSoal = { 
-            content: qMatch[2].trim(), 
-            options: [], 
-            correctAnswer: '',
-            type: 'pg'
-          };
-          lastQNum = qNum;
+        currentSoal = {
+          content: cleanContent,
+          options: [],
+          correctAnswer: '',
+          type,
+          stimulus: '',
+        };
+        lastQNum = qNum;
+        return;
+      }
+
+      if (!currentSoal) return;
+
+      // 2. Detect Options (A-E) - for PG or PGK
+      if (currentSoal.type === 'pg' || currentSoal.type === 'pgk') {
+        const optRegex = /([a-eA-E])\s*[.)]\s*(.*?)(?=\s+[a-eA-E]\s*[.)]\s*|$)/g;
+        let match;
+        let foundOpt = false;
+        while ((match = optRegex.exec(line)) !== null) {
+          currentSoal.options.push(match[2].trim());
+          foundOpt = true;
+        }
+        if (foundOpt) return;
+      }
+
+      // 3. Detect pairs for JODOH
+      if (currentSoal.type === 'menjodohkan') {
+        const pairMatch = line.match(/^[-*]\s*(.*?)\s*[:|]\s*(.*)/);
+        if (pairMatch) {
+          if (!currentSoal.pairs) currentSoal.pairs = [];
+          currentSoal.pairs.push({ left: pairMatch[1].trim(), right: pairMatch[2].trim() });
           return;
         }
       }
 
-      // 2. Detect Options (Handles multiple options per line, e.g. "a. Opt A  b. Opt B")
-      const optRegex = /([a-eA-E])\s*[.)]\s*(.*?)(?=\s+[a-eA-E]\s*[.)]\s*|$)/g;
-      let match;
-      let foundOpt = false;
-      while ((match = optRegex.exec(line)) !== null) {
-        if (currentSoal) {
-          currentSoal.options.push(match[2].trim());
-          foundOpt = true;
-        }
-      }
-
-      if (foundOpt) return;
-
-      // 3. Detect Answer Key (e.g. "Jawab: A" or "Kunci: B")
-      const keyMatch = line.match(/^(Jawab|Kunci|Ans|Answer|Jawaban|Key|Kunci Jawaban):\s*([A-Ea-e])/i);
-      if (keyMatch && currentSoal) {
-        const keyChar = keyMatch[2].toUpperCase();
-        const keyIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(keyChar);
-        if (keyIdx !== -1) {
-          currentSoal.correctAnswer = currentSoal.options[keyIdx] || '';
+      // 4. Detect Answer Key (e.g. "Jawab: A" or "Kunci: B")
+      const keyMatch = line.match(/^(Jawab|Kunci|Ans|Answer|Jawaban|Key|Kunci Jawaban):\s*(.*)/i);
+      if (keyMatch) {
+        const ansValue = keyMatch[2].trim();
+        
+        if (currentSoal.type === 'pg') {
+          const keyChar = ansValue.charAt(0).toUpperCase();
+          currentSoal.correctAnswer = keyChar;
+        } else if (currentSoal.type === 'pgk') {
+          const keys = ansValue.split(/[\s,]+/).map(k => k.trim().charAt(0).toUpperCase()).filter(k => 'ABCDE'.includes(k));
+          currentSoal.correctAnswer = keys;
+        } else if (currentSoal.type === 'benarSalah') {
+          currentSoal.statements = [{ 
+            statement: currentSoal.content, 
+            answer: (ansValue.toLowerCase().includes('benar') || ansValue.toLowerCase() === 'b') ? 'Benar' : 'Salah' 
+          }];
+          currentSoal.correctAnswer = 'multi-statement';
+        } else if (currentSoal.type === 'menjodohkan') {
+          if (!currentSoal.pairs || currentSoal.pairs.length === 0) {
+            const pairs = ansValue.split(/[\s,]+/).map(p => {
+              const [l, r] = p.split(':').map(s => s.trim());
+              return { left: l, right: r };
+            }).filter(p => p.left && p.right);
+            currentSoal.pairs = pairs;
+          }
+          currentSoal.correctAnswer = currentSoal.pairs;
+        } else {
+          currentSoal.correctAnswer = ansValue;
         }
         return;
       }
 
-      // 4. Append text to content if we are in a question before options
-      if (currentSoal && currentSoal.options.length === 0) {
+      // 5. Append text to content if no options/pairs yet
+      if (currentSoal.options.length === 0 && (!currentSoal.pairs || currentSoal.pairs.length === 0)) {
         currentSoal.content += ' ' + line;
       }
     });
@@ -393,7 +473,7 @@ export default function GuruSoalDetail() {
     }
 
     if (importedSoal.length === 0) {
-      throw new Error('Format dokumen tidak dikenali. Pastikan soal dimulai dengan angka dan pilihan dengan huruf a-e.');
+      throw new Error('Format dokumen tidak dikenali. Pastikan soal dimulai dengan angka dan kunci jawaban diawali dengan "Jawab:".');
     }
 
     const batch = writeBatch(db);
@@ -402,15 +482,13 @@ export default function GuruSoalDetail() {
       batch.set(docRef, {
         ...s,
         paketId,
-        type: 'pg',
-        stimulus: '',
         index: idx,
         createdAt: serverTimestamp()
       });
     });
 
     await batch.commit();
-    toast.success(`Berhasil mengimpor ${importedSoal.length} soal secara fleksibel!`);
+    toast.success(`Berhasil mengimpor ${importedSoal.length} soal dengan berbagai tipe!`);
   };
 
   const getBadgeFormat = (type: string) => {
@@ -808,25 +886,34 @@ export default function GuruSoalDetail() {
                 <h4 className="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
                    <Info className="w-4 h-4 text-blue-500"/> Contoh format Word yang benar:
                 </h4>
-                <div className="bg-white border rounded-lg p-4 font-mono text-[11px] leading-relaxed text-slate-700 shadow-inner overflow-x-auto">
-                  1. Siapa presiden pertama Indonesia? <br/>
-                  A. Soekarno <br/>
-                  B. Mohammad Hatta <br/>
-                  C. Soeharto <br/>
-                  D. B.J. Habibie <br/>
+                <div className="bg-white border rounded-lg p-4 font-mono text-[10px] leading-relaxed text-slate-700 shadow-inner overflow-x-auto max-h-[250px]">
+                  1. [PG] Apa warna bendera Indonesia? <br/>
+                  A. Merah Putih <br/>
+                  B. Biru Putih <br/>
                   Jawab: A <br/>
                   <br/>
-                  2. Apa ibu kota Jawa Barat? <br/>
-                  A. Jakarta <br/>
-                  B. Bandung <br/>
-                  C. Surabaya <br/>
-                  Jawab: B
+                  2. [PGK] Mana yang merupakan mamalia? <br/>
+                  A. Kucing <br/>
+                  B. Ikan <br/>
+                  C. Paus <br/>
+                  Jawab: A, C <br/>
+                  <br/>
+                  3. [BS] Matahari itu panas. <br/>
+                  Jawab: Benar <br/>
+                  <br/>
+                  4. [ISIAN] Ibukota Indonesia? <br/>
+                  Jawab: Jakarta <br/>
+                  <br/>
+                  5. [JODOH] Pasangkan! <br/>
+                  - Indonesia : Jakarta <br/>
+                  - Jepang : Tokyo <br/>
+                  Jawab: Indonesia:Jakarta, Jepang:Tokyo
                 </div>
                 <div className="mt-4 space-y-2">
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Gunakan tag tipe dalam kurung siku untuk non-PG reguler: [PGK], [BS], [ISIAN], [JODOH].</p>
                   <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Gunakan angka diikuti titik atau kurung (1. atau 1) untuk nomor soal.</p>
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Gunakan huruf A-E diikuti titik atau kurung untuk pilihan jawaban.</p>
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Pastikan ada baris "Jawab: [Huruf]" di setiap akhir soal.</p>
-                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Hindari tabel atau objek gambar di dalam Word untuk hasil akurat.</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Jawaban PGK dipisah koma (A, B, C). Jawaban Benar/Salah tulis "Benar" atau "Salah".</p>
+                  <p className="text-[11px] text-slate-500 font-medium tracking-tight">• Untuk Jodoh, tulis pasangan L:R dipisah koma pada bagian Jawaban.</p>
                 </div>
               </div>
 
