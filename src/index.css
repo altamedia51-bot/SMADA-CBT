@@ -132,12 +132,12 @@
 }
 
 @media print {
-  .h-screen, .min-h-screen {
+  * {
+    overflow: visible !important;
+  }
+  .h-screen, .min-h-screen, html, body {
     height: auto !important;
     min-height: 0 !important;
-  }
-  .overflow-hidden, .overflow-auto, .overflow-y-auto {
-    overflow: visible !important;
   }
   .flex-1 {
     flex: none !important;

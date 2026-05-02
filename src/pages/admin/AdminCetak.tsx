@@ -23,6 +23,45 @@ export default function AdminCetak() {
   const [isSoalModalOpen, setIsSoalModalOpen] = useState(false);
   const [isLjkModalOpen, setIsLjkModalOpen] = useState(false);
   
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      // @ts-ignore
+      const html2pdf = (await import('html2pdf.js')).default;
+      const element = document.getElementById('print-container');
+      
+      if (element) {
+        element.classList.remove('my-8', 'shadow-2xl', 'p-8');
+        element.classList.add('p-0');
+      }
+
+      const uk = config.ukuranKertas === 'F4' ? [215.9, 330.2] : 'a4';
+
+      const opt = {
+        margin:       10,
+        filename:     `Export_${printMode}_${new Date().getTime()}.pdf`,
+        image:        { type: 'jpeg', quality: 1 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: uk, orientation: 'portrait' },
+        pagebreak:    { mode: ['css', 'legacy'] }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+
+      if (element) {
+        element.classList.add('my-8', 'shadow-2xl', 'p-8');
+        element.classList.remove('p-0');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Gagal mengekspor PDF');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const [selectedKelasId, setSelectedKelasId] = useState('');
   const [selectedUjianId, setSelectedUjianId] = useState('');
   const [selectedPaketId, setSelectedPaketId] = useState('');
@@ -237,34 +276,31 @@ export default function AdminCetak() {
   if (printMode !== 'none') {
     return (
       <div className="fixed inset-0 z-[9999] bg-slate-200 overflow-y-auto w-full h-full print:static print:h-auto print:w-auto print:overflow-visible print:bg-white text-black">
-         <style>{`
-            @media print {
-              html, body, #root, #root > div, .fixed.inset-0 {
+          <style>{`
+              .page-break { page-break-after: always; break-after: page; }
+              .break-inside-avoid {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+              }
+              @media print {
+              html, body {
                 height: auto !important;
                 min-height: auto !important;
-                max-height: none !important;
-                margin: 0 !important;
-                padding: 0 !important;
                 overflow: visible !important;
-                position: static !important;
                 background-color: white !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
               }
               body > :not(#root) { display: none !important; }
-              .no-print { display: none !important; }
               #print-container {
                 width: 100% !important;
                 max-width: none !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                background-color: transparent !important;
-                box-shadow: none !important;
-                display: block !important;
+                background-color: white !important;
               }
-              .break-inside-avoid {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-              }
-              .page-break { page-break-after: always; break-after: page; }
+              .no-print, .no-print * { display: none !important; visibility: hidden !important; }
+              aside, header, nav { display: none !important; }
               @page { margin: 1cm; size: ${config.ukuranKertas === 'F4' ? '215.9mm 330.2mm' : 'A4'} portrait; }
             }
          `}</style>
@@ -274,8 +310,8 @@ export default function AdminCetak() {
             </div>
             <div className="flex gap-3">
                <Button variant="outline" onClick={() => setPrintMode('none')} className="h-11">Kembali</Button>
-               <Button onClick={() => window.print()} className="h-11 bg-blue-600 hover:bg-blue-700 px-6 font-bold shadow-lg shadow-blue-500/20">
-                 <FileText className="w-4 h-4 mr-2" /> Ekspor PDF
+               <Button onClick={handleExportPDF} disabled={isExporting} className="h-11 bg-blue-600 hover:bg-blue-700 px-6 font-bold shadow-lg shadow-blue-500/20">
+                 <FileText className="w-4 h-4 mr-2" /> {isExporting ? 'Memproses...' : 'Ekspor PDF'}
                </Button>
             </div>
          </div>
