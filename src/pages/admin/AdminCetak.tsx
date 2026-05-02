@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Printer, Settings, CreditCard, ListChecks, FileText, CheckCircle, School, FileQuestion, ScanLine, ImagePlus, X } from 'lucide-react';
 import { toast } from 'sonner';
-import domtoimage from 'dom-to-image';
+import html2canvas from 'html2canvas-pro';
 import { jsPDF } from 'jspdf';
 
 export default function AdminCetak() {
@@ -34,10 +34,17 @@ export default function AdminCetak() {
       
       if (!element) return;
       
-      element.classList.remove('my-8', 'shadow-2xl', 'p-8');
+      const originalCssText = element.style.cssText;
+      element.style.width = '210mm'; /* Approximate A4/F4 width */
+      element.style.maxWidth = 'none';
+      element.style.margin = '0';
+      element.style.padding = '0';
+      
+      element.classList.remove('my-8', 'shadow-2xl', 'p-8', 'mx-auto');
       element.classList.add('p-0');
 
-      const dataUrl = await domtoimage.toJpeg(element, { quality: 1, bgcolor: '#ffffff' });
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
 
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -46,7 +53,7 @@ export default function AdminCetak() {
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
       
       // Calculate how many pages we need
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -65,7 +72,8 @@ export default function AdminCetak() {
 
       pdf.save(`Export_${printMode}_${new Date().getTime()}.pdf`);
 
-      element.classList.add('my-8', 'shadow-2xl', 'p-8');
+      element.style.cssText = originalCssText;
+      element.classList.add('my-8', 'shadow-2xl', 'p-8', 'mx-auto');
       element.classList.remove('p-0');
     } catch (err: any) {
       console.error(err);
