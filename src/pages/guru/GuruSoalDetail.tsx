@@ -12,6 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import * as XLSX from 'xlsx';
 // @ts-ignore
 import mammoth from 'mammoth';
@@ -47,6 +48,25 @@ export default function GuruSoalDetail() {
 
   const [editingSoalId, setEditingSoalId] = useState<string | null>(null);
 
+  const [isBobotModalOpen, setIsBobotModalOpen] = useState(false);
+  const [bobotForm, setBobotForm] = useState({ pg: 0, pgk: 0, menjodohkan: 0, isian: 0, benarSalah: 0, uraian: 0 });
+
+  const handleSaveBobot = async () => {
+    const total = Number(bobotForm.pg) + Number(bobotForm.pgk) + Number(bobotForm.menjodohkan) + Number(bobotForm.isian) + Number(bobotForm.benarSalah) + Number(bobotForm.uraian);
+    if (total !== 100) {
+      toast.error(`Total bobot harus persis 100. Saat ini: ${total}`);
+      return;
+    }
+    if (!paketId) return;
+    try {
+      await updateDoc(doc(db, 'paket_soal', paketId), { bobot: bobotForm });
+      toast.success('Konfigurasi bobot berhasil disimpan');
+      setIsBobotModalOpen(false);
+    } catch (e: any) {
+      toast.error('Gagal menyimpan bobot: ' + e.message);
+    }
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -68,6 +88,11 @@ export default function GuruSoalDetail() {
       if(d.exists()) {
         const data = d.data();
         setPaketInfo({ id: d.id, ...data });
+        if (data.bobot) {
+          setBobotForm(data.bobot);
+        } else {
+          setBobotForm({ pg: 100, pgk: 0, menjodohkan: 0, isian: 0, benarSalah: 0, uraian: 0 });
+        }
       }
     });
 
@@ -511,11 +536,18 @@ Kunci: Indonesia:Jakarta, Jepang:Tokyo, Malaysia:Kuala Lumpur
           <Button variant="outline" size="icon" onClick={() => navigate(-1)} className="shrink-0 rounded-full border-slate-200 hover:bg-slate-100 bg-white">
              <ChevronLeft className="w-5 h-5 text-slate-700" />
           </Button>
-          <div>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-1">
-              {paketInfo?.title || 'Loading...'}
-            </h2>
-            <p className="text-slate-500 text-sm font-medium">Builder Interaktif Soal Standar & AKM Terpadu.</p>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-1">
+                  {paketInfo?.title || 'Loading...'}
+                </h2>
+                <p className="text-slate-500 text-sm font-medium">Builder Interaktif Soal Standar & AKM Terpadu.</p>
+              </div>
+              <Button onClick={() => setIsBobotModalOpen(true)} variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50 font-bold hidden md:flex">
+                 Konfigurasi Bobot Penilaian
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -1062,6 +1094,42 @@ Kunci: Indonesia:Jakarta, Jepang:Tokyo, Malaysia:Kuala Lumpur
           </div>
         </div>
       </div>
+
+      <Dialog open={isBobotModalOpen} onOpenChange={setIsBobotModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Konfigurasi Bobot Soal Total (100)</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <p className="text-sm text-slate-500 font-medium">Atur bobot tiap jenis soal. Total bobot harus berjulat tepat 100.</p>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right font-bold text-sm">Pilihan Ganda (PG)</label>
+              <Input type="number" value={bobotForm.pg} onChange={e => setBobotForm({...bobotForm, pg: Number(e.target.value)})} className="col-span-3 font-mono" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right font-bold text-sm">PG Kompleks (PGK)</label>
+              <Input type="number" value={bobotForm.pgk} onChange={e => setBobotForm({...bobotForm, pgk: Number(e.target.value)})} className="col-span-3 font-mono" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right font-bold text-sm">Menjodohkan</label>
+              <Input type="number" value={bobotForm.menjodohkan} onChange={e => setBobotForm({...bobotForm, menjodohkan: Number(e.target.value)})} className="col-span-3 font-mono" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right font-bold text-sm">Isian Singkat</label>
+              <Input type="number" value={bobotForm.isian} onChange={e => setBobotForm({...bobotForm, isian: Number(e.target.value)})} className="col-span-3 font-mono" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label className="text-right font-bold text-sm">Benar / Salah</label>
+              <Input type="number" value={bobotForm.benarSalah} onChange={e => setBobotForm({...bobotForm, benarSalah: Number(e.target.value)})} className="col-span-3 font-mono" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+               <label className="text-right font-bold text-sm text-blue-600">Total</label>
+               <div className="col-span-3 font-mono text-lg font-black">{Number(bobotForm.pg) + Number(bobotForm.pgk) + Number(bobotForm.menjodohkan) + Number(bobotForm.isian) + Number(bobotForm.benarSalah) + Number(bobotForm.uraian)}</div>
+            </div>
+          </div>
+          <Button onClick={handleSaveBobot} className="w-full h-11 bg-blue-600 hover:bg-blue-700 font-bold">Simpan Konfigurasi</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

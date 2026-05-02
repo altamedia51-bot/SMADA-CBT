@@ -85,6 +85,15 @@ export default function AdminHasil() {
         const soalSnap = await getDocs(collection(db, `paket_soal/${ujianData.paketId}/soal`));
         const soalList = soalSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
+        const paketSnap = await getDoc(doc(db, 'paket_soal', ujianData.paketId));
+        const paketData = paketSnap.exists() ? paketSnap.data() : {};
+        const bobot = paketData.bobot || { pg: 100, pgk: 0, menjodohkan: 0, isian: 0, benarSalah: 0, uraian: 0 };
+        
+        const counts: any = { pg: 0, pgk: 0, menjodohkan: 0, isian: 0, benarSalah: 0, uraian: 0 };
+        soalList.forEach((s:any) => {
+           counts[s.type||'pg'] = (counts[s.type||'pg'] || 0) + 1;
+        });
+
         const q = query(collection(db, 'jawaban_siswa'), where('ujianId', '==', selectedUjianId));
         const snapshot = await getDocs(q);
         
@@ -93,42 +102,92 @@ export default function AdminHasil() {
           const answers = data.answers || {};
           
           let correct = 0; let wrong = 0; let unanswered = 0;
+          let earnedScores: any = { pg: 0, pgk: 0, menjodohkan: 0, isian: 0, benarSalah: 0, uraian: 0 };
 
           soalList.forEach((soal: any) => {
             const studentAns = answers[soal.id];
-            if (!studentAns) {
+            const sType = soal.type || 'pg';
+            if (studentAns === undefined || studentAns === null || studentAns === '') {
               unanswered++;
             } else {
-              let isCorrect = false;
-              if (soal.type === 'pg') {
+              let points = 0;
+              if (sType === 'pg') {
                 const isValidAlphabet = /^[A-E]$/i.test(studentAns);
                 if (isValidAlphabet) {
                   const ansIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(studentAns.toUpperCase());
                   const studentTextAns = soal.options?.[ansIdx];
                   if (studentTextAns === soal.correctAnswer || studentAns.toUpperCase() === soal.correctAnswer || studentAns.toUpperCase() === soal.answer) {
-                    isCorrect = true;
+                    points = 1;
                   }
                 } else if (studentAns === soal.correctAnswer || studentAns === soal.answer) {
-                  isCorrect = true;
+                  points = 1;
                 }
-              } else if (soal.type === 'isian') {
+              } else if (sType === 'isian') {
                 const correctText = (soal.correctAnswer || soal.answer || '').toString().toLowerCase().trim();
                 if (studentAns.toString().toLowerCase().trim() === correctText) {
-                  isCorrect = true;
+                  points = 1;
+                }
+              } else if (sType === 'pgk') {
+                if (Array.isArray(studentAns) && Array.isArray(soal.correctAnswer)) {
+                  const sortedStudent = [...studentAns].sort();
+                  const sortedCorrect = [...soal.correctAnswer].sort();
+                  if (JSON.stringify(sortedStudent) === JSON.stringify(sortedCorrect)) {
+                     points = 1;
+                  } else {
+                     // Partial scoring
+                     const correctOpts = sortedStudent.filter(a => sortedCorrect.includes(a)).length;
+                     const wrongOpts = sortedStudent.filter(a => !sortedCorrect.includes(a)).length;
+                     const net = correctOpts - wrongOpts;
+                     if (net > 0 && sortedCorrect.length > 0) {
+                        points = net / sortedCorrect.length;
+                     }
+                  }
+                }
+              } else if (sType === 'menjodohkan') {
+                if (typeof studentAns === 'object' && soal.pairs && Array.isArray(soal.pairs)) {
+                   let totalPairs = soal.pairs.length;
+                   let correctPairs = 0;
+                   Object.keys(studentAns).forEach(leftIdx => {
+                      // Student matches left index to right index
+                      if (String(studentAns[leftIdx]) === String(leftIdx)) {
+                         correctPairs++;
+                      }
+                   });
+                   if (totalPairs > 0) points = correctPairs / totalPairs;
+                }
+              } else if (sType === 'benarSalah') {
+                if (typeof studentAns === 'object' && soal.statements && Array.isArray(soal.statements)) {
+                   let totalSt = soal.statements.length;
+                   let correctSt = 0;
+                   Object.keys(studentAns).forEach(idx => {
+                      if (soal.statements[Number(idx)]?.answer === studentAns[idx]) {
+                         correctSt++;
+                      }
+                   });
+                   if (totalSt > 0) points = correctSt / totalSt;
                 }
               }
 
-              if (isCorrect) correct++; else wrong++;
+              earnedScores[sType] += points;
+              if (points === 1) correct++; 
+              else if (points > 0) correct += points;
+              else wrong++;
             }
           });
 
+          let score = 0;
+          Object.keys(counts).forEach(type => {
+              if (counts[type] > 0 && bobot[type]) {
+                  score += (earnedScores[type] / counts[type]) * bobot[type];
+              }
+          });
+
           const total = soalList.length;
-          const score = total > 0 ? (correct / total) * 100 : 0;
 
           return {
             id: d.id,
             ...data,
-            metrics: { correct, wrong, unanswered, total, score: Math.round(score * 100) / 100 }
+            metrics: { correct: Math.round(correct * 10) / 10, wrong, unanswered, total, score: Math.round(score * 100) / 100 }
           };
         });
 
