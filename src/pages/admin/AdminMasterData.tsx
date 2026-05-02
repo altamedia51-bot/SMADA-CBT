@@ -38,6 +38,9 @@ export default function AdminMasterData() {
   const [siswaForm, setSiswaForm] = useState({
     nama: '',
     kelas: '',
+    jurusan: 'Semua',
+    sesiId: '',
+    fotoUrl: '',
     nis: '',
     password: ''
   });
@@ -333,6 +336,9 @@ export default function AdminMasterData() {
         await updateDoc(doc(db, 'users', editingSiswa.id), {
           displayName: siswaForm.nama,
           kelas: siswaForm.kelas,
+          jurusan: siswaForm.jurusan,
+          sesiId: siswaForm.sesiId,
+          fotoUrl: siswaForm.fotoUrl,
           nis: siswaForm.nis || editingSiswa.nis,
           updatedAt: serverTimestamp()
         });
@@ -363,6 +369,9 @@ export default function AdminMasterData() {
           displayName: siswaForm.nama,
           role: 'siswa',
           kelas: siswaForm.kelas,
+          jurusan: siswaForm.jurusan,
+          sesiId: siswaForm.sesiId,
+          fotoUrl: siswaForm.fotoUrl,
           nis: siswaForm.nis,
           isActive: true,
           createdAt: serverTimestamp()
@@ -382,7 +391,7 @@ export default function AdminMasterData() {
 
   const resetSiswaForm = () => {
     setEditingSiswa(null);
-    setSiswaForm({ nama: '', kelas: '', nis: '', password: '' });
+    setSiswaForm({ nama: '', kelas: '', jurusan: 'Semua', sesiId: '', fotoUrl: '', nis: '', password: '' });
   };
 
   const editSiswaAction = (siswa: any) => {
@@ -390,6 +399,9 @@ export default function AdminMasterData() {
     setSiswaForm({
       nama: siswa.displayName || '',
       kelas: siswa.kelas || '',
+      jurusan: siswa.jurusan || 'Semua',
+      sesiId: siswa.sesiId || '',
+      fotoUrl: siswa.fotoUrl || '',
       nis: siswa.nis || '',
       password: '' // Don't show password
     });
@@ -519,7 +531,15 @@ export default function AdminMasterData() {
           const name = findVal(['Nama', 'nama', 'name', 'DisplayName']);
           const classRoom = findVal(['Kelas', 'kelas', 'class', 'ClassRoom']);
           const password = findVal(['Password', 'password', 'pass', 'PIN']) || 'siswa123';
+          const jurusanCSV = findVal(['Jurusan', 'jurusan']) || 'Semua';
           
+          let sesiIdCSV = '';
+          const sesiInput = findVal(['Sesi', 'sesi', 'Session']);
+          if (sesiInput) {
+            const foundSesi = sesi.find(s => s.name?.toLowerCase() === sesiInput.toString().toLowerCase() || s.kode?.toLowerCase() === sesiInput.toString().toLowerCase());
+            if (foundSesi) sesiIdCSV = foundSesi.id;
+          }
+
           let rawNis = findVal(['NIS', 'nis', 'username', 'ID', 'no_induk']);
           
           // Generate NIS if missing
@@ -556,6 +576,9 @@ export default function AdminMasterData() {
                   displayName: name,
                   role: 'siswa',
                   kelas: classRoom,
+                  jurusan: jurusanCSV,
+                  sesiId: sesiIdCSV,
+                  fotoUrl: '',
                   nis: rawNis.toString(),
                   isActive: true,
                   createdAt: serverTimestamp()
@@ -569,6 +592,9 @@ export default function AdminMasterData() {
                   displayName: name,
                   role: 'siswa',
                   kelas: classRoom,
+                  jurusan: jurusanCSV,
+                  sesiId: sesiIdCSV,
+                  fotoUrl: '',
                   nis: rawNis.toString(),
                   isActive: true,
                   createdAt: serverTimestamp()
@@ -691,34 +717,74 @@ export default function AdminMasterData() {
             </div>
             
             <form onSubmit={saveSiswa} className="p-6 space-y-4">
-              <div className="flex gap-4">
-                <Input 
-                  placeholder="NAMA LENGKAP SISWA" 
-                  className="flex-1 uppercase font-medium h-11"
-                  value={siswaForm.nama}
-                  onChange={e => setSiswaForm({...siswaForm, nama: e.target.value})}
-                />
-                <Select 
-                  value={siswaForm.kelas} 
-                  onValueChange={val => setSiswaForm({...siswaForm, kelas: val})}
-                >
-                  <SelectTrigger className="w-40 h-11 font-medium bg-white">
-                    <SelectValue placeholder="PILIH KELAS" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {kelas.sort((a,b) => a.name.localeCompare(b.name)).map(k => (
-                      <SelectItem key={k.id} value={k.name}>{k.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input 
+                    placeholder="NAMA LENGKAP SISWA" 
+                    className="flex-1 uppercase font-medium h-11"
+                    value={siswaForm.nama}
+                    onChange={e => setSiswaForm({...siswaForm, nama: e.target.value})}
+                  />
+                  <div className="flex gap-2">
+                    <Select 
+                      value={siswaForm.kelas} 
+                      onValueChange={val => setSiswaForm({...siswaForm, kelas: val})}
+                    >
+                      <SelectTrigger className="flex-[2] h-11 font-medium bg-white">
+                        <SelectValue placeholder="PILIH KELAS" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {kelas.sort((a,b) => a.name.localeCompare(b.name)).map(k => (
+                          <SelectItem key={k.id} value={k.name}>{k.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select 
+                      value={siswaForm.jurusan} 
+                      onValueChange={val => setSiswaForm({...siswaForm, jurusan: val})}
+                    >
+                      <SelectTrigger className="flex-[1] h-11 font-medium bg-white">
+                        <SelectValue placeholder="JURUSAN" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Semua">Semua</SelectItem>
+                        <SelectItem value="IPA">IPA</SelectItem>
+                        <SelectItem value="IPS">IPS</SelectItem>
+                        <SelectItem value="Bahasa">Bahasa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input 
+                    placeholder="NIS / NOMOR INDUK SISWA" 
+                    className="h-11 font-mono"
+                    value={siswaForm.nis}
+                    onChange={e => setSiswaForm({...siswaForm, nis: e.target.value})}
+                  />
+                  <Select 
+                    value={siswaForm.sesiId} 
+                    onValueChange={val => setSiswaForm({...siswaForm, sesiId: val})}
+                  >
+                    <SelectTrigger className="h-11 font-medium bg-white">
+                      <SelectValue placeholder="PILIH SESI" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Tidak Ada</SelectItem>
+                      {sesi.sort((a,b) => a.name.localeCompare(b.name)).map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.kode})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input 
+                    placeholder="URL FOTO (OPSIONAL)" 
+                    className="h-11"
+                    value={siswaForm.fotoUrl}
+                    onChange={e => setSiswaForm({...siswaForm, fotoUrl: e.target.value})}
+                  />
+                </div>
               </div>
-              
-              <Input 
-                placeholder="NIS / NOMOR INDUK SISWA (OPSIONAL)" 
-                className="h-11 font-mono"
-                value={siswaForm.nis}
-                onChange={e => setSiswaForm({...siswaForm, nis: e.target.value})}
-              />
               
               {!editingSiswa ? (
                 <Input 
@@ -784,9 +850,17 @@ export default function AdminMasterData() {
                           <div key={student.id} className="flex items-center justify-between p-3 hover:bg-emerald-50/30 group transition-colors">
                             <div className="flex items-center gap-3 overflow-hidden">
                               <span className="text-xs font-medium text-slate-400 w-4">{idx + 1}.</span>
-                              <span className="text-sm font-bold text-slate-700 truncate cursor-pointer hover:text-emerald-600 transition-colors">
-                                {student.displayName}
-                              </span>
+                              <div>
+                                <span className="text-sm font-bold text-slate-700 truncate cursor-pointer hover:text-emerald-600 transition-colors block">
+                                  {student.displayName}
+                                </span>
+                                {(student.jurusan || student.sesiId) && (
+                                  <span className="text-[10px] text-slate-500 font-medium font-mono">
+                                    {student.jurusan && student.jurusan !== 'Semua' ? `[${student.jurusan}] ` : ''}
+                                    {student.sesiId && student.sesiId !== 'none' ? `SESI: ${sesi.find(s => s.id === student.sesiId)?.name || '?'}` : ''}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button 
