@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, getDocs, doc, getDoc, where, deleteDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, getDocs, doc, getDoc, where, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Download, FileText, CheckCircle, XCircle, AlertTriangle, Hash, Clock, RotateCcw, BookOpen, Calculator, BarChart3 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Search, Download, FileText, CheckCircle, XCircle, AlertTriangle, Hash, Clock, RotateCcw, BookOpen, Calculator, BarChart3, Edit3 } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
@@ -19,6 +20,11 @@ export default function AdminHasil() {
   const [loadingSesi, setLoadingSesi] = useState(false);
   const [searchSesi, setSearchSesi] = useState('');
   const [selectedKelasSesi, setSelectedKelasSesi] = useState<string>('all');
+  
+  const [isKoreksiModalOpen, setIsKoreksiModalOpen] = useState(false);
+  const [koreksiData, setKoreksiData] = useState<any>(null); // { id: jawabanId, siswaName, answers: {}, soalList: [] }
+  const [koreksiScores, setKoreksiScores] = useState<Record<string, number>>({});
+
   
   // -- STATE FOR TAB 2: Riwayat Kelas --
   const [kelasData, setKelasData] = useState<any[]>([]);
@@ -168,6 +174,10 @@ export default function AdminHasil() {
                 }
               }
 
+              if (data.overrides && data.overrides[soal.id] !== undefined) {
+                 points = data.overrides[soal.id];
+              }
+
               earnedScores[sType] += points;
               if (points === 1) correct++; 
               else if (points > 0) correct += points;
@@ -187,7 +197,7 @@ export default function AdminHasil() {
           return {
             id: d.id,
             ...data,
-            metrics: { correct: Math.round(correct * 10) / 10, wrong, unanswered, total, score: Math.round(score * 100) / 100 }
+            metrics: { correct: Math.round(correct * 10) / 10, wrong, unanswered, total, score: Math.round(score * 100) / 100, earnedScores, counts }
           };
         });
 
@@ -213,7 +223,7 @@ export default function AdminHasil() {
       siswaName: siswa.displayName || siswa.name,
       siswaKelas: siswa.kelas,
       isSubmitted: false, status: 'BELUM MENGERJAKAN',
-      metrics: { correct: 0, wrong: 0, unanswered: 0, total: 0, score: 0 },
+      metrics: { correct: 0, wrong: 0, unanswered: 0, total: 0, score: 0, earnedScores: { pg:0, pgk:0, menjodohkan:0, isian:0, benarSalah:0, uraian:0 }, counts: { pg:0, pgk:0, menjodohkan:0, isian:0, benarSalah:0, uraian:0 } },
       violations: 0, unstarted: true,
     }
   });
@@ -231,13 +241,75 @@ export default function AdminHasil() {
     return matchesSearch && matchesKelas;
   });
 
+  const handleOpenKoreksi = async (p: any) => {
+    if (p.unstarted || !selectedUjianId) return;
+    try {
+       const ujianRef = doc(db, 'ujian', selectedUjianId);
+       const ujianSnap = await getDoc(ujianRef);
+       const ujianData = ujianSnap.data();
+       if (!ujianData) return toast.error('Ujian tidak ditemukan');
+       const soalSnap = await getDocs(collection(db, `paket_soal/${ujianData.paketId}/soal`));
+       const soalList = soalSnap.docs.map(d => ({id:d.id, ...d.data()} as any));
+       // Filter only isian singkat questions
+       const isianSoal = soalList.filter(s => s.type === 'isian');
+       if (isianSoal.length === 0) return toast.info('Tidak ada soal Isian Singkat pada ujian ini.');
+
+       const initialScores: Record<string, number> = {};
+       
+       // Calculate initial scores based on existing auto-correction or previous overrides
+       isianSoal.forEach(s => {
+          const studentAns = p.answers ? p.answers[s.id] : null;
+          // check if override points exist in db
+          if (p.overrides && p.overrides[s.id] !== undefined) {
+             initialScores[s.id] = p.overrides[s.id];
+          } else {
+             let points = 0;
+             if (studentAns !== undefined && studentAns !== null && studentAns !== '') {
+                const correctText = (s.correctAnswer || s.answer || '').toString().toLowerCase().trim();
+                if (studentAns.toString().toLowerCase().trim() === correctText) {
+                   points = 1;
+                }
+             }
+             initialScores[s.id] = points;
+          }
+       });
+
+       setKoreksiScores(initialScores);
+       setKoreksiData({ id: p.id, siswaName: p.siswaName, answers: p.answers || {}, isianSoal });
+       setIsKoreksiModalOpen(true);
+    } catch(e:any) {
+       toast.error('Gagal membuka data koreksi: '+e.message);
+    }
+  };
+
+  const handleSaveKoreksi = async () => {
+    if (!koreksiData) return;
+    try {
+      await updateDoc(doc(db, 'jawaban_siswa', koreksiData.id), {
+         overrides: koreksiScores
+      });
+      toast.success('Koreksi berhasil disimpan, nilai akan segera diperbarui.');
+      setIsKoreksiModalOpen(false);
+    } catch(e:any) {
+      toast.error('Gagal menyimpan koreksi: ' + e.message);
+    }
+  };
+
   const handleExportSesiExcel = () => {
     if (filteredSesi.length === 0) return;
     const data = filteredSesi.map(p => ({
       'Nama Siswa': p.siswaName, 'ID Siswa': p.siswaId || p.id, 'Kelas': p.siswaKelas,
       'Status': p.unstarted ? 'Belum Mengerjakan' : (p.isSubmitted ? 'Selesai' : 'Sedang Mengerjakan'),
-      'Benar': p.metrics.correct, 'Salah': p.metrics.wrong, 'Kosong': p.metrics.unanswered, 'Total Soal': p.metrics.total,
-      'Nilai': p.metrics.score, 'Pelanggaran': p.violations || 0
+      'PG': p.metrics.earnedScores?.pg || 0,
+      'PGK': p.metrics.earnedScores?.pgk || 0,
+      'Menjodohkan': p.metrics.earnedScores?.menjodohkan || 0,
+      'Isian': p.metrics.earnedScores?.isian || 0,
+      'Benar/Salah': p.metrics.earnedScores?.benarSalah || 0,
+      'Kosong': p.metrics.unanswered || 0,
+      'Total Benar': p.metrics.correct,
+      'Total Salah': p.metrics.wrong,
+      'Total Soal': p.metrics.total,
+      'NilaiAkhir': p.metrics.score, 'Pelanggaran': p.violations || 0
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -490,7 +562,7 @@ export default function AdminHasil() {
                       <tr>
                         <th className="px-5 py-4">Peserta & Kelas</th>
                         <th className="px-5 py-4">Status Pengerjaan</th>
-                        <th className="px-5 py-4 text-center">B / S / K</th>
+                        <th className="px-5 py-4 text-center">Analisis Jawaban (PG / PGK / MJD / IS / BS / Kosong)</th>
                         <th className="px-5 py-4 text-center">Nilai Akhir</th>
                         <th className="px-5 py-4 text-center">Aksi / Opsi</th>
                       </tr>
@@ -518,20 +590,35 @@ export default function AdminHasil() {
                             )}
                           </td>
                           <td className="px-5 py-4">
-                            <div className="flex items-center justify-center gap-3">
+                            <div className="flex items-center justify-center gap-2">
                                <div className="flex flex-col items-center">
-                                 <span className="text-[9px] text-emerald-600 font-black">BENAR</span>
-                                 <span className="font-bold text-slate-700 text-[13px]">{p.metrics.correct}</span>
+                                 <span className="text-[9px] text-slate-500 font-black">PG</span>
+                                 <span className="font-bold text-emerald-600 text-[12px]">{p.metrics?.earnedScores?.pg || 0}</span>
                                </div>
                                <div className="h-4 w-px bg-slate-200" />
                                <div className="flex flex-col items-center">
-                                 <span className="text-[9px] text-rose-600 font-black">SALAH</span>
-                                 <span className="font-bold text-slate-700 text-[13px]">{p.metrics.wrong}</span>
+                                 <span className="text-[9px] text-slate-500 font-black">PGK</span>
+                                 <span className="font-bold text-emerald-600 text-[12px]">{p.metrics?.earnedScores?.pgk || 0}</span>
                                </div>
                                <div className="h-4 w-px bg-slate-200" />
                                <div className="flex flex-col items-center">
-                                 <span className="text-[9px] text-slate-400 font-black">KOSONG</span>
-                                 <span className="font-bold text-slate-700 text-[13px]">{p.metrics.unanswered}</span>
+                                 <span className="text-[9px] text-slate-500 font-black">MJD</span>
+                                 <span className="font-bold text-emerald-600 text-[12px]">{p.metrics?.earnedScores?.menjodohkan || 0}</span>
+                               </div>
+                               <div className="h-4 w-px bg-slate-200" />
+                               <div className="flex flex-col items-center">
+                                 <span className="text-[9px] text-slate-500 font-black">IS</span>
+                                 <span className="font-bold text-emerald-600 text-[12px]">{p.metrics?.earnedScores?.isian || 0}</span>
+                               </div>
+                               <div className="h-4 w-px bg-slate-200" />
+                               <div className="flex flex-col items-center">
+                                 <span className="text-[9px] text-slate-500 font-black">BS</span>
+                                 <span className="font-bold text-emerald-600 text-[12px]">{p.metrics?.earnedScores?.benarSalah || 0}</span>
+                               </div>
+                               <div className="h-4 w-px bg-slate-200" />
+                               <div className="flex flex-col items-center">
+                                 <span className="text-[9px] text-slate-400 font-black" title="Kosong">KOSONG</span>
+                                 <span className="font-bold text-rose-500 text-[12px]">{p.metrics?.unanswered || 0}</span>
                                </div>
                             </div>
                           </td>
@@ -546,17 +633,30 @@ export default function AdminHasil() {
                              {(p.violations || 0) > 0 && <span className="block text-[10px] text-rose-500 font-bold mt-1.5" title="Pelanggaran">⚠️ {p.violations} Viols</span>}
                           </td>
                           <td className="px-5 py-4 text-center">
-                            {!p.unstarted && (
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8 bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500 font-bold text-xs rounded-lg transition-all"
-                                onClick={() => handleResetSession(p.id)}
-                                title="Hapus sesi siswa ini untuk memungkinkannya login dan mengulang dari awal."
-                              >
-                                <RotateCcw className="w-3.5 h-3.5 mr-1" /> Ulang
-                              </Button>
-                            )}
+                            <div className="flex items-center justify-center gap-2">
+                              {!p.unstarted && (
+                                <>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-8 bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500 font-bold text-xs rounded-lg transition-all"
+                                    onClick={() => handleResetSession(p.id)}
+                                    title="Hapus sesi siswa ini untuk memungkinkannya login dan mengulang dari awal."
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5 mr-1" /> Ulang
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-8 bg-white hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 text-slate-500 font-bold text-xs rounded-lg transition-all"
+                                    onClick={() => handleOpenKoreksi(p)}
+                                    title="Koreksi manual jawaban isian singkat siswa."
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 mr-1" /> Koreksi
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -699,6 +799,53 @@ export default function AdminHasil() {
         </Card>
       </div>
       )}
+
+      {/* MODAL KOREKSI */}
+      <Dialog open={isKoreksiModalOpen} onOpenChange={setIsKoreksiModalOpen}>
+        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Koreksi Isian Singkat: {koreksiData?.siswaName}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-6">
+            <p className="text-sm text-slate-500 font-medium">Beri nilai 1 (Benar), 0 (Salah), atau desimal parsial (contoh: 0.5) untuk setiap soal isian di bawah ini.</p>
+            {koreksiData?.isianSoal.map((soal: any, idx: number) => {
+               const studentAns = koreksiData.answers[soal.id] || '(Kosong)';
+               const correctAns = soal.correctAnswer || soal.answer || '(Kosong)';
+               return (
+                 <div key={soal.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                   <p className="font-bold text-slate-700 text-sm mb-2">{idx + 1}. {soal.question || soal.content}</p>
+                   <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                         <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Jawaban Siswa</p>
+                         <p className={`text-sm font-semibold ${studentAns === '(Kosong)' ? 'text-rose-400 italic' : 'text-slate-800'}`}>{studentAns}</p>
+                      </div>
+                      <div>
+                         <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Kunci Jawaban</p>
+                         <p className="text-sm font-semibold text-emerald-600">{correctAns}</p>
+                      </div>
+                   </div>
+                   <div className="flex items-center gap-3">
+                     <p className="text-xs font-bold text-slate-600">Poin:</p>
+                     <Input 
+                        type="number" 
+                        step="0.1" 
+                        min="0" 
+                        max="1"
+                        className="w-24 h-9 font-bold font-mono"
+                        value={koreksiScores[soal.id] ?? 0}
+                        onChange={(e) => setKoreksiScores({...koreksiScores, [soal.id]: parseFloat(e.target.value) || 0})}
+                     />
+                   </div>
+                 </div>
+               );
+            })}
+          </div>
+          <div className="flex justify-end pt-4">
+             <Button variant="outline" onClick={() => setIsKoreksiModalOpen(false)}>Batal</Button>
+             <Button className="ml-3 bg-blue-600 hover:bg-blue-700 font-bold" onClick={handleSaveKoreksi}>Simpan Koreksi</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
