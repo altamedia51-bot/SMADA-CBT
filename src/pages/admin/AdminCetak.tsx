@@ -239,33 +239,36 @@ export default function AdminCetak() {
       <div className="fixed inset-0 z-[9999] bg-slate-200 overflow-y-auto w-full h-full print:static print:h-auto print:w-auto print:overflow-visible print:bg-white text-black">
          <style>{`
             @media print {
-              html, body, #root {
-                height: max-content !important;
+              html, body, #root, #root > div, .fixed.inset-0 {
+                height: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: visible !important;
-                background: white;
+                position: static !important;
+                background-color: white !important;
               }
-              body * {
-                visibility: hidden;
-              }
-              #print-container, #print-container * {
-                visibility: visible;
-              }
+              body > :not(#root) { display: none !important; }
+              .no-print { display: none !important; }
               #print-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
+                width: 100% !important;
+                max-width: none !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                background-color: transparent !important;
+                box-shadow: none !important;
+                display: block !important;
               }
-              .no-print { display: none !important; }
+              .break-inside-avoid {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+              }
               .page-break { page-break-after: always; break-after: page; }
               @page { margin: 1cm; size: ${config.ukuranKertas === 'F4' ? '215.9mm 330.2mm' : 'A4'} portrait; }
             }
          `}</style>
-         <div className="no-print sticky top-0 bg-white border-b shadow-sm p-4 flex justify-between items-center z-10 px-8">
+         <div className="no-print sticky top-0 bg-white border-b shadow-sm w-full p-4 flex justify-between items-center z-10 px-8">
             <div>
                <h2 className="text-xl font-bold text-slate-800">Preview {printMode === 'kartu' ? 'Kartu Peserta' : printMode === 'hadir' ? 'Daftar Hadir' : printMode === 'berita' ? 'Berita Acara' : printMode === 'soal' ? 'Soal Ujian' : 'Lembar Jawaban'}</h2>
             </div>

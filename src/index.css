@@ -130,3 +130,16 @@
     @apply font-sans;
     }
 }
+
+@media print {
+  .h-screen {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  .overflow-hidden {
+    overflow: visible !important;
+  }
+  .flex-1 {
+    flex: none !important;
+  }
+}
