@@ -15,12 +15,16 @@ export default function AdminUjian() {
   const [paketList, setPaketList] = useState<any[]>([]);
   const [kelasList, setKelasList] = useState<any[]>([]);
   const [jenisUjianList, setJenisUjianList] = useState<any[]>([]);
+  const [sesiList, setSesiList] = useState<any[]>([]);
   const [soalCounts, setSoalCounts] = useState<Record<string, number>>({});
   
   const [title, setTitle] = useState('');
   const [paketId, setPaketId] = useState('');
   const [kelasId, setKelasId] = useState('');
   const [jenisUjianId, setJenisUjianId] = useState('');
+  const [sesiId, setSesiId] = useState('');
+  const [waktuMulai, setWaktuMulai] = useState('');
+  const [waktuSelesai, setWaktuSelesai] = useState('');
   const [duration, setDuration] = useState('120'); // minutes
   const [status, setStatus] = useState('draft'); // draft, aktif, selesai
 
@@ -64,10 +68,35 @@ export default function AdminUjian() {
       setKelasList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
+    // Fetch Sesi
+    const qSesi = query(collection(db, 'sesi'));
+    const unsubSesi = onSnapshot(qSesi, snap => {
+      setSesiList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
     return () => {
-      unsubUjian(); unsubPaket(); unsubKelas(); unsubJenis();
+      unsubUjian(); unsubPaket(); unsubKelas(); unsubJenis(); unsubSesi();
     };
   }, []);
+
+  // Token auto refresh every 15 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      ujianList.forEach(u => {
+        if (u.status === 'aktif') {
+          const lastUpdate = u.lastTokenUpdate?.toMillis() || u.updatedAt?.toMillis() || 0;
+          if (now - lastUpdate >= 15 * 60 * 1000) {
+            updateDoc(doc(db, 'ujian', u.id), {
+              token: Math.random().toString(36).substring(2, 8).toUpperCase(),
+              lastTokenUpdate: serverTimestamp()
+            }).catch(e => console.error("Auto token update error:", e));
+          }
+        }
+      });
+    }, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [ujianList]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,9 +110,13 @@ export default function AdminUjian() {
         paketId,
         kelasId,
         jenisUjianId,
+        sesiId,
+        waktuMulai,
+        waktuSelesai,
         duration: parseInt(duration),
         status,
         token: Math.random().toString(36).substring(2, 8).toUpperCase(), // Generate random 6-char token
+        lastTokenUpdate: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
 
@@ -104,6 +137,9 @@ export default function AdminUjian() {
       setPaketId('');
       setKelasId('');
       setJenisUjianId('');
+      setSesiId('');
+      setWaktuMulai('');
+      setWaktuSelesai('');
       setDuration('120');
       setStatus('draft');
     } catch (err: any) {
@@ -117,6 +153,9 @@ export default function AdminUjian() {
     setPaketId(u.paketId || '');
     setKelasId(u.kelasId || '');
     setJenisUjianId(u.jenisUjianId || '');
+    setSesiId(u.sesiId || '');
+    setWaktuMulai(u.waktuMulai || '');
+    setWaktuSelesai(u.waktuSelesai || '');
     setDuration(u.duration?.toString() || '120');
     setStatus(u.status || 'draft');
   };
@@ -134,7 +173,12 @@ export default function AdminUjian() {
   const toggleStatus = async (id: string, currentStatus: string) => {
     const newStatus = currentStatus === 'aktif' ? 'selesai' : 'aktif';
     try {
-      await updateDoc(doc(db, 'ujian', id), { status: newStatus });
+      const payload: any = { status: newStatus };
+      if (newStatus === 'aktif') {
+        payload.token = Math.random().toString(36).substring(2, 8).toUpperCase();
+        payload.lastTokenUpdate = serverTimestamp();
+      }
+      await updateDoc(doc(db, 'ujian', id), payload);
       toast.success(`Status ujian diubah menjadi ${newStatus}`);
     } catch (err: any) {
       toast.error('Gagal mengubah status: ' + err.message);
@@ -236,25 +280,61 @@ export default function AdminUjian() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Awal</label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="h-11 bg-slate-50 border-slate-200 font-bold focus:ring-indigo-500">
-                      <SelectValue placeholder="Status" />
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sesi Ujian</label>
+                  <Select value={sesiId} onValueChange={setSesiId}>
+                    <SelectTrigger className="h-11 bg-slate-50 border-slate-200 focus:ring-indigo-500">
+                      <SelectValue placeholder="Pilih Sesi" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="draft"><span className="text-slate-600">Draft</span></SelectItem>
-                      <SelectItem value="aktif"><span className="text-emerald-600">Aktif</span></SelectItem>
-                      <SelectItem value="selesai"><span className="text-rose-600">Selesai</span></SelectItem>
+                      {sesiList.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.kode})</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Waktu Mulai</label>
+                  <Input 
+                    type="time"
+                    value={waktuMulai} 
+                    onChange={(e) => setWaktuMulai(e.target.value)} 
+                    className="h-11 bg-slate-50 border-slate-200 focus-visible:ring-indigo-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Waktu Selesai</label>
+                  <Input 
+                    type="time"
+                    value={waktuSelesai} 
+                    onChange={(e) => setWaktuSelesai(e.target.value)} 
+                    className="h-11 bg-slate-50 border-slate-200 focus-visible:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Status Awal</label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger className="h-11 bg-slate-50 border-slate-200 font-bold focus:ring-indigo-500">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft"><span className="text-slate-600">Draft</span></SelectItem>
+                    <SelectItem value="aktif"><span className="text-emerald-600">Aktif</span></SelectItem>
+                    <SelectItem value="selesai"><span className="text-rose-600">Selesai</span></SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="pt-4 flex gap-3">
                 {editingId && (
                   <Button type="button" variant="outline" className="h-11 flex-1 font-bold rounded-xl" onClick={() => {
                     setEditingId(null);
-                    setTitle(''); setPaketId(''); setKelasId(''); setDuration('120'); setStatus('draft');
+                    setTitle(''); setPaketId(''); setKelasId(''); setJenisUjianId(''); setSesiId(''); setWaktuMulai(''); setWaktuSelesai(''); setDuration('120'); setStatus('draft');
                   }}>Batal</Button>
                 )}
                 <Button type="submit" className={`h-11 ${editingId ? 'flex-1' : 'w-full'} font-bold rounded-xl shadow-md ${editingId ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}>
@@ -282,6 +362,7 @@ export default function AdminUjian() {
               const paket = paketList.find(p => p.id === u.paketId);
               const kelas = kelasList.find(k => k.id === u.kelasId);
               const jenis = jenisUjianList.find(j => j.id === u.jenisUjianId);
+              const sesiObj = sesiList.find(s => s.id === u.sesiId);
               
               const isAktif = u.status === 'aktif';
               const isSelesai = u.status === 'selesai';
@@ -314,9 +395,9 @@ export default function AdminUjian() {
                       </div>
                     </div>
 
-                    <h4 className="font-extrabold text-[1.1rem] leading-tight text-slate-800 mb-4 pr-6">{u.title}</h4>
+                    <h4 className="font-extrabold text-[1.1rem] leading-tight text-slate-800 mb-4 pr-6">{u.title} {jenis ? `(${jenis.kode})` : ''}</h4>
                     
-                    <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-[13px]">
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-[13px] mb-4">
                       <div className="flex items-center gap-2 text-slate-600">
                         <BookOpen className="w-4 h-4 text-indigo-400 shrink-0" />
                         <span className="font-medium truncate">{paket?.title || '-'}</span>
@@ -335,7 +416,18 @@ export default function AdminUjian() {
                       </div>
                     </div>
 
-                    <div className="mt-5 pt-4 border-t border-slate-100/80 flex items-center justify-between">
+                    <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-xs mb-3 flex flex-col gap-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-bold uppercase tracking-wider">Sesi</span>
+                        <span className="font-bold text-slate-800">{sesiObj ? sesiObj.name : '-'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-bold uppercase tracking-wider">Waktu Akses</span>
+                        <span className="font-bold text-slate-800">{u.waktuMulai || '-'} s/d {u.waktuSelesai || '-'}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-slate-100/80 flex items-center justify-between">
                        <div>
                          <p className="text-[10px] uppercase font-bold text-slate-400 mb-0.5 tracking-wider">Token Ujian</p>
                          <p className={`font-mono text-xl font-black tracking-widest ${isAktif ? 'text-emerald-600' : isSelesai ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
