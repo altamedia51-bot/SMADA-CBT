@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Printer, Settings, CreditCard, ListChecks, FileText, CheckCircle, School, FileQuestion, ScanLine, ImagePlus, X } from 'lucide-react';
 import { toast } from 'sonner';
+import html2pdf from 'html2pdf.js';
 
 export default function AdminCetak() {
   const [kelasList, setKelasList] = useState<any[]>([]);
@@ -28,8 +29,6 @@ export default function AdminCetak() {
   const handleExportPDF = async () => {
     setIsExporting(true);
     try {
-      // @ts-ignore
-      const html2pdf = (await import('html2pdf.js')).default;
       const element = document.getElementById('print-container');
       
       if (element) {
@@ -54,9 +53,9 @@ export default function AdminCetak() {
         element.classList.add('my-8', 'shadow-2xl', 'p-8');
         element.classList.remove('p-0');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Gagal mengekspor PDF');
+      toast.error('Gagal mengekspor PDF: ' + (err?.message || 'Error tidak diketahui'));
     } finally {
       setIsExporting(false);
     }
