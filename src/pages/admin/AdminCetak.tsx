@@ -275,7 +275,7 @@ export default function AdminCetak() {
             <div className="flex gap-3">
                <Button variant="outline" onClick={() => setPrintMode('none')} className="h-11">Kembali</Button>
                <Button onClick={() => window.print()} className="h-11 bg-blue-600 hover:bg-blue-700 px-6 font-bold shadow-lg shadow-blue-500/20">
-                 <Printer className="w-4 h-4 mr-2" /> Cetak Sekarang
+                 <FileText className="w-4 h-4 mr-2" /> Ekspor PDF
                </Button>
             </div>
          </div>
@@ -283,10 +283,11 @@ export default function AdminCetak() {
          <div id="print-container" className="max-w-[21cm] mx-auto bg-white min-h-[29.7cm] p-8 shadow-2xl my-8 print:my-0 print:shadow-none font-sans text-slate-900">
             {/* KARTU PRINT */}
             {printMode === 'kartu' && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-wrap -mx-2">
                  {printData?.siswa.map((s:any, idx:number) => (
-                   <div key={idx} className="border-2 border-slate-800 rounded-xl overflow-hidden print:border-[1.5px] print:rounded-lg break-inside-avoid">
-                      <div className="border-b-2 border-slate-800 p-3 bg-slate-100 flex items-center justify-between text-center print:border-b-[1.5px]">
+                   <div key={idx} className="w-1/2 px-2 mb-4 break-inside-avoid">
+                     <div className="border-2 border-slate-800 rounded-xl overflow-hidden print:border-[1.5px] print:rounded-lg h-full flex flex-col">
+                        <div className="border-b-2 border-slate-800 p-3 bg-slate-100 flex items-center justify-between text-center print:border-b-[1.5px]">
                          {config.kopKiri ? (
                            <img src={config.kopKiri} className="w-10 h-10 object-contain" alt="Logo" />
                          ) : config.kopKanan ? (
@@ -350,7 +351,8 @@ export default function AdminCetak() {
                             </div>
                          </div>
                       </div>
-                   </div>
+                    </div>
+                  </div>
                  ))}
               </div>
             )}
@@ -413,7 +415,7 @@ export default function AdminCetak() {
                           </thead>
                           <tbody>
                              {sList.map((s:any, i:number) => (
-                                <tr key={i}>
+                                <tr key={i} className="break-inside-avoid">
                                    <td className="border border-slate-800 py-3 px-3 text-center">{i+1}</td>
                                    <td className="border border-slate-800 py-3 px-3 font-mono text-center">{s.nis||(s.email ? s.email.split('@')[0] : '-')}</td>
                                    <td className="border border-slate-800 py-3 px-3 uppercase">{s.name || s.displayName}</td>
@@ -487,7 +489,7 @@ export default function AdminCetak() {
 
                      <p className="mt-8 mb-4">yang membuat berita acara :</p>
 
-                     <div className="w-full relative mt-4">
+                     <div className="w-full relative mt-4 break-inside-avoid">
                         <div className="absolute right-32 top-0 font-bold mb-4">TTD</div>
                         <table className="w-full mt-8 border-none text-sm">
                            <tbody>

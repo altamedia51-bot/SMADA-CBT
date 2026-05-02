@@ -132,11 +132,11 @@
 }
 
 @media print {
-  .h-screen {
+  .h-screen, .min-h-screen {
     height: auto !important;
     min-height: 0 !important;
   }
-  .overflow-hidden {
+  .overflow-hidden, .overflow-auto, .overflow-y-auto {
     overflow: visible !important;
   }
   .flex-1 {
