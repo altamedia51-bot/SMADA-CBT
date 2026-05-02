@@ -431,7 +431,9 @@ export default function AdminCetak() {
                   </div>
                   <h3 className="text-center font-black text-xl leading-tight mb-1">BERITA ACARA PENYELENGGARAAN</h3>
                   <h3 className="text-center font-black text-xl mb-2 uppercase leading-tight">{config.namaUjian}</h3>
-                  <p className="text-center font-bold text-md mb-8 uppercase">{config.tahunAjaran}</p>
+                  <p className="text-center font-bold text-md mb-8 uppercase">
+                    {config.tahunAjaran.toLowerCase().includes('tahun') ? config.tahunAjaran : `Tahun Ajaran ${config.tahunAjaran}`}
+                  </p>
                   <div className="text-justify leading-relaxed space-y-6">
                      <p>Pada hari ini tanggal <strong>...............................</strong> telah diselenggarakan {config.namaUjian} untuk mata pelajaran <strong>{printData.mapel}</strong> dari pukul ................... sampai ...................</p>
                      
@@ -448,27 +450,61 @@ export default function AdminCetak() {
                         <div className="w-full h-32 border border-slate-800 mt-2"></div>
                      </div>
 
-                     <p>Demikian Berita Acara ini dibuat dengan sesungguhnya.</p>
+                     <p className="mt-8 mb-4">yang membuat berita acara :</p>
 
-                     <div className="flex justify-between mt-16 text-center text-sm">
-                        <div>
-                           <p>Mengetahui,<br/>Kepala Sekolah</p>
-                           <br/><br/><br/>
-                           <p className="font-bold underline">{config.kepsek}</p>
-                           <p>NIP. {config.nip}</p>
-                        </div>
-                        <div>
-                           <p><br/>Proktor Ruang,</p>
-                           <br/><br/><br/>
-                           <p className="font-bold underline">{config.proktor}</p>
-                           <p>NIP. {config.nipProktor}</p>
-                        </div>
-                        <div>
-                           <p>Sukorejo, ...............................<br/>Pengawas Ruang,</p>
-                           <br/><br/><br/>
-                           <p className="font-bold underline">{config.pengawas}</p>
-                           <p>NIP. {config.nipPengawas}</p>
-                        </div>
+                     <div className="w-full relative mt-4">
+                        <div className="absolute right-32 top-0 font-bold mb-4">TTD</div>
+                        <table className="w-full mt-8 border-none text-sm">
+                           <tbody>
+                              <tr>
+                                 <td className="w-32 text-right pr-4 align-bottom py-2">Proktor</td>
+                                 <td className="border-b border-black w-1/2 relative py-2">
+                                     <span className="absolute bottom-1 left-4 font-bold uppercase">{config.proktor}</span>
+                                 </td>
+                                 <td className="w-10"></td>
+                                 <td className="w-64 align-bottom py-2"><span className="mr-2">1.</span> ________________________________</td>
+                              </tr>
+                              <tr>
+                                 <td className="text-right pr-4 align-bottom py-2">NIP</td>
+                                 <td className="border-b border-black relative py-2">
+                                     <span className="absolute bottom-1 left-4 font-bold">{config.nipProktor}</span>
+                                 </td>
+                                 <td colSpan={2}></td>
+                              </tr>
+                              <tr><td colSpan={4} className="h-6"></td></tr>
+                              <tr>
+                                 <td className="w-32 text-right pr-4 align-bottom py-2">Pengawas</td>
+                                 <td className="border-b border-black relative py-2">
+                                     <span className="absolute bottom-1 left-4 font-bold uppercase">{config.pengawas}</span>
+                                 </td>
+                                 <td className="w-10"></td>
+                                 <td className="w-64 align-bottom py-2"><span className="mr-2">2.</span> ________________________________</td>
+                              </tr>
+                              <tr>
+                                 <td className="text-right pr-4 align-bottom py-2">NIP</td>
+                                 <td className="border-b border-black relative py-2">
+                                     <span className="absolute bottom-1 left-4 font-bold">{config.nipPengawas}</span>
+                                 </td>
+                                 <td colSpan={2}></td>
+                              </tr>
+                              <tr><td colSpan={4} className="h-6"></td></tr>
+                              <tr>
+                                 <td className="w-32 text-right pr-4 align-bottom py-2">Kepala Sekolah</td>
+                                 <td className="border-b border-black relative py-2">
+                                     <span className="absolute bottom-1 left-4 font-bold uppercase">{config.kepsek}</span>
+                                 </td>
+                                 <td className="w-10"></td>
+                                 <td className="w-64 align-bottom py-2"><span className="mr-2">3.</span> ________________________________</td>
+                              </tr>
+                              <tr>
+                                 <td className="text-right pr-4 align-bottom py-2">NIP</td>
+                                 <td className="border-b border-black relative py-2">
+                                     <span className="absolute bottom-1 left-4 font-bold">{config.nip}</span>
+                                 </td>
+                                 <td colSpan={2}></td>
+                              </tr>
+                           </tbody>
+                        </table>
                      </div>
                   </div>
                </div>
