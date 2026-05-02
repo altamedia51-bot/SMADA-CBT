@@ -786,15 +786,15 @@ export default function AdminCetak() {
       </Dialog>
 
       <Dialog open={isKartuModalOpen} onOpenChange={setIsKartuModalOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Cetak Kartu Peserta</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedKelasId} onValueChange={setSelectedKelasId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Kelas" /></SelectTrigger><SelectContent>{kelasList.map(k => (<SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateKartu}>Buat Kartu</Button></div></DialogContent>
+        <DialogContent><DialogHeader><DialogTitle>Cetak Kartu Peserta</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedKelasId} onValueChange={setSelectedKelasId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Kelas">{kelasList.find(k=>k.id===selectedKelasId)?.name}</SelectValue></SelectTrigger><SelectContent>{kelasList.map(k => (<SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateKartu}>Buat Kartu</Button></div></DialogContent>
       </Dialog>
       
       <Dialog open={isHadirModalOpen} onOpenChange={setIsHadirModalOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Cetak Daftar Hadir</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedKelasId} onValueChange={setSelectedKelasId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Kelas" /></SelectTrigger><SelectContent>{kelasList.map(k => (<SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateHadir}>Buat Daftar Hadir</Button></div></DialogContent>
+        <DialogContent><DialogHeader><DialogTitle>Cetak Daftar Hadir</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedKelasId} onValueChange={setSelectedKelasId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Kelas">{kelasList.find(k=>k.id===selectedKelasId)?.name}</SelectValue></SelectTrigger><SelectContent>{kelasList.map(k => (<SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateHadir}>Buat Daftar Hadir</Button></div></DialogContent>
       </Dialog>
 
       <Dialog open={isBeritaModalOpen} onOpenChange={setIsBeritaModalOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Cetak Berita Acara Ujian</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedUjianId} onValueChange={setSelectedUjianId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Jadwal Ujian" /></SelectTrigger><SelectContent>{ujianList.map(u => (<SelectItem key={u.id} value={u.id}>{u.title}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateBerita}>Buat Berita Acara</Button></div></DialogContent>
+        <DialogContent><DialogHeader><DialogTitle>Cetak Berita Acara Ujian</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedUjianId} onValueChange={setSelectedUjianId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Jadwal Ujian">{ujianList.find(u=>u.id===selectedUjianId)?.title}</SelectValue></SelectTrigger><SelectContent>{ujianList.map(u => (<SelectItem key={u.id} value={u.id}>{u.title}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateBerita}>Buat Berita Acara</Button></div></DialogContent>
       </Dialog>
       <Dialog open={isSoalModalOpen} onOpenChange={setIsSoalModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
@@ -804,7 +804,9 @@ export default function AdminCetak() {
               <label className="text-xs font-bold text-slate-500 mb-1 block">Pilih Paket Soal</label>
               <Select value={selectedPaketId} onValueChange={setSelectedPaketId}>
                 <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Pilih Paket Soal" />
+                  <SelectValue placeholder="Pilih Paket Soal">
+                    {paketList.find(p=>p.id===selectedPaketId)?.title}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {paketList.map(p => {

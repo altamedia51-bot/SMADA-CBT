@@ -236,7 +236,9 @@ export default function AdminUjian() {
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bank Soal (Materi)</label>
                 <Select value={paketId} onValueChange={setPaketId}>
                   <SelectTrigger className="h-11 bg-slate-50 border-slate-200 focus:ring-indigo-500">
-                    <SelectValue placeholder="Pilih Paket Soal" />
+                    <SelectValue placeholder="Pilih Paket Soal">
+                      {paketList.find(p=>p.id===paketId)?.title}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {paketList.map(p => (
@@ -251,7 +253,9 @@ export default function AdminUjian() {
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Peserta (Kelas)</label>
                   <Select value={kelasId} onValueChange={setKelasId}>
                     <SelectTrigger className="h-11 bg-slate-50 border-slate-200 focus:ring-indigo-500">
-                      <SelectValue placeholder="Pilih Kelas" />
+                      <SelectValue placeholder="Pilih Kelas">
+                        {kelasList.find(k=>k.id===kelasId)?.name}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {kelasList.map(k => (
@@ -277,7 +281,9 @@ export default function AdminUjian() {
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Jenis Ujian</label>
                   <Select value={jenisUjianId} onValueChange={setJenisUjianId}>
                     <SelectTrigger className="h-11 bg-slate-50 border-slate-200 focus:ring-indigo-500">
-                      <SelectValue placeholder="Jenis" />
+                      <SelectValue placeholder="Jenis">
+                        {jenisUjianList.find(j=>j.id===jenisUjianId)?.kode}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {jenisUjianList.map(j => (
@@ -291,7 +297,9 @@ export default function AdminUjian() {
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sesi Ujian</label>
                   <Select value={sesiId} onValueChange={setSesiId}>
                     <SelectTrigger className="h-11 bg-slate-50 border-slate-200 focus:ring-indigo-500">
-                      <SelectValue placeholder="Pilih Sesi" />
+                      <SelectValue placeholder="Pilih Sesi">
+                        {sesiId ? `${sesiList.find(s=>s.id===sesiId)?.name} (${sesiList.find(s=>s.id===sesiId)?.kode})` : undefined}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {sesiList.map(s => (

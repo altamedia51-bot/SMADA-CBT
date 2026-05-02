@@ -110,7 +110,9 @@ export default function GuruPaketSoal() {
               <div className="grid gap-2">
                 <label className="text-sm font-medium">Mata Pelajaran</label>
                 <Select value={newMapelId} onValueChange={setNewMapelId} required>
-                  <SelectTrigger><SelectValue placeholder="Pilih Mapel" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Pilih Mapel">
+                    {mapelList.find(m=>m.id===newMapelId)?.name}
+                  </SelectValue></SelectTrigger>
                   <SelectContent>
                     {mapelList.map(m => (
                       <SelectItem key={m.id} value={m.id}>{m.name} ({m.jenjang})</SelectItem>

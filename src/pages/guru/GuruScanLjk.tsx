@@ -202,7 +202,9 @@ export default function GuruScanLjk() {
                <label className="text-xs font-bold text-slate-400 mb-2 block uppercase tracking-wider">Target Ujian</label>
                <Select value={selectedUjian} onValueChange={setSelectedUjian}>
                  <SelectTrigger className="w-full bg-slate-800 border-slate-700 text-slate-200 focus:ring-emerald-500 h-12">
-                   <SelectValue placeholder="Pilih Ujian..." />
+                   <SelectValue placeholder="Pilih Ujian...">
+                     {ujianList.find(u=>u.id===selectedUjian)?.title}
+                   </SelectValue>
                  </SelectTrigger>
                  <SelectContent className="bg-slate-800 border-slate-700 text-slate-200">
                     {ujianList.map(u => (

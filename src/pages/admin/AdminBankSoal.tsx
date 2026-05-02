@@ -143,7 +143,11 @@ export default function AdminBankSoal() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Mata Pelajaran</label>
                   <Select value={newMapelId} onValueChange={setNewMapelId} required>
-                    <SelectTrigger className="h-11"><SelectValue placeholder="Pilih Mapel" /></SelectTrigger>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Pilih Mapel">
+                        {mapelList.find(m=>m.id===newMapelId)?.name || 'Pilih Mapel'}
+                      </SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
                       {mapelList.map(m => (
                         <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
@@ -183,7 +187,11 @@ export default function AdminBankSoal() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Penulis / Guru</label>
                   <Select value={newGuruId} onValueChange={setNewGuruId} required>
-                    <SelectTrigger className="h-11"><SelectValue placeholder="Pilih Pembuat" /></SelectTrigger>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Pilih Pembuat">
+                        {newGuruId === profile?.uid ? 'Saya Sendiri (Admin)' : guruList.find(g=>g.id===newGuruId)?.name || 'Pilih Pembuat'}
+                      </SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={profile?.uid || ''}>Saya Sendiri (Admin)</SelectItem>
                       {guruList.map(g => (

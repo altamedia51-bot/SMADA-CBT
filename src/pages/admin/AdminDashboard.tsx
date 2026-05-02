@@ -117,7 +117,9 @@ export default function AdminDashboard() {
               ) : (
                 <Select value={selectedUjian} onValueChange={setSelectedUjian}>
                   <SelectTrigger className="w-full sm:w-[220px] bg-white">
-                    <SelectValue placeholder="Pilih Ujian Aktif..." />
+                    <SelectValue placeholder="Pilih Ujian Aktif...">
+                      {ujianList.find(u=>u.id===selectedUjian)?.title}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {ujianList.map(u => (

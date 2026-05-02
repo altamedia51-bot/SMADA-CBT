@@ -151,9 +151,11 @@ export default function AdminLeger() {
 
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <Select value={selectedKelas} onValueChange={setSelectedKelas}>
-            <SelectTrigger className="w-[180px] bg-white">
-              <SelectValue placeholder="Pilih Kelas" />
-            </SelectTrigger>
+                  <SelectTrigger className="w-[180px] bg-white">
+                    <SelectValue placeholder="Pilih Kelas">
+                      {selectedKelas === 'all' ? 'Semua Kelas' : selectedKelas}
+                    </SelectValue>
+                  </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Kelas</SelectItem>
               {uniqueClasses.map((kls: any) => (

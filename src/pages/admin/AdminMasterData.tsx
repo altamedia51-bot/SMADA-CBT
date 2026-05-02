@@ -783,7 +783,9 @@ export default function AdminMasterData() {
                     onValueChange={val => setSiswaForm({...siswaForm, sesiId: val})}
                   >
                     <SelectTrigger className="h-11 font-medium bg-white">
-                      <SelectValue placeholder="PILIH SESI" />
+                      <SelectValue placeholder="PILIH SESI">
+                        {siswaForm.sesiId === 'none' ? 'Tidak Ada' : siswaForm.sesiId ? `${sesi.find(s=>s.id===siswaForm.sesiId)?.name} (${sesi.find(s=>s.id===siswaForm.sesiId)?.kode})` : "PILIH SESI"}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Tidak Ada</SelectItem>
@@ -1156,7 +1158,11 @@ export default function AdminMasterData() {
               <div className="md:col-span-4 grid gap-1.5">
                 <label className="text-xs font-bold text-slate-500 ml-1">WALI KELAS (OPSIONAL)</label>
                 <Select value={waliKelas === '' ? 'none' : waliKelas} onValueChange={v => setWaliKelas(v === 'none' ? '' : v)}>
-                  <SelectTrigger className="h-11 border-slate-200"><SelectValue placeholder="Pilih Guru..." /></SelectTrigger>
+                  <SelectTrigger className="h-11 border-slate-200">
+                    <SelectValue placeholder="Pilih Guru...">
+                      {waliKelas === '' || waliKelas === 'none' ? '--TIDAK ADA--' : users.find(u=>u.id===waliKelas)?.displayName || 'Pilih Guru...'}
+                    </SelectValue>
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">--TIDAK ADA--</SelectItem>
                     {users.filter(u => u.role === 'guru').map(g => (

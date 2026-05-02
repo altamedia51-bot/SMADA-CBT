@@ -170,7 +170,9 @@ export default function GuruDashboard() {
                  <div className="mt-8 w-full max-w-[240px]">
                     <Select value={selectedUjian} onValueChange={setSelectedUjian}>
                        <SelectTrigger className="w-full h-11 bg-white border-slate-200 rounded-xl focus:ring-blue-500 font-bold text-slate-600 shadow-sm">
-                          <SelectValue placeholder="Pilih Ujian Aktif..." />
+                          <SelectValue placeholder="Pilih Ujian Aktif...">
+                            {ujianList.find(u=>u.id===selectedUjian)?.title}
+                          </SelectValue>
                        </SelectTrigger>
                        <SelectContent rounded-2xl>
                           {ujianList.length === 0 ? (
@@ -189,7 +191,9 @@ export default function GuruDashboard() {
                  <div className="p-4 border-b border-slate-50 bg-slate-50/30">
                     <Select value={selectedUjian} onValueChange={setSelectedUjian}>
                        <SelectTrigger className="w-full h-10 bg-white border-slate-200 rounded-lg focus:ring-blue-500 font-bold text-xs text-slate-600 shadow-sm">
-                          <SelectValue placeholder="Ganti Ujian..." />
+                          <SelectValue placeholder="Ganti Ujian...">
+                            {ujianList.find(u=>u.id===selectedUjian)?.title}
+                          </SelectValue>
                        </SelectTrigger>
                        <SelectContent rounded-xl>
                           {ujianList.map(u => (

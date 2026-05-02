@@ -329,7 +329,9 @@ export default function AdminHasil() {
                   <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 block">Pilih Jadwal Ujian</label>
                   <Select value={selectedUjianId} onValueChange={setSelectedUjianId}>
                     <SelectTrigger className="w-full bg-slate-50 border-slate-200 font-medium h-11">
-                      <SelectValue placeholder="Pilih Ujian..." />
+                      <SelectValue placeholder="Pilih Ujian...">
+                        {ujianList.find(u=>u.id===selectedUjianId)?.title}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {ujianList.map(u => (
@@ -392,7 +394,9 @@ export default function AdminHasil() {
                 </div>
                 <Select value={selectedKelasSesi} onValueChange={setSelectedKelasSesi}>
                   <SelectTrigger className="w-full sm:w-[200px] h-11 bg-white border-slate-200 focus:ring-indigo-500 font-medium">
-                    <SelectValue placeholder="Semua Kelas" />
+                    <SelectValue placeholder="Semua Kelas">
+                      {selectedKelasSesi === 'all' ? 'Semua Kelas' : selectedKelasSesi}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Kelas</SelectItem>
@@ -519,7 +523,9 @@ export default function AdminHasil() {
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5"/> Pilih Kelas Utama</label>
                 <Select value={selectedKelasRiwayat} onValueChange={setSelectedKelasRiwayat}>
                   <SelectTrigger className="h-12 bg-slate-50 border-slate-200 focus:ring-indigo-500 font-bold text-slate-700">
-                    <SelectValue placeholder="Pilih Kelas" />
+                    <SelectValue placeholder="Pilih Kelas">
+                      {kelasData.find(k=>k.id===selectedKelasRiwayat)?.name || 'Pilih Kelas'}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {kelasData.map(k => (
@@ -532,7 +538,9 @@ export default function AdminHasil() {
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Mata Pelajaran (Filter Opsional)</label>
                 <Select value={selectedMapelRiwayat} onValueChange={setSelectedMapelRiwayat}>
                   <SelectTrigger className="h-12 bg-slate-50 border-slate-200 focus:ring-indigo-500 font-bold text-slate-700">
-                    <SelectValue placeholder="Semua Mapel" />
+                    <SelectValue placeholder="Semua Mapel">
+                      {selectedMapelRiwayat === 'all' ? 'Semua Mata Pelajaran' : mapelData.find(m=>m.id===selectedMapelRiwayat)?.name || 'Semua Mapel'}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Mata Pelajaran</SelectItem>
