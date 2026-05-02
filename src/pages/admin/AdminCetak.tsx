@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Printer, Settings, CreditCard, ListChecks, FileText, CheckCircle, School, FileQuestion, ScanLine, ImagePlus, X } from 'lucide-react';
 import { toast } from 'sonner';
-import html2pdf from 'html2pdf.js';
+import domtoimage from 'dom-to-image';
+import { jsPDF } from 'jspdf';
 
 export default function AdminCetak() {
   const [kelasList, setKelasList] = useState<any[]>([]);
@@ -31,31 +32,49 @@ export default function AdminCetak() {
     try {
       const element = document.getElementById('print-container');
       
-      if (element) {
-        element.classList.remove('my-8', 'shadow-2xl', 'p-8');
-        element.classList.add('p-0');
+      if (!element) return;
+      
+      element.classList.remove('my-8', 'shadow-2xl', 'p-8');
+      element.classList.add('p-0');
+
+      const dataUrl = await domtoimage.toJpeg(element, { quality: 1, bgcolor: '#ffffff' });
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: config.ukuranKertas === 'F4' ? [215.9, 330.2] : 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+      
+      // Calculate how many pages we need
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let heightLeft = pdfHeight;
+      let position = 0;
+
+      pdf.addImage(dataUrl, 'JPEG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(dataUrl, 'JPEG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
       }
 
-      const uk = config.ukuranKertas === 'F4' ? [215.9, 330.2] : 'a4';
+      pdf.save(`Export_${printMode}_${new Date().getTime()}.pdf`);
 
-      const opt = {
-        margin:       10,
-        filename:     `Export_${printMode}_${new Date().getTime()}.pdf`,
-        image:        { type: 'jpeg', quality: 1 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: uk, orientation: 'portrait' },
-        pagebreak:    { mode: ['css', 'legacy'] }
-      };
-
-      await html2pdf().set(opt).from(element).save();
-
-      if (element) {
-        element.classList.add('my-8', 'shadow-2xl', 'p-8');
-        element.classList.remove('p-0');
-      }
+      element.classList.add('my-8', 'shadow-2xl', 'p-8');
+      element.classList.remove('p-0');
     } catch (err: any) {
       console.error(err);
       toast.error('Gagal mengekspor PDF: ' + (err?.message || 'Error tidak diketahui'));
+      const element = document.getElementById('print-container');
+      if (element) {
+         element.classList.add('my-8', 'shadow-2xl', 'p-8');
+         element.classList.remove('p-0');
+      }
     } finally {
       setIsExporting(false);
     }
