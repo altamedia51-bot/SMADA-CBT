@@ -23,6 +23,8 @@ export default function AdminUjian() {
   const [kelasId, setKelasId] = useState('');
   const [jenisUjianId, setJenisUjianId] = useState('');
   const [sesiId, setSesiId] = useState('');
+  const [tanggal, setTanggal] = useState('');
+  const [jurusan, setJurusan] = useState('Semua');
   const [waktuMulai, setWaktuMulai] = useState('');
   const [waktuSelesai, setWaktuSelesai] = useState('');
   const [duration, setDuration] = useState('120'); // minutes
@@ -111,6 +113,8 @@ export default function AdminUjian() {
         kelasId,
         jenisUjianId,
         sesiId,
+        tanggal,
+        jurusan,
         waktuMulai,
         waktuSelesai,
         duration: parseInt(duration),
@@ -138,6 +142,8 @@ export default function AdminUjian() {
       setKelasId('');
       setJenisUjianId('');
       setSesiId('');
+      setTanggal('');
+      setJurusan('Semua');
       setWaktuMulai('');
       setWaktuSelesai('');
       setDuration('120');
@@ -154,6 +160,8 @@ export default function AdminUjian() {
     setKelasId(u.kelasId || '');
     setJenisUjianId(u.jenisUjianId || '');
     setSesiId(u.sesiId || '');
+    setTanggal(u.tanggal || '');
+    setJurusan(u.jurusan || 'Semua');
     setWaktuMulai(u.waktuMulai || '');
     setWaktuSelesai(u.waktuSelesai || '');
     setDuration(u.duration?.toString() || '120');
@@ -296,6 +304,33 @@ export default function AdminUjian() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tanggal Ujian</label>
+                  <Input 
+                    type="date"
+                    value={tanggal} 
+                    onChange={(e) => setTanggal(e.target.value)} 
+                    className="h-11 bg-slate-50 border-slate-200 focus-visible:ring-indigo-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Jurusan</label>
+                  <Select value={jurusan} onValueChange={setJurusan}>
+                    <SelectTrigger className="h-11 bg-slate-50 border-slate-200 focus:ring-indigo-500">
+                      <SelectValue placeholder="Pilih Jurusan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Semua">Semua Jurusan</SelectItem>
+                      <SelectItem value="IPA">IPA</SelectItem>
+                      <SelectItem value="IPS">IPS</SelectItem>
+                      <SelectItem value="Bahasa">Bahasa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Waktu Mulai</label>
                   <Input 
                     type="time"
@@ -334,7 +369,7 @@ export default function AdminUjian() {
                 {editingId && (
                   <Button type="button" variant="outline" className="h-11 flex-1 font-bold rounded-xl" onClick={() => {
                     setEditingId(null);
-                    setTitle(''); setPaketId(''); setKelasId(''); setJenisUjianId(''); setSesiId(''); setWaktuMulai(''); setWaktuSelesai(''); setDuration('120'); setStatus('draft');
+                    setTitle(''); setPaketId(''); setKelasId(''); setJenisUjianId(''); setSesiId(''); setTanggal(''); setJurusan('Semua'); setWaktuMulai(''); setWaktuSelesai(''); setDuration('120'); setStatus('draft');
                   }}>Batal</Button>
                 )}
                 <Button type="submit" className={`h-11 ${editingId ? 'flex-1' : 'w-full'} font-bold rounded-xl shadow-md ${editingId ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20'}`}>
@@ -417,13 +452,19 @@ export default function AdminUjian() {
                     </div>
 
                     <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-xs mb-3 flex flex-col gap-2">
+                       <div className="flex justify-between items-center">
+                        <span className="text-slate-500 font-bold uppercase tracking-wider">Jurusan</span>
+                        <span className="font-bold text-slate-800">{u.jurusan || 'Semua'}</span>
+                      </div>
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500 font-bold uppercase tracking-wider">Sesi</span>
                         <span className="font-bold text-slate-800">{sesiObj ? sesiObj.name : '-'}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500 font-bold uppercase tracking-wider">Waktu Akses</span>
-                        <span className="font-bold text-slate-800">{u.waktuMulai || '-'} s/d {u.waktuSelesai || '-'}</span>
+                        <span className="font-bold text-slate-800">
+                          {u.tanggal ? new Date(u.tanggal).toLocaleDateString('id-ID') : '-'} | {u.waktuMulai || '-'} s/d {u.waktuSelesai || '-'}
+                        </span>
                       </div>
                     </div>
 
