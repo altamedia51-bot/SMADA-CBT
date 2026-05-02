@@ -8,8 +8,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Printer, Settings, CreditCard, ListChecks, FileText, CheckCircle, School, FileQuestion, ScanLine, ImagePlus, X } from 'lucide-react';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas-pro';
-import { jsPDF } from 'jspdf';
 
 export default function AdminCetak() {
   const [kelasList, setKelasList] = useState<any[]>([]);
@@ -27,65 +25,11 @@ export default function AdminCetak() {
   
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleExportPDF = async () => {
-    setIsExporting(true);
-    try {
-      const element = document.getElementById('print-container');
-      
-      if (!element) return;
-      
-      const originalCssText = element.style.cssText;
-      element.style.width = '210mm'; /* Approximate A4/F4 width */
-      element.style.maxWidth = 'none';
-      element.style.margin = '0';
-      element.style.padding = '0';
-      
-      element.classList.remove('my-8', 'shadow-2xl', 'p-8', 'mx-auto');
-      element.classList.add('p-0');
-
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-      const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
-
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: config.ukuranKertas === 'F4' ? [215.9, 330.2] : 'a4'
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      // Calculate how many pages we need
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      let heightLeft = pdfHeight;
-      let position = 0;
-
-      pdf.addImage(dataUrl, 'JPEG', 0, position, pdfWidth, pdfHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - pdfHeight;
-        pdf.addPage();
-        pdf.addImage(dataUrl, 'JPEG', 0, position, pdfWidth, pdfHeight);
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save(`Export_${printMode}_${new Date().getTime()}.pdf`);
-
-      element.style.cssText = originalCssText;
-      element.classList.add('my-8', 'shadow-2xl', 'p-8', 'mx-auto');
-      element.classList.remove('p-0');
-    } catch (err: any) {
-      console.error(err);
-      toast.error('Gagal mengekspor PDF: ' + (err?.message || 'Error tidak diketahui'));
-      const element = document.getElementById('print-container');
-      if (element) {
-         element.classList.add('my-8', 'shadow-2xl', 'p-8');
-         element.classList.remove('p-0');
-      }
-    } finally {
-      setIsExporting(false);
-    }
+  const handleExportPDF = () => {
+    toast.info('Mohon gunakan "Simpan sebagai PDF (Save as PDF)" pada jendela cetak.', { duration: 4000 });
+    setTimeout(() => {
+       window.print();
+    }, 500);
   };
 
   const [selectedKelasId, setSelectedKelasId] = useState('');
@@ -342,12 +286,18 @@ export default function AdminCetak() {
             </div>
          </div>
 
-         <div id="print-container" className="max-w-[21cm] mx-auto bg-white min-h-[29.7cm] p-8 shadow-2xl my-8 print:my-0 print:shadow-none font-sans text-slate-900">
+         <div id="print-container" 
+              className="mx-auto bg-white shadow-2xl my-8 print:my-0 print:shadow-none font-sans text-slate-900"
+              style={{
+                padding: '10mm',
+                maxWidth: config.ukuranKertas === 'F4' ? '215.9mm' : '210mm',
+                minHeight: config.ukuranKertas === 'F4' ? '330.2mm' : '297mm',
+              }}>
             {/* KARTU PRINT */}
             {printMode === 'kartu' && (
-              <div className="flex flex-wrap -mx-2">
+              <div className="flex flex-wrap -mx-4">
                  {printData?.siswa.map((s:any, idx:number) => (
-                   <div key={idx} className="w-1/2 px-2 mb-4 break-inside-avoid">
+                   <div key={idx} className="w-1/2 px-4 mb-8 break-inside-avoid">
                      <div className="border-2 border-slate-800 rounded-xl overflow-hidden print:border-[1.5px] print:rounded-lg h-full flex flex-col">
                         <div className="border-b-2 border-slate-800 p-3 bg-slate-100 flex items-center justify-between text-center print:border-b-[1.5px]">
                          {config.kopKiri ? (
