@@ -50,6 +50,24 @@ export default function AdminCetak() {
       reader.readAsDataURL(file);
     }
   };
+
+  const handleKopKiriUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setConfig(prev => ({...prev, kopKiri: reader.result as string}));
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleKopKananUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setConfig(prev => ({...prev, kopKanan: reader.result as string}));
+      reader.readAsDataURL(file);
+    }
+  };
   
   const [printMode, setPrintMode] = useState<'none'|'kartu'|'hadir'|'berita'|'soal'|'ljk'>('none');
   const [printData, setPrintData] = useState<any>(null);
@@ -60,7 +78,15 @@ export default function AdminCetak() {
     sekolah: 'SMA NEGERI 2 SUKOREJO',
     alamat: 'Jl. Raya Sukorejo No. 1, Pasuruan',
     kepsek: 'Dr. H. Ahmad, M.Pd.',
-    nip: '19700101 199512 1 001'
+    nip: '19700101 199512 1 001',
+    ketuaPelaksana: 'Budiman, S.Pd',
+    nipKetuaPelaksana: '19800101 200501 1 002',
+    proktor: 'Andrey, S.Kom',
+    nipProktor: '19900202 201001 1 003',
+    pengawas: 'Siti Aminah, M.Pd.',
+    nipPengawas: '19850303 200801 2 004',
+    kopKiri: '',
+    kopKanan: ''
   });
 
   useEffect(() => {
@@ -251,8 +277,24 @@ export default function AdminCetak() {
                                <tr className="border-t-2 border-slate-800">
                                   <td className="pt-3 text-sm text-blue-800 font-black">PASSWORD</td><td className="pt-3 px-1">:</td><td className="pt-3 text-sm font-mono font-black">{s.showPassword ? s.showPassword : (s.tempPassword || '123456')}</td>
                                </tr>
-                            </tbody>
+                             </tbody>
                          </table>
+                         
+                         {/* ADD SIGNATURE HERE */}
+                         <div className="flex justify-between mt-4 text-[9px] text-center font-bold">
+                            <div>
+                               <p>Ketua Pelaksana,</p>
+                               <br/><br/>
+                               <p className="underline">{config.ketuaPelaksana}</p>
+                               <p>NIP. {config.nipKetuaPelaksana}</p>
+                            </div>
+                            <div>
+                               <p>Kepala Sekolah,</p>
+                               <br/><br/>
+                               <p className="underline">{config.kepsek}</p>
+                               <p>NIP. {config.nip}</p>
+                            </div>
+                         </div>
                       </div>
                    </div>
                  ))}
@@ -262,7 +304,9 @@ export default function AdminCetak() {
             {/* DAFTAR HADIR PRINT */}
             {printMode === 'hadir' && (
                <div>
-                  <div className="text-center border-b-[3px] border-black pb-4 mb-6">
+                  <div className="text-center border-b-[3px] border-black pb-4 mb-6 relative">
+                     {config.kopKiri && <img src={config.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
+                     {config.kopKanan && <img src={config.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
                      <h2 className="font-bold">{config.kop1}</h2>
                      <h2 className="font-bold">{config.kop2}</h2>
                      <h1 className="text-2xl font-black uppercase">{config.sekolah}</h1>
@@ -299,13 +343,30 @@ export default function AdminCetak() {
                         ))}
                      </tbody>
                   </table>
+                  
+                  <div className="flex justify-between mt-10 text-center text-sm">
+                     <div>
+                        <p>Pengawas Ruang,</p>
+                        <br/><br/><br/>
+                        <p className="font-bold underline">{config.pengawas}</p>
+                        <p>NIP. {config.nipPengawas}</p>
+                     </div>
+                     <div>
+                        <p>Proktor,</p>
+                        <br/><br/><br/>
+                        <p className="font-bold underline">{config.proktor}</p>
+                        <p>NIP. {config.nipProktor}</p>
+                     </div>
+                  </div>
                </div>
             )}
 
             {/* BERITA ACARA PRINT */}
             {printMode === 'berita' && (
                <div>
-                  <div className="text-center border-b-[3px] border-black pb-4 mb-8">
+                  <div className="text-center border-b-[3px] border-black pb-4 mb-8 relative">
+                     {config.kopKiri && <img src={config.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
+                     {config.kopKanan && <img src={config.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
                      <h2 className="font-bold">{config.kop1}</h2>
                      <h2 className="font-bold">{config.kop2}</h2>
                      <h1 className="text-2xl font-black uppercase">{config.sekolah}</h1>
@@ -330,7 +391,7 @@ export default function AdminCetak() {
 
                      <p>Demikian Berita Acara ini dibuat dengan sesungguhnya.</p>
 
-                     <div className="flex justify-between mt-16 text-center">
+                     <div className="flex justify-between mt-16 text-center text-sm">
                         <div>
                            <p>Mengetahui,<br/>Kepala Sekolah</p>
                            <br/><br/><br/>
@@ -338,10 +399,16 @@ export default function AdminCetak() {
                            <p>NIP. {config.nip}</p>
                         </div>
                         <div>
+                           <p><br/>Proktor Ruang,</p>
+                           <br/><br/><br/>
+                           <p className="font-bold underline">{config.proktor}</p>
+                           <p>NIP. {config.nipProktor}</p>
+                        </div>
+                        <div>
                            <p>Sukorejo, ...............................<br/>Pengawas Ruang,</p>
                            <br/><br/><br/>
-                           <p className="font-bold underline">.........................................</p>
-                           <p>NIP. ....................................</p>
+                           <p className="font-bold underline">{config.pengawas}</p>
+                           <p>NIP. {config.nipPengawas}</p>
                         </div>
                      </div>
                   </div>
@@ -677,7 +744,7 @@ export default function AdminCetak() {
       </div>
 
       <Dialog open={isSettingsModalOpen} onOpenChange={setIsSettingsModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Pengaturan Cetak / Kop Surat</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-4">
              <div className="grid grid-cols-2 gap-4">
@@ -686,9 +753,32 @@ export default function AdminCetak() {
              </div>
              <div><label className="text-xs font-bold text-slate-500 mb-1 block">Nama Sekolah</label><Input value={config.sekolah} onChange={e=>setConfig({...config, sekolah: e.target.value})} /></div>
              <div><label className="text-xs font-bold text-slate-500 mb-1 block">Alamat Sekolah</label><Input value={config.alamat} onChange={e=>setConfig({...config, alamat: e.target.value})} /></div>
+             
+             <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+               <div>
+                  <label className="text-xs font-bold text-slate-500 mb-1 block">Logo Kiri</label>
+                  <Input type="file" accept="image/*" onChange={handleKopKiriUpload} className="mb-2" />
+                  {config.kopKiri && <img src={config.kopKiri} alt="Kop Kiri" className="h-12 object-contain" />}
+               </div>
+               <div>
+                  <label className="text-xs font-bold text-slate-500 mb-1 block">Logo Kanan</label>
+                  <Input type="file" accept="image/*" onChange={handleKopKananUpload} className="mb-2" />
+                  {config.kopKanan && <img src={config.kopKanan} alt="Kop Kanan" className="h-12 object-contain" />}
+               </div>
+             </div>
+
              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
                <div><label className="text-xs font-bold text-slate-500 mb-1 block">Nama Kepala Sekolah</label><Input value={config.kepsek} onChange={e=>setConfig({...config, kepsek: e.target.value})} /></div>
-               <div><label className="text-xs font-bold text-slate-500 mb-1 block">NIP</label><Input value={config.nip} onChange={e=>setConfig({...config, nip: e.target.value})} /></div>
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">NIP Kepala Sekolah</label><Input value={config.nip} onChange={e=>setConfig({...config, nip: e.target.value})} /></div>
+               
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Ketua Pelaksana</label><Input value={config.ketuaPelaksana} onChange={e=>setConfig({...config, ketuaPelaksana: e.target.value})} /></div>
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">NIP Ketua Pelaksana</label><Input value={config.nipKetuaPelaksana} onChange={e=>setConfig({...config, nipKetuaPelaksana: e.target.value})} /></div>
+               
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Proktor Ruang</label><Input value={config.proktor} onChange={e=>setConfig({...config, proktor: e.target.value})} /></div>
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">NIP Proktor</label><Input value={config.nipProktor} onChange={e=>setConfig({...config, nipProktor: e.target.value})} /></div>
+               
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Pengawas Ujian</label><Input value={config.pengawas} onChange={e=>setConfig({...config, pengawas: e.target.value})} /></div>
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">NIP Pengawas</label><Input value={config.nipPengawas} onChange={e=>setConfig({...config, nipPengawas: e.target.value})} /></div>
              </div>
              <Button className="w-full bg-blue-600 hover:bg-blue-700 font-bold h-11" onClick={saveConfig}>Simpan Pengaturan</Button>
           </div>
