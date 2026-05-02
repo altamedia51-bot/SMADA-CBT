@@ -14,6 +14,7 @@ export default function AdminCetak() {
   const [ujianList, setUjianList] = useState<any[]>([]);
   const [paketList, setPaketList] = useState<any[]>([]);
   const [mapelList, setMapelList] = useState<any[]>([]);
+  const [sesiList, setSesiList] = useState<any[]>([]);
   
   const [isKartuModalOpen, setIsKartuModalOpen] = useState(false);
   const [isHadirModalOpen, setIsHadirModalOpen] = useState(false);
@@ -113,11 +114,16 @@ export default function AdminCetak() {
        setMapelList(snap.docs.map(d => ({id: d.id, ...d.data()})));
     });
 
+    const unsubSesi = onSnapshot(collection(db, 'sesi'), (snap) => {
+       setSesiList(snap.docs.map(d => ({id: d.id, ...d.data()})));
+    });
+
     return () => {
       unsubKelas();
       unsubUjian();
       unsubPaket();
       unsubMapel();
+      unsubSesi();
     };
   }, []);
 
@@ -257,7 +263,13 @@ export default function AdminCetak() {
                  {printData?.siswa.map((s:any, idx:number) => (
                    <div key={idx} className="border-2 border-slate-800 rounded-xl overflow-hidden print:border-[1.5px] print:rounded-lg break-inside-avoid">
                       <div className="border-b-2 border-slate-800 p-3 bg-slate-100 flex items-center justify-between text-center print:border-b-[1.5px]">
-                         <School className="w-8 h-8 text-slate-700" />
+                         {config.kopKiri ? (
+                           <img src={config.kopKiri} className="w-10 h-10 object-contain" alt="Logo" />
+                         ) : config.kopKanan ? (
+                           <img src={config.kopKanan} className="w-10 h-10 object-contain" alt="Logo" />
+                         ) : (
+                           <School className="w-8 h-8 text-slate-700" />
+                         )}
                          <div className="flex-1 px-2">
                            <h3 className="font-black text-[13px] uppercase tracking-wide">KARTU PESERTA UJIAN</h3>
                            <p className="font-bold text-[10px] text-slate-600 uppercase">{config.sekolah}</p>
@@ -306,68 +318,90 @@ export default function AdminCetak() {
             )}
 
             {/* DAFTAR HADIR PRINT */}
-            {printMode === 'hadir' && (
+            {printMode === 'hadir' && printData?.siswa && typeof printData.siswa === 'object' && (
                <div>
-                  <div className="text-center border-b-[3px] border-black pb-4 mb-6 relative">
-                     {config.kopKiri && <img src={config.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
-                     {config.kopKanan && <img src={config.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
-                     <h2 className="font-bold">{config.kop1}</h2>
-                     <h2 className="font-bold">{config.kop2}</h2>
-                     <h1 className="text-2xl font-black uppercase">{config.sekolah}</h1>
-                     <p className="text-sm">{config.alamat}</p>
-                     <p className="text-[11px] mt-0.5">
-                        {config.notelp && <span className="mr-3">Telp. {config.notelp}</span>}
-                        {config.fax && <span className="mr-3">Fax. {config.fax}</span>}
-                        {config.email && <span className="mr-3">Email: {config.email}</span>}
-                        {config.website && <span>Website: {config.website}</span>}
-                     </p>
-                  </div>
-                  <h3 className="text-center font-black text-lg underline mb-6">DAFTAR HADIR PESERTA UJIAN</h3>
-                  <div className="flex justify-between mb-4 font-bold text-sm">
-                     <div><p>Kelas: {printData?.kelasName}</p><p>Ruang: 01</p></div>
-                     <div><p>Mata Pelajaran: ...............................</p><p>Tanggal: ...............................</p></div>
-                  </div>
-                  <table className="w-full border-collapse border border-slate-800 text-sm">
-                     <thead>
-                        <tr className="bg-slate-100">
-                           <th className="border border-slate-800 py-2 px-3 w-10">No</th>
-                           <th className="border border-slate-800 py-2 px-3">NIS</th>
-                           <th className="border border-slate-800 py-2 px-3">Nama Siswa</th>
-                           <th className="border border-slate-800 py-2 px-3 w-40" colSpan={2}>Tanda Tangan</th>
-                           <th className="border border-slate-800 py-2 px-3 w-20">Ket</th>
-                        </tr>
-                     </thead>
-                     <tbody>
-                        {printData?.siswa.map((s:any, i:number) => (
-                           <tr key={i}>
-                              <td className="border border-slate-800 py-3 px-3 text-center">{i+1}</td>
-                              <td className="border border-slate-800 py-3 px-3 font-mono text-center">{s.nis||(s.email ? s.email.split('@')[0] : '-')}</td>
-                              <td className="border border-slate-800 py-3 px-3 uppercase">{s.name || s.displayName}</td>
-                              {i % 2 === 0 ? (
-                                 <><td className="border-r-0 border-b border-t border-l border-slate-800 py-3 px-3 relative"><span className="absolute top-1 left-2 text-[10px]">{i+1}.</span></td><td className="border-l-0 border-b border-t border-r border-slate-800 py-3 px-3"></td></>
-                              ) : (
-                                 <><td className="border-r-0 border-b border-t border-l border-slate-800 py-3 px-3"></td><td className="border-l-0 border-b border-t border-r border-slate-800 py-3 px-3 relative"><span className="absolute top-1 left-2 text-[10px]">{i+1}.</span></td></>
-                              )}
-                              <td className="border border-slate-800 py-3 px-3"></td>
-                           </tr>
-                        ))}
-                     </tbody>
-                  </table>
-                  
-                  <div className="flex justify-between mt-10 text-center text-sm">
-                     <div>
-                        <p>Pengawas Ruang,</p>
-                        <br/><br/><br/>
-                        <p className="font-bold underline">{config.pengawas}</p>
-                        <p>NIP. {config.nipPengawas}</p>
-                     </div>
-                     <div>
-                        <p>Proktor,</p>
-                        <br/><br/><br/>
-                        <p className="font-bold underline">{config.proktor}</p>
-                        <p>NIP. {config.nipProktor}</p>
-                     </div>
-                  </div>
+                  {Object.entries(printData.siswa.reduce((acc: any, s: any) => {
+                    const sId = s.sesiId && s.sesiId !== 'none' ? s.sesiId : 'Tanpa Sesi';
+                    if (!acc[sId]) acc[sId] = [];
+                    acc[sId].push(s);
+                    return acc;
+                  }, {})).sort((a: any, b: any) => {
+                    if (a[0] === 'Tanpa Sesi') return 1;
+                    if (b[0] === 'Tanpa Sesi') return -1;
+                    const sa = sesiList.find(s=>s.id===a[0]);
+                    const sb = sesiList.find(s=>s.id===b[0]);
+                    return (sa?.name || a[0]).localeCompare(sb?.name || b[0]);
+                  }).map(([sesiId, sList]: [string, any], groupIdx) => (
+                    <div key={sesiId} className={groupIdx > 0 ? "break-before-page mt-8 print:mt-0" : ""}>
+                       <div className="text-center border-b-[3px] border-black pb-4 mb-6 relative">
+                          {config.kopKiri && <img src={config.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
+                          {config.kopKanan && <img src={config.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
+                          <h2 className="font-bold">{config.kop1}</h2>
+                          <h2 className="font-bold">{config.kop2}</h2>
+                          <h1 className="text-2xl font-black uppercase">{config.sekolah}</h1>
+                          <p className="text-sm">{config.alamat}</p>
+                          <p className="text-[11px] mt-0.5">
+                             {config.notelp && <span className="mr-3">Telp. {config.notelp}</span>}
+                             {config.fax && <span className="mr-3">Fax. {config.fax}</span>}
+                             {config.email && <span className="mr-3">Email: {config.email}</span>}
+                             {config.website && <span>Website: {config.website}</span>}
+                          </p>
+                       </div>
+                       <h3 className="text-center font-black text-lg underline mb-6">DAFTAR HADIR PESERTA UJIAN</h3>
+                       <div className="flex justify-between mb-4 font-bold text-sm">
+                          <div>
+                            <p>Kelas: {printData?.kelasName}</p>
+                            <p>Sesi: {sesiId !== 'Tanpa Sesi' ? sesiList.find(s => s.id === sesiId)?.name || 'Sesi 1' : 'Tanpa Sesi'}</p>
+                            <p>Ruang: 01</p>
+                          </div>
+                          <div className="text-right">
+                             <p>Mata Pelajaran: ...............................</p>
+                             <p>Tanggal: ...............................</p>
+                          </div>
+                       </div>
+                       <table className="w-full border-collapse border border-slate-800 text-sm">
+                          <thead>
+                             <tr className="bg-slate-100">
+                                <th className="border border-slate-800 py-2 px-3 w-10">No</th>
+                                <th className="border border-slate-800 py-2 px-3">NIS</th>
+                                <th className="border border-slate-800 py-2 px-3">Nama Siswa</th>
+                                <th className="border border-slate-800 py-2 px-3 w-40" colSpan={2}>Tanda Tangan</th>
+                                <th className="border border-slate-800 py-2 px-3 w-20">Ket</th>
+                             </tr>
+                          </thead>
+                          <tbody>
+                             {sList.map((s:any, i:number) => (
+                                <tr key={i}>
+                                   <td className="border border-slate-800 py-3 px-3 text-center">{i+1}</td>
+                                   <td className="border border-slate-800 py-3 px-3 font-mono text-center">{s.nis||(s.email ? s.email.split('@')[0] : '-')}</td>
+                                   <td className="border border-slate-800 py-3 px-3 uppercase">{s.name || s.displayName}</td>
+                                   {i % 2 === 0 ? (
+                                      <><td className="border-r-0 border-b border-t border-l border-slate-800 py-3 px-3 relative"><span className="absolute top-1 left-2 text-[10px]">{i+1}.</span></td><td className="border-l-0 border-b border-t border-r border-slate-800 py-3 px-3"></td></>
+                                   ) : (
+                                      <><td className="border-r-0 border-b border-t border-l border-slate-800 py-3 px-3"></td><td className="border-l-0 border-b border-t border-r border-slate-800 py-3 px-3 relative"><span className="absolute top-1 left-2 text-[10px]">{i+1}.</span></td></>
+                                   )}
+                                   <td className="border border-slate-800 py-3 px-3"></td>
+                                </tr>
+                             ))}
+                          </tbody>
+                       </table>
+                       
+                       <div className="flex justify-between mt-10 text-center text-sm">
+                          <div>
+                             <p>Pengawas Ruang,</p>
+                             <br/><br/><br/>
+                             <p className="font-bold underline">{config.pengawas}</p>
+                             <p>NIP. {config.nipPengawas}</p>
+                          </div>
+                          <div>
+                             <p>Proktor,</p>
+                             <br/><br/><br/>
+                             <p className="font-bold underline">{config.proktor}</p>
+                             <p>NIP. {config.nipProktor}</p>
+                          </div>
+                       </div>
+                    </div>
+                  ))}
                </div>
             )}
 
