@@ -77,6 +77,10 @@ export default function AdminCetak() {
     kop2: 'DINAS PENDIDIKAN',
     sekolah: 'SMA NEGERI 2 SUKOREJO',
     alamat: 'Jl. Raya Sukorejo No. 1, Pasuruan',
+    email: 'info@sman2sukorejo.sch.id',
+    notelp: '(0343) 611000',
+    fax: '(0343) 611000',
+    website: 'www.sman2sukorejo.sch.id',
     kepsek: 'Dr. H. Ahmad, M.Pd.',
     nip: '19700101 199512 1 001',
     ketuaPelaksana: 'Budiman, S.Pd',
@@ -311,6 +315,12 @@ export default function AdminCetak() {
                      <h2 className="font-bold">{config.kop2}</h2>
                      <h1 className="text-2xl font-black uppercase">{config.sekolah}</h1>
                      <p className="text-sm">{config.alamat}</p>
+                     <p className="text-[11px] mt-0.5">
+                        {config.notelp && <span className="mr-3">Telp. {config.notelp}</span>}
+                        {config.fax && <span className="mr-3">Fax. {config.fax}</span>}
+                        {config.email && <span className="mr-3">Email: {config.email}</span>}
+                        {config.website && <span>Website: {config.website}</span>}
+                     </p>
                   </div>
                   <h3 className="text-center font-black text-lg underline mb-6">DAFTAR HADIR PESERTA UJIAN</h3>
                   <div className="flex justify-between mb-4 font-bold text-sm">
@@ -371,6 +381,12 @@ export default function AdminCetak() {
                      <h2 className="font-bold">{config.kop2}</h2>
                      <h1 className="text-2xl font-black uppercase">{config.sekolah}</h1>
                      <p className="text-sm">{config.alamat}</p>
+                     <p className="text-[11px] mt-0.5">
+                        {config.notelp && <span className="mr-3">Telp. {config.notelp}</span>}
+                        {config.fax && <span className="mr-3">Fax. {config.fax}</span>}
+                        {config.email && <span className="mr-3">Email: {config.email}</span>}
+                        {config.website && <span>Website: {config.website}</span>}
+                     </p>
                   </div>
                   <h3 className="text-center font-black text-xl mb-8">BERITA ACARA PENYELENGGARAAN UJIAN</h3>
                   <div className="text-justify leading-relaxed space-y-6">
@@ -754,6 +770,13 @@ export default function AdminCetak() {
              <div><label className="text-xs font-bold text-slate-500 mb-1 block">Nama Sekolah</label><Input value={config.sekolah} onChange={e=>setConfig({...config, sekolah: e.target.value})} /></div>
              <div><label className="text-xs font-bold text-slate-500 mb-1 block">Alamat Sekolah</label><Input value={config.alamat} onChange={e=>setConfig({...config, alamat: e.target.value})} /></div>
              
+             <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">No Telepon</label><Input value={config.notelp} onChange={e=>setConfig({...config, notelp: e.target.value})} /></div>
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Fax</label><Input value={config.fax} onChange={e=>setConfig({...config, fax: e.target.value})} /></div>
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Email</label><Input value={config.email} onChange={e=>setConfig({...config, email: e.target.value})} /></div>
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Website</label><Input value={config.website} onChange={e=>setConfig({...config, website: e.target.value})} /></div>
+             </div>
+
              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
                <div>
                   <label className="text-xs font-bold text-slate-500 mb-1 block">Logo Kiri</label>
