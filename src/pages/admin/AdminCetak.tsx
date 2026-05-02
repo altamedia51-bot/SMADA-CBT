@@ -350,7 +350,8 @@ export default function AdminCetak() {
                              {config.website && <span>Website: {config.website}</span>}
                           </p>
                        </div>
-                       <h3 className="text-center font-black text-lg underline mb-2">DAFTAR HADIR PESERTA {config.namaUjian.toUpperCase()}</h3>
+                       <h3 className="text-center font-black text-lg leading-tight mb-1">DAFTAR HADIR PESERTA</h3>
+                       <h3 className="text-center font-black text-lg uppercase leading-tight mb-1">{config.namaUjian}</h3>
                        <p className="text-center font-bold text-sm mb-6 uppercase">{config.tahunAjaran}</p>
                        <div className="flex justify-between mb-4 font-bold text-sm">
                           <div>
@@ -426,7 +427,8 @@ export default function AdminCetak() {
                         {config.website && <span>Website: {config.website}</span>}
                      </p>
                   </div>
-                  <h3 className="text-center font-black text-xl mb-2">BERITA ACARA PENYELENGGARAAN {config.namaUjian.toUpperCase()}</h3>
+                  <h3 className="text-center font-black text-xl leading-tight mb-1">BERITA ACARA PENYELENGGARAAN</h3>
+                  <h3 className="text-center font-black text-xl mb-2 uppercase leading-tight">{config.namaUjian}</h3>
                   <p className="text-center font-bold text-md mb-8 uppercase">{config.tahunAjaran}</p>
                   <div className="text-justify leading-relaxed space-y-6">
                      <p>Pada hari ini tanggal <strong>...............................</strong> telah diselenggarakan {config.namaUjian} untuk mata pelajaran <strong>{printData.mapel}</strong> dari pukul ................... sampai ...................</p>
