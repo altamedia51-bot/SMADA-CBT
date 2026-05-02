@@ -108,6 +108,7 @@ export default function AdminCetak() {
   };
 
   const [selectedKelasId, setSelectedKelasId] = useState('');
+  const [selectedSesiId, setSelectedSesiId] = useState('');
   const [selectedUjianId, setSelectedUjianId] = useState('');
   const [selectedPaketId, setSelectedPaketId] = useState('');
   const [jumlahSoalLjk, setJumlahSoalLjk] = useState(50);
@@ -285,15 +286,15 @@ export default function AdminCetak() {
   };
 
   const handleGenerateHadir = async () => {
-    if (!selectedKelasId) { toast.error("Pilih kelas terlebih dahulu"); return; }
-    const kls = kelasList.find(k => k.id === selectedKelasId);
+    if (!selectedSesiId) { toast.error("Pilih sesi terlebih dahulu"); return; }
+    const sesiName = sesiList.find(s => s.id === selectedSesiId)?.name || 'Semua Sesi';
     try {
        const q = query(collection(db, 'users'), where('role', '==', 'siswa'));
        const snap = await getDocs(q);
-       const siswa = snap.docs.map(d => d.data()).filter((s:any) => s.kelas === kls.name || s.kelasId === kls.id);
-       if (siswa.length === 0) { toast.error("Tidak ada siswa di kelas ini"); return; }
+       const siswa = snap.docs.map(d => d.data()).filter((s:any) => s.sesiId === selectedSesiId);
+       if (siswa.length === 0) { toast.error("Tidak ada siswa di sesi ini"); return; }
        
-       setPrintData({ kelasName: kls.name, siswa: siswa.sort((a,b) => (a.name||a.displayName||'').localeCompare(b.name||b.displayName||'')) });
+       setPrintData({ sesiName: sesiName, siswa: siswa.sort((a,b) => (a.name||a.displayName||'').localeCompare(b.name||b.displayName||'')) });
        setIsHadirModalOpen(false);
        setPrintMode('hadir');
     } catch (err: any) { toast.error("Gagal: " + err.message); }
@@ -451,20 +452,16 @@ export default function AdminCetak() {
             {printMode === 'hadir' && printData?.siswa && typeof printData.siswa === 'object' && (
                <div>
                   {Object.entries(printData.siswa.reduce((acc: any, s: any) => {
-                    const sId = s.sesiId && s.sesiId !== 'none' ? s.sesiId : 'Tanpa Sesi';
-                    if (!acc[sId]) acc[sId] = [];
-                    acc[sId].push(s);
+                    const rId = s.ruangId || '01';
+                    if (!acc[rId]) acc[rId] = [];
+                    acc[rId].push(s);
                     return acc;
                   }, {})).sort((a: any, b: any) => {
-                    if (a[0] === 'Tanpa Sesi') return 1;
-                    if (b[0] === 'Tanpa Sesi') return -1;
-                    const sa = sesiList.find(s=>s.id===a[0]);
-                    const sb = sesiList.find(s=>s.id===b[0]);
-                    return (sa?.name || a[0]).localeCompare(sb?.name || b[0]);
-                  }).map(([sesiId, sList]: [string, any], groupIdx) => (
-                    <div key={sesiId}>
+                    return a[0].localeCompare(b[0]);
+                  }).map(([ruangId, sList]: [string, any], groupIdx) => (
+                    <div key={ruangId}>
                       {chunkArray(sList, 20).map((chunk: any[], chunkIdx: number) => (
-                         <div key={`${sesiId}-${chunkIdx}`} className={`pdf-page bg-white relative ${(groupIdx > 0 || chunkIdx > 0) ? "mt-8 print:mt-0 print:break-before-page" : ""}`} style={{ minHeight: config.ukuranKertas === 'F4' ? '330.2mm' : '297mm', padding: '10mm', display: 'flex', flexDirection: 'column' }}>
+                         <div key={`${ruangId}-${chunkIdx}`} className={`pdf-page bg-white relative ${(groupIdx > 0 || chunkIdx > 0) ? "mt-8 print:mt-0 print:break-before-page" : ""}`} style={{ minHeight: config.ukuranKertas === 'F4' ? '330.2mm' : '297mm', padding: '10mm', display: 'flex', flexDirection: 'column' }}>
                             <div className="text-center border-b-[3px] border-black pb-4 mb-6 relative">
                                {config.kopKiri && <img src={config.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
                                {config.kopKanan && <img src={config.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
@@ -486,9 +483,8 @@ export default function AdminCetak() {
                             </p>
                             <div className="flex justify-between mb-4 font-bold text-sm">
                                <div>
-                                 <p>Kelas: {printData?.kelasName}</p>
-                                 <p>Sesi: {sesiId !== 'Tanpa Sesi' ? sesiList.find(s => s.id === sesiId)?.name || 'Sesi 1' : 'Tanpa Sesi'}</p>
-                                 <p>Ruang: 01</p>
+                                 <p>Sesi: {printData?.sesiName}</p>
+                                 <p>Ruang: {ruangId}</p>
                                </div>
                                <div className="text-right">
                                   <p>Mata Pelajaran: ...............................</p>
@@ -1050,7 +1046,7 @@ export default function AdminCetak() {
       </Dialog>
       
       <Dialog open={isHadirModalOpen} onOpenChange={setIsHadirModalOpen}>
-        <DialogContent><DialogHeader><DialogTitle>Cetak Daftar Hadir</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedKelasId} onValueChange={setSelectedKelasId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Kelas">{kelasList.find(k=>k.id===selectedKelasId)?.name}</SelectValue></SelectTrigger><SelectContent>{kelasList.map(k => (<SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateHadir}>Buat Daftar Hadir</Button></div></DialogContent>
+        <DialogContent><DialogHeader><DialogTitle>Cetak Daftar Hadir</DialogTitle></DialogHeader><div className="space-y-4 pt-4"><Select value={selectedSesiId} onValueChange={setSelectedSesiId}><SelectTrigger className="h-11"><SelectValue placeholder="Pilih Sesi Ujian">{sesiList.find(s=>s.id===selectedSesiId)?.name}</SelectValue></SelectTrigger><SelectContent>{sesiList.map(s => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}</SelectContent></Select><Button className="w-full bg-blue-600 h-11 font-bold" onClick={handleGenerateHadir}>Buat Daftar Hadir</Button></div></DialogContent>
       </Dialog>
 
       <Dialog open={isBeritaModalOpen} onOpenChange={setIsBeritaModalOpen}>
