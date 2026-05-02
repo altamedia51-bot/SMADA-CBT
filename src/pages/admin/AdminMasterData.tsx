@@ -643,7 +643,7 @@ export default function AdminMasterData() {
   };
 
   const downloadTemplate = () => {
-    const csvContent = "Nama,Kelas,Password\nALFY NUR ASHIFAK,XE1,siswa123\nALIFIA NASWA HAFIDHOH,XE1,siswa123";
+    const csvContent = "Nama,Kelas,Jurusan,NIS,Sesi,Password\nALFY NUR ASHIFAK,XE1,IPA,123456,Sesi 1,siswa123\nALIFIA NASWA HAFIDHOH,XE2,IPS,123457,Sesi 2,siswa123";
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
