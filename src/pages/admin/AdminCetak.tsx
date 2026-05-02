@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Printer, Settings, CreditCard, ListChecks, FileText, CheckCircle, School, FileQuestion, ScanLine, ImagePlus, X } from 'lucide-react';
 import { toast } from 'sonner';
+import domtoimage from 'dom-to-image';
+import { jsPDF } from 'jspdf';
 
 export default function AdminCetak() {
   const [kelasList, setKelasList] = useState<any[]>([]);
@@ -25,11 +27,84 @@ export default function AdminCetak() {
   
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleExportPDF = () => {
-    toast.info('Mohon gunakan "Simpan sebagai PDF (Save as PDF)" pada jendela cetak.', { duration: 4000 });
-    setTimeout(() => {
-       window.print();
-    }, 500);
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      const element = document.getElementById('print-container');
+      
+      if (!element) return;
+      
+      // Temporary style adjustments for export to ensure correct dimensions
+      const originalCssText = element.style.cssText;
+      const isF4 = config.ukuranKertas === 'F4';
+      element.style.width = isF4 ? '215.9mm' : '210mm'; 
+      element.style.maxWidth = 'none';
+      element.style.margin = '0';
+      if (!element.querySelector('.pdf-page')) {
+          element.style.padding = '10mm';
+      } else {
+          element.style.padding = '0'; // padding is handled by the pages themselves
+      }
+      
+      element.classList.remove('my-8', 'shadow-2xl', 'mx-auto');
+
+      // Add a slight delay to ensure dynamic images (logos) are loaded
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: isF4 ? [215.9, 330.2] : 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const pages = element.querySelectorAll('.pdf-page');
+
+      if (pages.length > 0) {
+        for (let i = 0; i < pages.length; i++) {
+          const pageEl = pages[i] as HTMLElement;
+          const dataUrl = await domtoimage.toJpeg(pageEl, { quality: 1, bgcolor: '#ffffff' });
+          if (i > 0) pdf.addPage();
+          const imgHeight = (pageEl.offsetHeight * pdfWidth) / pageEl.offsetWidth;
+          // Only add padding if not stretching to edge
+          pdf.addImage(dataUrl, 'JPEG', 0, 0, pdfWidth, imgHeight);
+        }
+      } else {
+        const dataUrl = await domtoimage.toJpeg(element, { quality: 1, bgcolor: '#ffffff' });
+        const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+        
+        let heightLeft = pdfHeight;
+        let position = 0;
+
+        pdf.addImage(dataUrl, 'JPEG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - pdfHeight;
+          pdf.addPage();
+          pdf.addImage(dataUrl, 'JPEG', 0, position, pdfWidth, pdfHeight);
+          heightLeft -= pageHeight;
+        }
+      }
+
+      pdf.save(`Export_${printMode}_${new Date().getTime()}.pdf`);
+
+      // Restore original styles
+      element.style.cssText = originalCssText;
+      element.classList.add('my-8', 'shadow-2xl', 'mx-auto');
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Gagal mengekspor PDF: ' + (err?.message || 'Error tidak diketahui'));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const chunkArray = (arr: any[], size: number) => {
+    return Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
+      arr.slice(i * size, i * size + size)
+    );
   };
 
   const [selectedKelasId, setSelectedKelasId] = useState('');
@@ -295,77 +370,80 @@ export default function AdminCetak() {
               }}>
             {/* KARTU PRINT */}
             {printMode === 'kartu' && (
-              <div className="flex flex-wrap -mx-4">
-                 {printData?.siswa.map((s:any, idx:number) => (
-                   <div key={idx} className="w-1/2 px-4 mb-8 break-inside-avoid">
-                     <div className="border-2 border-slate-800 rounded-xl overflow-hidden print:border-[1.5px] print:rounded-lg h-full flex flex-col">
-                        <div className="border-b-2 border-slate-800 p-3 bg-slate-100 flex items-center justify-between text-center print:border-b-[1.5px]">
-                         {config.kopKiri ? (
-                           <img src={config.kopKiri} className="w-10 h-10 object-contain" alt="Logo" />
-                         ) : config.kopKanan ? (
-                           <img src={config.kopKanan} className="w-10 h-10 object-contain" alt="Logo" />
-                         ) : (
-                           <School className="w-8 h-8 text-slate-700" />
-                         )}
-                         <div className="flex-1 px-2">
-                           <h3 className="font-black text-[13px] uppercase tracking-wide">KARTU PESERTA</h3>
-                           <p className="font-bold text-[11px] text-slate-800 uppercase">{config.namaUjian}</p>
-                           <p className="font-bold text-[9px] text-slate-600 uppercase">{config.sekolah} • {config.tahunAjaran.toLowerCase().includes('tahun') ? config.tahunAjaran : `Tahun Ajaran ${config.tahunAjaran}`}</p>
-                         </div>
+              <div>
+                {chunkArray(printData?.siswa || [], 8).map((pageKardus, pIdx) => (
+                  <div key={pIdx} className={`pdf-page bg-white relative flex flex-wrap -mx-4 content-start ${pIdx > 0 ? "mt-8 print:mt-0 print:break-before-page" : ""}`} style={{ minHeight: config.ukuranKertas === 'F4' ? '330.2mm' : '297mm', padding: '10mm' }}>
+                     {pageKardus.map((s:any, idx:number) => (
+                       <div key={idx} className="w-1/2 px-4 mb-8 break-inside-avoid">
+                         <div className="border-2 border-slate-800 rounded-xl overflow-hidden print:border-[1.5px] print:rounded-lg h-full flex flex-col">
+                            <div className="border-b-2 border-slate-800 p-3 bg-slate-100 flex items-center justify-between text-center print:border-b-[1.5px]">
+                             {config.kopKiri ? (
+                               <img src={config.kopKiri} className="w-10 h-10 object-contain" alt="Logo" />
+                             ) : config.kopKanan ? (
+                               <img src={config.kopKanan} className="w-10 h-10 object-contain" alt="Logo" />
+                             ) : (
+                               <School className="w-8 h-8 text-slate-700" />
+                             )}
+                             <div className="flex-1 px-2">
+                               <h3 className="font-black text-[13px] uppercase tracking-wide">KARTU PESERTA</h3>
+                               <p className="font-bold text-[11px] text-slate-800 uppercase">{config.namaUjian}</p>
+                               <p className="font-bold text-[9px] text-slate-600 uppercase">{config.sekolah} • {config.tahunAjaran.toLowerCase().includes('tahun') ? config.tahunAjaran : `Tahun Ajaran ${config.tahunAjaran}`}</p>
+                             </div>
+                          </div>
+                          <div className="p-4 space-y-3">
+                             <div className="flex gap-4 items-start">
+                                <div className="flex-1">
+                                   <table className="w-full text-[11px] font-bold">
+                                      <tbody>
+                                         <tr className="border-b border-dashed border-slate-300">
+                                            <td className="py-2 text-slate-500 w-[70px] align-top">NAMA</td>
+                                            <td className="py-2 px-1 align-top">:</td>
+                                            <td className="py-2 uppercase break-words leading-tight">{s.name || s.displayName || '-'}</td>
+                                         </tr>
+                                         <tr className="border-b border-dashed border-slate-300">
+                                            <td className="py-2 text-slate-500">NIS / ID</td><td className="py-2 px-1">:</td><td className="py-2 font-mono">{s.nis || (s.email ? s.email.split('@')[0] : '-')}</td>
+                                         </tr>
+                                         <tr className="border-b border-dashed border-slate-300">
+                                            <td className="py-2 text-slate-500">KELAS</td><td className="py-2 px-1">:</td><td className="py-2">{s.kelas || printData.kelasName}</td>
+                                         </tr>
+                                         <tr className="border-b border-dashed border-slate-300">
+                                            <td className="py-2 text-slate-500">RUANG</td><td className="py-2 px-1">:</td><td className="py-2">{s.ruangId || '01'} - SESI {s.sesiId || '1'}</td>
+                                         </tr>
+                                         <tr className="border-t-2 border-slate-800">
+                                            <td className="pt-3 text-sm text-blue-800 font-black">PASSWORD</td><td className="pt-3 px-1">:</td><td className="pt-3 text-sm font-mono font-black">{s.showPassword ? s.showPassword : (s.tempPassword || '123456')}</td>
+                                         </tr>
+                                       </tbody>
+                                   </table>
+                                </div>
+                                <div className="w-[2.5cm] h-[3.5cm] border-2 border-dashed border-slate-300 flex flex-col items-center justify-center bg-slate-50 text-[10px] text-slate-400 font-bold shrink-0">
+                                   {s.photoUrl || s.photo ? (
+                                     <img src={s.photoUrl || s.photo} className="w-full h-full object-cover" alt="Foto Peserta" />
+                                   ) : (
+                                     <span className="text-center">FOTO<br/>3x4</span>
+                                   )}
+                                </div>
+                             </div>
+                             {/* ADD SIGNATURE HERE */}
+                             <div className="flex justify-between mt-4 text-[9px] text-center font-bold">
+                                <div>
+                                   <p>Ketua Pelaksana,</p>
+                                   <br/><br/>
+                                   <p className="underline">{config.ketuaPelaksana}</p>
+                                   <p>NIP. {config.nipKetuaPelaksana}</p>
+                                </div>
+                                <div>
+                                   <p>Kepala Sekolah,</p>
+                                   <br/><br/>
+                                   <p className="underline">{config.kepsek}</p>
+                                   <p>NIP. {config.nip}</p>
+                                </div>
+                             </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="p-4 space-y-3">
-                         <div className="flex gap-4 items-start">
-                            <div className="flex-1">
-                               <table className="w-full text-[11px] font-bold">
-                                  <tbody>
-                                     <tr className="border-b border-dashed border-slate-300">
-                                        <td className="py-2 text-slate-500 w-[70px] align-top">NAMA</td>
-                                        <td className="py-2 px-1 align-top">:</td>
-                                        <td className="py-2 uppercase break-words leading-tight">{s.name || s.displayName || '-'}</td>
-                                     </tr>
-                                     <tr className="border-b border-dashed border-slate-300">
-                                        <td className="py-2 text-slate-500">NIS / ID</td><td className="py-2 px-1">:</td><td className="py-2 font-mono">{s.nis || (s.email ? s.email.split('@')[0] : '-')}</td>
-                                     </tr>
-                                     <tr className="border-b border-dashed border-slate-300">
-                                        <td className="py-2 text-slate-500">KELAS</td><td className="py-2 px-1">:</td><td className="py-2">{s.kelas || printData.kelasName}</td>
-                                     </tr>
-                                     <tr className="border-b border-dashed border-slate-300">
-                                        <td className="py-2 text-slate-500">RUANG</td><td className="py-2 px-1">:</td><td className="py-2">{s.ruangId || '01'} - SESI {s.sesiId || '1'}</td>
-                                     </tr>
-                                     <tr className="border-t-2 border-slate-800">
-                                        <td className="pt-3 text-sm text-blue-800 font-black">PASSWORD</td><td className="pt-3 px-1">:</td><td className="pt-3 text-sm font-mono font-black">{s.showPassword ? s.showPassword : (s.tempPassword || '123456')}</td>
-                                     </tr>
-                                   </tbody>
-                               </table>
-                            </div>
-                            <div className="w-[2.5cm] h-[3.5cm] border-2 border-dashed border-slate-300 flex flex-col items-center justify-center bg-slate-50 text-[10px] text-slate-400 font-bold shrink-0">
-                               {s.photoUrl || s.photo ? (
-                                 <img src={s.photoUrl || s.photo} className="w-full h-full object-cover" alt="Foto Peserta" />
-                               ) : (
-                                 <span className="text-center">FOTO<br/>3x4</span>
-                               )}
-                            </div>
-                         </div>
-                         
-                         {/* ADD SIGNATURE HERE */}
-                         <div className="flex justify-between mt-4 text-[9px] text-center font-bold">
-                            <div>
-                               <p>Ketua Pelaksana,</p>
-                               <br/><br/>
-                               <p className="underline">{config.ketuaPelaksana}</p>
-                               <p>NIP. {config.nipKetuaPelaksana}</p>
-                            </div>
-                            <div>
-                               <p>Kepala Sekolah,</p>
-                               <br/><br/>
-                               <p className="underline">{config.kepsek}</p>
-                               <p>NIP. {config.nip}</p>
-                            </div>
-                         </div>
-                      </div>
-                    </div>
+                     ))}
                   </div>
-                 ))}
+                ))}
               </div>
             )}
 
@@ -384,78 +462,90 @@ export default function AdminCetak() {
                     const sb = sesiList.find(s=>s.id===b[0]);
                     return (sa?.name || a[0]).localeCompare(sb?.name || b[0]);
                   }).map(([sesiId, sList]: [string, any], groupIdx) => (
-                    <div key={sesiId} className={groupIdx > 0 ? "print:break-before-page mt-8 print:mt-0" : ""}>
-                       <div className="text-center border-b-[3px] border-black pb-4 mb-6 relative">
-                          {config.kopKiri && <img src={config.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
-                          {config.kopKanan && <img src={config.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
-                          <h2 className="font-bold">{config.kop1}</h2>
-                          <h2 className="font-bold">{config.kop2}</h2>
-                          <h1 className="text-2xl font-black uppercase">{config.sekolah}</h1>
-                          <p className="text-sm">{config.alamat}</p>
-                          <p className="text-[11px] mt-0.5">
-                             {config.notelp && <span className="mr-3">Telp. {config.notelp}</span>}
-                             {config.fax && <span className="mr-3">Fax. {config.fax}</span>}
-                             {config.email && <span className="mr-3">Email: {config.email}</span>}
-                             {config.website && <span>Website: {config.website}</span>}
-                          </p>
-                       </div>
-                       <h3 className="text-center font-black text-lg leading-tight mb-1">DAFTAR HADIR PESERTA</h3>
-                       <h3 className="text-center font-black text-lg uppercase leading-tight mb-1">{config.namaUjian}</h3>
-                       <p className="text-center font-bold text-sm mb-6 uppercase">
-                         {config.tahunAjaran.toLowerCase().includes('tahun') ? config.tahunAjaran : `Tahun Ajaran ${config.tahunAjaran}`}
-                       </p>
-                       <div className="flex justify-between mb-4 font-bold text-sm">
-                          <div>
-                            <p>Kelas: {printData?.kelasName}</p>
-                            <p>Sesi: {sesiId !== 'Tanpa Sesi' ? sesiList.find(s => s.id === sesiId)?.name || 'Sesi 1' : 'Tanpa Sesi'}</p>
-                            <p>Ruang: 01</p>
-                          </div>
-                          <div className="text-right">
-                             <p>Mata Pelajaran: ...............................</p>
-                             <p>Tanggal: ...............................</p>
-                          </div>
-                       </div>
-                       <table className="w-full border-collapse border border-slate-800 text-sm">
-                          <thead>
-                             <tr className="bg-slate-100">
-                                <th className="border border-slate-800 py-2 px-3 w-10">No</th>
-                                <th className="border border-slate-800 py-2 px-3">NIS</th>
-                                <th className="border border-slate-800 py-2 px-3">Nama Siswa</th>
-                                <th className="border border-slate-800 py-2 px-3 w-40" colSpan={2}>Tanda Tangan</th>
-                                <th className="border border-slate-800 py-2 px-3 w-20">Ket</th>
-                             </tr>
-                          </thead>
-                          <tbody>
-                             {sList.map((s:any, i:number) => (
-                                <tr key={i} className="break-inside-avoid">
-                                   <td className="border border-slate-800 py-3 px-3 text-center">{i+1}</td>
-                                   <td className="border border-slate-800 py-3 px-3 font-mono text-center">{s.nis||(s.email ? s.email.split('@')[0] : '-')}</td>
-                                   <td className="border border-slate-800 py-3 px-3 uppercase">{s.name || s.displayName}</td>
-                                   {i % 2 === 0 ? (
-                                      <><td className="border-r-0 border-b border-t border-l border-slate-800 py-3 px-3 relative"><span className="absolute top-1 left-2 text-[10px]">{i+1}.</span></td><td className="border-l-0 border-b border-t border-r border-slate-800 py-3 px-3"></td></>
-                                   ) : (
-                                      <><td className="border-r-0 border-b border-t border-l border-slate-800 py-3 px-3"></td><td className="border-l-0 border-b border-t border-r border-slate-800 py-3 px-3 relative"><span className="absolute top-1 left-2 text-[10px]">{i+1}.</span></td></>
-                                   )}
-                                   <td className="border border-slate-800 py-3 px-3"></td>
-                                </tr>
-                             ))}
-                          </tbody>
-                       </table>
-                       
-                       <div className="flex justify-between mt-10 text-center text-sm">
-                          <div>
-                             <p>Pengawas Ruang,</p>
-                             <br/><br/><br/>
-                             <p className="font-bold underline">{config.pengawas}</p>
-                             <p>NIP. {config.nipPengawas}</p>
-                          </div>
-                          <div>
-                             <p>Proktor,</p>
-                             <br/><br/><br/>
-                             <p className="font-bold underline">{config.proktor}</p>
-                             <p>NIP. {config.nipProktor}</p>
-                          </div>
-                       </div>
+                    <div key={sesiId}>
+                      {chunkArray(sList, 20).map((chunk: any[], chunkIdx: number) => (
+                         <div key={`${sesiId}-${chunkIdx}`} className={`pdf-page bg-white relative ${(groupIdx > 0 || chunkIdx > 0) ? "mt-8 print:mt-0 print:break-before-page" : ""}`} style={{ minHeight: config.ukuranKertas === 'F4' ? '330.2mm' : '297mm', padding: '10mm', display: 'flex', flexDirection: 'column' }}>
+                            <div className="text-center border-b-[3px] border-black pb-4 mb-6 relative">
+                               {config.kopKiri && <img src={config.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
+                               {config.kopKanan && <img src={config.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
+                               <h2 className="font-bold">{config.kop1}</h2>
+                               <h2 className="font-bold">{config.kop2}</h2>
+                               <h1 className="text-2xl font-black uppercase">{config.sekolah}</h1>
+                               <p className="text-sm">{config.alamat}</p>
+                               <p className="text-[11px] mt-0.5">
+                                  {config.notelp && <span className="mr-3">Telp. {config.notelp}</span>}
+                                  {config.fax && <span className="mr-3">Fax. {config.fax}</span>}
+                                  {config.email && <span className="mr-3">Email: {config.email}</span>}
+                                  {config.website && <span>Website: {config.website}</span>}
+                               </p>
+                            </div>
+                            <h3 className="text-center font-black text-lg leading-tight mb-1">DAFTAR HADIR PESERTA {(chunkArray(sList, 20).length > 1) ? ` - Hal. ${chunkIdx + 1}` : ''}</h3>
+                            <h3 className="text-center font-black text-lg uppercase leading-tight mb-1">{config.namaUjian}</h3>
+                            <p className="text-center font-bold text-sm mb-6 uppercase">
+                              {config.tahunAjaran.toLowerCase().includes('tahun') ? config.tahunAjaran : `Tahun Ajaran ${config.tahunAjaran}`}
+                            </p>
+                            <div className="flex justify-between mb-4 font-bold text-sm">
+                               <div>
+                                 <p>Kelas: {printData?.kelasName}</p>
+                                 <p>Sesi: {sesiId !== 'Tanpa Sesi' ? sesiList.find(s => s.id === sesiId)?.name || 'Sesi 1' : 'Tanpa Sesi'}</p>
+                                 <p>Ruang: 01</p>
+                               </div>
+                               <div className="text-right">
+                                  <p>Mata Pelajaran: ...............................</p>
+                                  <p>Tanggal: ...............................</p>
+                               </div>
+                            </div>
+                            <table className="w-full border-collapse border border-slate-800 text-sm flex-1">
+                               <thead>
+                                  <tr className="bg-slate-100 h-10">
+                                     <th className="border border-slate-800 py-1 px-3 w-10">No</th>
+                                     <th className="border border-slate-800 py-1 px-3">NIS</th>
+                                     <th className="border border-slate-800 py-1 px-3">Nama Siswa</th>
+                                     <th className="border border-slate-800 py-1 px-3 w-40" colSpan={2}>Tanda Tangan</th>
+                                     <th className="border border-slate-800 py-1 px-3 w-20">Ket</th>
+                                  </tr>
+                               </thead>
+                               <tbody>
+                                  {chunk.map((s:any, idx:number) => {
+                                     const actualIndex = chunkIdx * 20 + idx;
+                                     return (
+                                     <tr key={idx} className="break-inside-avoid">
+                                        <td className="border border-slate-800 py-1.5 px-3 text-center h-10">{actualIndex+1}</td>
+                                        <td className="border border-slate-800 py-1.5 px-3 font-mono text-center h-10">{s.nis||(s.email ? s.email.split('@')[0] : '-')}</td>
+                                        <td className="border border-slate-800 py-1.5 px-3 uppercase h-10">{s.name || s.displayName}</td>
+                                        {actualIndex % 2 === 0 ? (
+                                           <><td className="border-r-0 border-b border-t border-l border-slate-800 py-1.5 px-3 relative h-10"><span className="absolute top-1 left-2 text-[10px]">{actualIndex+1}.</span></td><td className="border-l-0 border-b border-t border-r border-slate-800 py-1.5 px-3 h-10"></td></>
+                                        ) : (
+                                           <><td className="border-r-0 border-b border-t border-l border-slate-800 py-1.5 px-3 h-10"></td><td className="border-l-0 border-b border-t border-r border-slate-800 py-1.5 px-3 relative h-10"><span className="absolute top-1 left-2 text-[10px]">{actualIndex+1}.</span></td></>
+                                        )}
+                                        <td className="border border-slate-800 py-1.5 px-3 h-10"></td>
+                                     </tr>
+                                     );
+                                  })}
+                               </tbody>
+                            </table>
+                            
+                            {/* Only show TTD on the last page of the session */}
+                            {chunkIdx === chunkArray(sList, 20).length - 1 ? (
+                               <div className="flex justify-between mt-10 text-center text-sm pt-4">
+                                  <div>
+                                     <p>Pengawas Ruang,</p>
+                                     <br/><br/><br/>
+                                     <p className="font-bold underline">{config.pengawas}</p>
+                                     <p>NIP. {config.nipPengawas}</p>
+                                  </div>
+                                  <div>
+                                     <p>Proktor,</p>
+                                     <br/><br/><br/>
+                                     <p className="font-bold underline">{config.proktor}</p>
+                                     <p>NIP. {config.nipProktor}</p>
+                                  </div>
+                               </div>
+                            ) : (
+                               <div className="flex-1 mt-10"></div>
+                            )}
+                         </div>
+                      ))}
                     </div>
                   ))}
                </div>
@@ -463,7 +553,7 @@ export default function AdminCetak() {
 
             {/* BERITA ACARA PRINT */}
             {printMode === 'berita' && (
-               <div>
+               <div className="pdf-page bg-white relative flex flex-col" style={{ minHeight: config.ukuranKertas === 'F4' ? '330.2mm' : '297mm', padding: '10mm' }}>
                   <div className="text-center border-b-[3px] border-black pb-4 mb-8 relative">
                      {config.kopKiri && <img src={config.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
                      {config.kopKanan && <img src={config.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
