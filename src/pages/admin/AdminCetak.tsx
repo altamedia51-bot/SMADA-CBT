@@ -236,14 +236,32 @@ export default function AdminCetak() {
 
   if (printMode !== 'none') {
     return (
-      <div className="fixed inset-0 z-[9999] bg-slate-200 overflow-y-auto w-full h-full">
+      <div className="fixed inset-0 z-[9999] bg-slate-200 overflow-y-auto w-full h-full print:static print:h-auto print:w-auto print:overflow-visible print:bg-white text-black">
          <style>{`
             @media print {
-              body * { visibility: hidden; }
-              #print-container, #print-container * { visibility: visible; }
-              #print-container { position: absolute; left: 0; top: 0; width: 100%; background: white;}
+              html, body, #root {
+                height: max-content !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: visible !important;
+                background: white;
+              }
+              body * {
+                visibility: hidden;
+              }
+              #print-container, #print-container * {
+                visibility: visible;
+              }
+              #print-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
               .no-print { display: none !important; }
-              .page-break { page-break-after: always; }
+              .page-break { page-break-after: always; break-after: page; }
               @page { margin: 1cm; size: ${config.ukuranKertas === 'F4' ? '215.9mm 330.2mm' : 'A4'} portrait; }
             }
          `}</style>
