@@ -275,7 +275,7 @@ export default function AdminCetak() {
                          <div className="flex-1 px-2">
                            <h3 className="font-black text-[13px] uppercase tracking-wide">KARTU PESERTA</h3>
                            <p className="font-bold text-[11px] text-slate-800 uppercase">{config.namaUjian}</p>
-                           <p className="font-bold text-[9px] text-slate-600 uppercase">{config.sekolah} • {config.tahunAjaran}</p>
+                           <p className="font-bold text-[9px] text-slate-600 uppercase">{config.sekolah} • {config.tahunAjaran.toLowerCase().includes('tahun') ? config.tahunAjaran : `Tahun Ajaran ${config.tahunAjaran}`}</p>
                          </div>
                       </div>
                       <div className="p-4 space-y-3">
@@ -352,7 +352,9 @@ export default function AdminCetak() {
                        </div>
                        <h3 className="text-center font-black text-lg leading-tight mb-1">DAFTAR HADIR PESERTA</h3>
                        <h3 className="text-center font-black text-lg uppercase leading-tight mb-1">{config.namaUjian}</h3>
-                       <p className="text-center font-bold text-sm mb-6 uppercase">{config.tahunAjaran}</p>
+                       <p className="text-center font-bold text-sm mb-6 uppercase">
+                         {config.tahunAjaran.toLowerCase().includes('tahun') ? config.tahunAjaran : `Tahun Ajaran ${config.tahunAjaran}`}
+                       </p>
                        <div className="flex justify-between mb-4 font-bold text-sm">
                           <div>
                             <p>Kelas: {printData?.kelasName}</p>
