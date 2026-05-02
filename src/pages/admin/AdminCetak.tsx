@@ -371,7 +371,7 @@ export default function AdminCetak() {
             {/* KARTU PRINT */}
             {printMode === 'kartu' && (
               <div>
-                {chunkArray(printData?.siswa || [], 8).map((pageKardus, pIdx) => (
+                {chunkArray(printData?.siswa || [], 6).map((pageKardus, pIdx) => (
                   <div key={pIdx} className={`pdf-page bg-white relative flex flex-wrap -mx-4 content-start ${pIdx > 0 ? "mt-8 print:mt-0 print:break-before-page" : ""}`} style={{ minHeight: config.ukuranKertas === 'F4' ? '330.2mm' : '297mm', padding: '10mm' }}>
                      {pageKardus.map((s:any, idx:number) => (
                        <div key={idx} className="w-1/2 px-4 mb-8 break-inside-avoid">
