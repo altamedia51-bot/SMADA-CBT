@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { FileText, Trash2, ArrowRight, BookOpen, Layers, Plus, PencilRuler } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function AdminBankSoal() {
   const { profile } = useAuthStore();
@@ -17,11 +18,14 @@ export default function AdminBankSoal() {
   const [paketList, setPaketList] = useState<any[]>([]);
   const [mapelList, setMapelList] = useState<any[]>([]);
   const [guruList, setGuruList] = useState<any[]>([]);
+  const [kelasList, setKelasList] = useState<any[]>([]);
   
   const [isOpen, setIsOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newMapelId, setNewMapelId] = useState('');
   const [newJenjang, setNewJenjang] = useState('SMA');
+  const [newJurusan, setNewJurusan] = useState('Semua');
+  const [newKelasIds, setNewKelasIds] = useState<string[]>([]);
   const [newGuruId, setNewGuruId] = useState('');
 
   // Search and Filter states (optional enhancements)
@@ -46,24 +50,38 @@ export default function AdminBankSoal() {
       setPaketList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
-    return () => { unMapel(); unPaket(); unGuru(); };
+    const unKelas = onSnapshot(collection(db, 'kelas'), (snap) => {
+      setKelasList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => { unMapel(); unPaket(); unGuru(); unKelas(); };
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle || !newMapelId || !newGuruId) return toast.error("Semua field wajib diisi");
+    if (!newTitle || !newMapelId || !newGuruId || newKelasIds.length === 0) {
+      if (newKelasIds.length === 0) toast.error("Pilih minimal 1 Kelas/Rombel");
+      else toast.error("Semua field wajib diisi");
+      return;
+    }
 
     try {
       await addDoc(collection(db, 'paket_soal'), {
         title: newTitle,
         mapelId: newMapelId,
         jenjang: newJenjang,
+        jurusan: newJurusan,
         guruId: newGuruId, // Assigned Guru
-        kelasIds: [],
+        kelasIds: newKelasIds,
         createdAt: serverTimestamp()
       });
       setIsOpen(false);
       setNewTitle('');
+      setNewMapelId('');
+      setNewJenjang('SMA');
+      setNewJurusan('Semua');
+      setNewKelasIds([]);
+      setNewGuruId('');
       toast.success('Paket soal berhasil dibuat!');
     } catch (err: any) {
       toast.error('Gagal membuat paket: ' + err.message);
@@ -149,17 +167,62 @@ export default function AdminBankSoal() {
                   </div>
                   
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Penulis / Guru</label>
-                    <Select value={newGuruId} onValueChange={setNewGuruId} required>
-                      <SelectTrigger className="h-11"><SelectValue placeholder="Pilih Pembuat" /></SelectTrigger>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Jurusan</label>
+                    <Select value={newJurusan} onValueChange={setNewJurusan}>
+                      <SelectTrigger className="h-11"><SelectValue placeholder="Pilih Jurusan" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={profile?.uid || ''}>Saya Sendiri (Admin)</SelectItem>
-                        {guruList.map(g => (
-                          g.id !== profile?.uid && <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                        ))}
+                        <SelectItem value="Semua">Semua Jurusan</SelectItem>
+                        <SelectItem value="IPA">IPA</SelectItem>
+                        <SelectItem value="IPS">IPS</SelectItem>
+                        <SelectItem value="Bahasa">Bahasa</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Penulis / Guru</label>
+                  <Select value={newGuruId} onValueChange={setNewGuruId} required>
+                    <SelectTrigger className="h-11"><SelectValue placeholder="Pilih Pembuat" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={profile?.uid || ''}>Saya Sendiri (Admin)</SelectItem>
+                      {guruList.map(g => (
+                        g.id !== profile?.uid && <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kelas / Rombel <span className="text-rose-500">*</span></label>
+                  <div className="border border-input rounded-md p-3 max-h-[160px] overflow-y-auto space-y-2 bg-slate-50 w-full">
+                    {kelasList.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-2 font-medium">Belum ada data kelas</p>
+                    ) : (
+                      kelasList.map(kelas => (
+                        <div key={kelas.id} className="flex items-center space-x-3 bg-white p-2 rounded border border-slate-100 shadow-sm hover:border-blue-200 transition-colors w-full">
+                          <Checkbox 
+                            id={`kelas-admin-${kelas.id}`} 
+                            checked={newKelasIds.includes(kelas.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setNewKelasIds([...newKelasIds, kelas.id]);
+                              } else {
+                                setNewKelasIds(newKelasIds.filter(id => id !== kelas.id));
+                              }
+                            }}
+                          />
+                          <label 
+                            htmlFor={`kelas-admin-${kelas.id}`} 
+                            className="text-sm font-bold text-slate-700 cursor-pointer flex-1 py-1"
+                          >
+                            {kelas.name}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium">Pilih satu atau lebih kelas tujuan.</p>
                 </div>
 
                 <div className="pt-4">
@@ -188,6 +251,12 @@ export default function AdminBankSoal() {
               const mapelName = mapelList.find(m => m.id === p.mapelId)?.name || "Unknown Mapel";
               const author = guruList.find(g => g.id === p.guruId)?.name || 'Admin';
               
+              // Get kelas names
+              const kelasNames = p.kelasIds?.map((kid: string) => {
+                const k = kelasList.find(c => c.id === kid);
+                return k ? k.name : kid;
+              }).join(', ') || '-';
+              
               return (
                 <Card 
                   key={p.id} 
@@ -197,9 +266,14 @@ export default function AdminBankSoal() {
                   <div className="h-2 w-full bg-gradient-to-r from-blue-500 to-indigo-500"></div>
                   <CardHeader className="pb-3 relative flex-1">
                     <div className="flex justify-between items-start mb-2">
-                       <span className="inline-flex font-bold uppercase tracking-wider text-[10px] bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full border border-indigo-100">
-                         {p.jenjang}
-                       </span>
+                       <div className="flex gap-2">
+                         <span className="inline-flex font-bold uppercase tracking-wider text-[10px] bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full border border-indigo-100">
+                           {p.jenjang}
+                         </span>
+                         <span className="inline-flex font-bold uppercase tracking-wider text-[10px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full border border-blue-100">
+                           {p.jurusan || 'Semua'}
+                         </span>
+                       </div>
                        <Button 
                          variant="ghost" 
                          size="icon" 
@@ -212,6 +286,9 @@ export default function AdminBankSoal() {
                     <CardTitle className="text-xl font-bold leading-snug text-slate-800 group-hover:text-blue-600 transition-colors">
                       {p.title}
                     </CardTitle>
+                    <p className="text-xs text-slate-500 font-medium mt-1 line-clamp-1" title={kelasNames}>
+                       Target: {kelasNames}
+                    </p>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-3">
