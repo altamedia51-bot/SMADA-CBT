@@ -45,7 +45,22 @@ export default function AdminMasterData() {
     password: ''
   });
   
-  // Guru Form State
+  const handleFotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Check size limit: 512KB
+    if (file.size > 512 * 1024) {
+      toast.error('Ukuran file foto maksimal 512KB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSiswaForm(prev => ({ ...prev, fotoUrl: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
+  };
   const [editingGuru, setEditingGuru] = useState<any>(null);
   const [guruForm, setGuruForm] = useState({
     nama: '',
@@ -777,12 +792,19 @@ export default function AdminMasterData() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Input 
-                    placeholder="URL FOTO (OPSIONAL)" 
-                    className="h-11"
-                    value={siswaForm.fotoUrl}
-                    onChange={e => setSiswaForm({...siswaForm, fotoUrl: e.target.value})}
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      type="file" 
+                      accept="image/*"
+                      className="h-11 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 flex-1 pt-1.5"
+                      onChange={handleFotoUpload}
+                    />
+                    {siswaForm.fotoUrl && (
+                      <div className="w-11 h-11 shrink-0 rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
+                        <img src={siswaForm.fotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               
