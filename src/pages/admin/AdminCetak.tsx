@@ -74,6 +74,7 @@ export default function AdminCetak() {
   const [printData, setPrintData] = useState<any>(null);
   
   const [config, setConfig] = useState({
+    ukuranKertas: 'A4',
     namaUjian: 'ASESMEN SUMATIF AKHIR SEMESTER',
     tahunAjaran: 'Tahun Ajaran 2023/2024',
     kop1: 'PEMERINTAH PROVINSI JAWA TIMUR',
@@ -243,7 +244,7 @@ export default function AdminCetak() {
               #print-container { position: absolute; left: 0; top: 0; width: 100%; background: white;}
               .no-print { display: none !important; }
               .page-break { page-break-after: always; }
-              @page { margin: 1cm; size: A4 portrait; }
+              @page { margin: 1cm; size: ${config.ukuranKertas === 'F4' ? '215.9mm 330.2mm' : 'A4'} portrait; }
             }
          `}</style>
          <div className="no-print sticky top-0 bg-white border-b shadow-sm p-4 flex justify-between items-center z-10 px-8">
@@ -279,25 +280,38 @@ export default function AdminCetak() {
                          </div>
                       </div>
                       <div className="p-4 space-y-3">
-                         <table className="w-full text-[11px] font-bold">
-                            <tbody>
-                               <tr className="border-b border-dashed border-slate-300">
-                                  <td className="py-2 text-slate-500 w-[70px]">NAMA</td><td className="py-2 px-1">:</td><td className="py-2 uppercase truncate max-w-[120px]">{s.name || s.displayName || '-'}</td>
-                               </tr>
-                               <tr className="border-b border-dashed border-slate-300">
-                                  <td className="py-2 text-slate-500">NIS / ID</td><td className="py-2 px-1">:</td><td className="py-2 font-mono">{s.nis || (s.email ? s.email.split('@')[0] : '-')}</td>
-                               </tr>
-                               <tr className="border-b border-dashed border-slate-300">
-                                  <td className="py-2 text-slate-500">KELAS</td><td className="py-2 px-1">:</td><td className="py-2">{s.kelas || printData.kelasName}</td>
-                               </tr>
-                               <tr className="border-b border-dashed border-slate-300">
-                                  <td className="py-2 text-slate-500">RUANG</td><td className="py-2 px-1">:</td><td className="py-2">{s.ruangId || '01'} - SESI {s.sesiId || '1'}</td>
-                               </tr>
-                               <tr className="border-t-2 border-slate-800">
-                                  <td className="pt-3 text-sm text-blue-800 font-black">PASSWORD</td><td className="pt-3 px-1">:</td><td className="pt-3 text-sm font-mono font-black">{s.showPassword ? s.showPassword : (s.tempPassword || '123456')}</td>
-                               </tr>
-                             </tbody>
-                         </table>
+                         <div className="flex gap-4 items-start">
+                            <div className="flex-1">
+                               <table className="w-full text-[11px] font-bold">
+                                  <tbody>
+                                     <tr className="border-b border-dashed border-slate-300">
+                                        <td className="py-2 text-slate-500 w-[70px] align-top">NAMA</td>
+                                        <td className="py-2 px-1 align-top">:</td>
+                                        <td className="py-2 uppercase break-words leading-tight">{s.name || s.displayName || '-'}</td>
+                                     </tr>
+                                     <tr className="border-b border-dashed border-slate-300">
+                                        <td className="py-2 text-slate-500">NIS / ID</td><td className="py-2 px-1">:</td><td className="py-2 font-mono">{s.nis || (s.email ? s.email.split('@')[0] : '-')}</td>
+                                     </tr>
+                                     <tr className="border-b border-dashed border-slate-300">
+                                        <td className="py-2 text-slate-500">KELAS</td><td className="py-2 px-1">:</td><td className="py-2">{s.kelas || printData.kelasName}</td>
+                                     </tr>
+                                     <tr className="border-b border-dashed border-slate-300">
+                                        <td className="py-2 text-slate-500">RUANG</td><td className="py-2 px-1">:</td><td className="py-2">{s.ruangId || '01'} - SESI {s.sesiId || '1'}</td>
+                                     </tr>
+                                     <tr className="border-t-2 border-slate-800">
+                                        <td className="pt-3 text-sm text-blue-800 font-black">PASSWORD</td><td className="pt-3 px-1">:</td><td className="pt-3 text-sm font-mono font-black">{s.showPassword ? s.showPassword : (s.tempPassword || '123456')}</td>
+                                     </tr>
+                                   </tbody>
+                               </table>
+                            </div>
+                            <div className="w-[2.5cm] h-[3.5cm] border-2 border-dashed border-slate-300 flex flex-col items-center justify-center bg-slate-50 text-[10px] text-slate-400 font-bold shrink-0">
+                               {s.photoUrl || s.photo ? (
+                                 <img src={s.photoUrl || s.photo} className="w-full h-full object-cover" alt="Foto Peserta" />
+                               ) : (
+                                 <span className="text-center">FOTO<br/>3x4</span>
+                               )}
+                            </div>
+                         </div>
                          
                          {/* ADD SIGNATURE HERE */}
                          <div className="flex justify-between mt-4 text-[9px] text-center font-bold">
@@ -462,46 +476,49 @@ export default function AdminCetak() {
                                      <span className="absolute bottom-1 left-4 font-bold uppercase">{config.proktor}</span>
                                  </td>
                                  <td className="w-10"></td>
-                                 <td className="w-64 align-bottom py-2"><span className="mr-2">1.</span> ________________________________</td>
+                                 <td className="w-64 align-bottom py-2"></td>
                               </tr>
                               <tr>
                                  <td className="text-right pr-4 align-bottom py-2">NIP</td>
                                  <td className="border-b border-black relative py-2">
                                      <span className="absolute bottom-1 left-4 font-bold">{config.nipProktor}</span>
                                  </td>
-                                 <td colSpan={2}></td>
+                                 <td className="w-10"></td>
+                                 <td className="w-64 align-bottom py-2"><span className="mr-2">1.</span> ________________________________</td>
                               </tr>
-                              <tr><td colSpan={4} className="h-6"></td></tr>
+                              <tr><td colSpan={4} className="h-4"></td></tr>
                               <tr>
                                  <td className="w-32 text-right pr-4 align-bottom py-2">Pengawas</td>
                                  <td className="border-b border-black relative py-2">
                                      <span className="absolute bottom-1 left-4 font-bold uppercase">{config.pengawas}</span>
                                  </td>
                                  <td className="w-10"></td>
-                                 <td className="w-64 align-bottom py-2"><span className="mr-2">2.</span> ________________________________</td>
+                                 <td className="w-64 align-bottom py-2"></td>
                               </tr>
                               <tr>
                                  <td className="text-right pr-4 align-bottom py-2">NIP</td>
                                  <td className="border-b border-black relative py-2">
                                      <span className="absolute bottom-1 left-4 font-bold">{config.nipPengawas}</span>
                                  </td>
-                                 <td colSpan={2}></td>
+                                 <td className="w-10"></td>
+                                 <td className="w-64 align-bottom py-2"><span className="mr-2">2.</span> ________________________________</td>
                               </tr>
-                              <tr><td colSpan={4} className="h-6"></td></tr>
+                              <tr><td colSpan={4} className="h-4"></td></tr>
                               <tr>
                                  <td className="w-32 text-right pr-4 align-bottom py-2">Kepala Sekolah</td>
                                  <td className="border-b border-black relative py-2">
                                      <span className="absolute bottom-1 left-4 font-bold uppercase">{config.kepsek}</span>
                                  </td>
                                  <td className="w-10"></td>
-                                 <td className="w-64 align-bottom py-2"><span className="mr-2">3.</span> ________________________________</td>
+                                 <td className="w-64 align-bottom py-2"></td>
                               </tr>
                               <tr>
                                  <td className="text-right pr-4 align-bottom py-2">NIP</td>
                                  <td className="border-b border-black relative py-2">
                                      <span className="absolute bottom-1 left-4 font-bold">{config.nip}</span>
                                  </td>
-                                 <td colSpan={2}></td>
+                                 <td className="w-10"></td>
+                                 <td className="w-64 align-bottom py-2"><span className="mr-2">3.</span> ________________________________</td>
                               </tr>
                            </tbody>
                         </table>
@@ -843,14 +860,26 @@ export default function AdminCetak() {
           <DialogHeader><DialogTitle>Pengaturan Cetak / Kop Surat</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-4">
              <div className="grid grid-cols-2 gap-4">
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Ukuran Kertas</label>
+                 <select 
+                   className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                   value={config.ukuranKertas} 
+                   onChange={e=>setConfig({...config, ukuranKertas: e.target.value})}
+                 >
+                   <option value="A4">A4</option>
+                   <option value="F4">F4</option>
+                 </select>
+               </div>
                <div><label className="text-xs font-bold text-slate-500 mb-1 block">Nama Ujian</label><Input value={config.namaUjian} onChange={e=>setConfig({...config, namaUjian: e.target.value})} /></div>
-               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Tahun Ajaran</label><Input value={config.tahunAjaran} onChange={e=>setConfig({...config, tahunAjaran: e.target.value})} /></div>
              </div>
              <div className="grid grid-cols-2 gap-4">
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Tahun Ajaran</label><Input value={config.tahunAjaran} onChange={e=>setConfig({...config, tahunAjaran: e.target.value})} /></div>
                <div><label className="text-xs font-bold text-slate-500 mb-1 block">Kop Baris 1</label><Input value={config.kop1} onChange={e=>setConfig({...config, kop1: e.target.value})} /></div>
-               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Kop Baris 2</label><Input value={config.kop2} onChange={e=>setConfig({...config, kop2: e.target.value})} /></div>
              </div>
-             <div><label className="text-xs font-bold text-slate-500 mb-1 block">Nama Sekolah</label><Input value={config.sekolah} onChange={e=>setConfig({...config, sekolah: e.target.value})} /></div>
+             <div className="grid grid-cols-2 gap-4">
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Kop Baris 2</label><Input value={config.kop2} onChange={e=>setConfig({...config, kop2: e.target.value})} /></div>
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Nama Sekolah</label><Input value={config.sekolah} onChange={e=>setConfig({...config, sekolah: e.target.value})} /></div>
+             </div>
              <div><label className="text-xs font-bold text-slate-500 mb-1 block">Alamat Sekolah</label><Input value={config.alamat} onChange={e=>setConfig({...config, alamat: e.target.value})} /></div>
              
              <div className="grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
