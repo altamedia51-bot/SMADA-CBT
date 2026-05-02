@@ -74,6 +74,8 @@ export default function AdminCetak() {
   const [printData, setPrintData] = useState<any>(null);
   
   const [config, setConfig] = useState({
+    namaUjian: 'ASESMEN SUMATIF AKHIR SEMESTER',
+    tahunAjaran: 'Tahun Ajaran 2023/2024',
     kop1: 'PEMERINTAH PROVINSI JAWA TIMUR',
     kop2: 'DINAS PENDIDIKAN',
     sekolah: 'SMA NEGERI 2 SUKOREJO',
@@ -271,8 +273,9 @@ export default function AdminCetak() {
                            <School className="w-8 h-8 text-slate-700" />
                          )}
                          <div className="flex-1 px-2">
-                           <h3 className="font-black text-[13px] uppercase tracking-wide">KARTU PESERTA UJIAN</h3>
-                           <p className="font-bold text-[10px] text-slate-600 uppercase">{config.sekolah}</p>
+                           <h3 className="font-black text-[13px] uppercase tracking-wide">KARTU PESERTA</h3>
+                           <p className="font-bold text-[11px] text-slate-800 uppercase">{config.namaUjian}</p>
+                           <p className="font-bold text-[9px] text-slate-600 uppercase">{config.sekolah} • {config.tahunAjaran}</p>
                          </div>
                       </div>
                       <div className="p-4 space-y-3">
@@ -332,7 +335,7 @@ export default function AdminCetak() {
                     const sb = sesiList.find(s=>s.id===b[0]);
                     return (sa?.name || a[0]).localeCompare(sb?.name || b[0]);
                   }).map(([sesiId, sList]: [string, any], groupIdx) => (
-                    <div key={sesiId} className={groupIdx > 0 ? "break-before-page mt-8 print:mt-0" : ""}>
+                    <div key={sesiId} className={groupIdx > 0 ? "print:break-before-page mt-8 print:mt-0" : ""}>
                        <div className="text-center border-b-[3px] border-black pb-4 mb-6 relative">
                           {config.kopKiri && <img src={config.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
                           {config.kopKanan && <img src={config.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
@@ -347,7 +350,8 @@ export default function AdminCetak() {
                              {config.website && <span>Website: {config.website}</span>}
                           </p>
                        </div>
-                       <h3 className="text-center font-black text-lg underline mb-6">DAFTAR HADIR PESERTA UJIAN</h3>
+                       <h3 className="text-center font-black text-lg underline mb-2">DAFTAR HADIR PESERTA {config.namaUjian.toUpperCase()}</h3>
+                       <p className="text-center font-bold text-sm mb-6 uppercase">{config.tahunAjaran}</p>
                        <div className="flex justify-between mb-4 font-bold text-sm">
                           <div>
                             <p>Kelas: {printData?.kelasName}</p>
@@ -422,9 +426,10 @@ export default function AdminCetak() {
                         {config.website && <span>Website: {config.website}</span>}
                      </p>
                   </div>
-                  <h3 className="text-center font-black text-xl mb-8">BERITA ACARA PENYELENGGARAAN UJIAN</h3>
+                  <h3 className="text-center font-black text-xl mb-2">BERITA ACARA PENYELENGGARAAN {config.namaUjian.toUpperCase()}</h3>
+                  <p className="text-center font-bold text-md mb-8 uppercase">{config.tahunAjaran}</p>
                   <div className="text-justify leading-relaxed space-y-6">
-                     <p>Pada hari ini tanggal <strong>...............................</strong> telah diselenggarakan Ujian untuk mata pelajaran <strong>{printData.mapel}</strong> dari pukul ................... sampai ...................</p>
+                     <p>Pada hari ini tanggal <strong>...............................</strong> telah diselenggarakan {config.namaUjian} untuk mata pelajaran <strong>{printData.mapel}</strong> dari pukul ................... sampai ...................</p>
                      
                      <ol className="list-[lower-alpha] pl-6 space-y-2">
                         <li>Ruang Ujian: <strong>{printData.ruang}</strong></li>
@@ -797,6 +802,10 @@ export default function AdminCetak() {
         <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Pengaturan Cetak / Kop Surat</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-4">
+             <div className="grid grid-cols-2 gap-4">
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Nama Ujian</label><Input value={config.namaUjian} onChange={e=>setConfig({...config, namaUjian: e.target.value})} /></div>
+               <div><label className="text-xs font-bold text-slate-500 mb-1 block">Tahun Ajaran</label><Input value={config.tahunAjaran} onChange={e=>setConfig({...config, tahunAjaran: e.target.value})} /></div>
+             </div>
              <div className="grid grid-cols-2 gap-4">
                <div><label className="text-xs font-bold text-slate-500 mb-1 block">Kop Baris 1</label><Input value={config.kop1} onChange={e=>setConfig({...config, kop1: e.target.value})} /></div>
                <div><label className="text-xs font-bold text-slate-500 mb-1 block">Kop Baris 2</label><Input value={config.kop2} onChange={e=>setConfig({...config, kop2: e.target.value})} /></div>
