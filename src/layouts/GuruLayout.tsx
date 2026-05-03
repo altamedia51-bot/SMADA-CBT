@@ -1,7 +1,7 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, ClipboardCheck, BookOpen, Printer, UserRound, HelpCircle, Users } from 'lucide-react';
+import { LogOut, LayoutDashboard, ClipboardCheck, BookOpen, Printer, UserRound, HelpCircle, Users, GraduationCap } from 'lucide-react';
 import { useIdleLogout } from '../hooks/useIdleLogout';
 import { useAppSettings } from '../hooks/useAppSettings';
 
@@ -16,6 +16,7 @@ export default function GuruLayout() {
   const navItems = [
     { label: 'Paket Soal', path: '/guru/paket-soal', icon: BookOpen },
     { label: 'Hasil Ujian', path: '/guru/hasil', icon: ClipboardCheck },
+    { label: 'Nilai Raport', path: '/guru/nilai-raport', icon: GraduationCap },
     ...(profile?.waliKelas ? [{ label: 'Data Siswa', path: '/guru/data-siswa', icon: Users }] : []),
     { label: 'Panduan', path: '/guru/panduan', icon: HelpCircle },
     { label: 'Profil', path: '/guru/profil', icon: UserRound },
