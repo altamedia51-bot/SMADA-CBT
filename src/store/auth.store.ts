@@ -9,6 +9,7 @@ interface UserProfile {
   displayName: string;
   role: UserRole;
   isActive: boolean;
+  waliKelas?: string;
 }
 
 interface AuthState {

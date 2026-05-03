@@ -27,8 +27,9 @@ service cloud.firestore {
     // 1. Users
     match /users/{userId} {
       // Allow public read for student listing (needed for login page dropdown)
-      allow read: if isAuthenticated() || resource.data.role == 'siswa';
-      allow write: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() || resource == null || resource.data.role == 'siswa';
+      allow create, update: if isAuthenticated() && (userId == request.auth.uid || isAdmin() || (isGuru() && request.resource.data.role == 'siswa' && request.resource.data.kelas == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.waliKelas));
+      allow delete: if isAuthenticated() && (isAdmin() || (isGuru() && resource.data.role == 'siswa' && resource.data.kelas == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.waliKelas));
     }
 
     // 2. Siswa (Deprecated or mapping to users? The previous setup had /siswa/ but also /users/. 

@@ -66,7 +66,8 @@ export default function AdminMasterData() {
     nama: '',
     nip: '',
     password: '',
-    nomorWa: ''
+    nomorWa: '',
+    waliKelas: ''
   });
 
   // Visibility states
@@ -470,6 +471,7 @@ export default function AdminMasterData() {
           displayName: guruForm.nama,
           nip: guruForm.nip,
           nomorWa: guruForm.nomorWa,
+          waliKelas: guruForm.waliKelas,
           updatedAt: serverTimestamp()
         });
         toast.success(`Data guru ${guruForm.nama} diperbarui.`);
@@ -486,12 +488,12 @@ export default function AdminMasterData() {
         const uid = data.localId;
         const { setDoc } = await import('firebase/firestore');
         await setDoc(doc(db, 'users', uid), {
-          uid, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, isActive: true, createdAt: serverTimestamp()
+          uid, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, isActive: true, createdAt: serverTimestamp()
         }, { merge: true });
         toast.success(`Guru ${guruForm.nama} ditambahkan.`);
       }
       setEditingGuru(null);
-      setGuruForm({ nama: '', nip: '', password: '', nomorWa: '' });
+      setGuruForm({ nama: '', nip: '', password: '', nomorWa: '', waliKelas: '' });
     } catch (err: any) {
       toast.error('Eror: ' + err.message);
     }
@@ -970,12 +972,24 @@ export default function AdminMasterData() {
                     </p>
                   </div>
                 )}
+                <div className="md:col-span-2">
+                   <select
+                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                     value={guruForm.waliKelas}
+                     onChange={e => setGuruForm({...guruForm, waliKelas: e.target.value})}
+                   >
+                     <option value="">-- TANPA WALI KELAS --</option>
+                     {kelas.map(k => (
+                       <option key={k.id} value={k.name}>{k.name}</option>
+                     ))}
+                   </select>
+                </div>
                 <div className="flex gap-2 w-full md:col-span-2">
                   <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold h-10">
                     Simpan Data Guru
                   </Button>
                   {editingGuru && (
-                    <Button type="button" variant="outline" onClick={() => { setEditingGuru(null); setGuruForm({nama:'', nip:'', password:'', nomorWa: ''}); }} className="h-10">
+                    <Button type="button" variant="outline" onClick={() => { setEditingGuru(null); setGuruForm({nama:'', nip:'', password:'', nomorWa: '', waliKelas: ''}); }} className="h-10">
                       Batal
                     </Button>
                   )}
@@ -990,20 +1004,22 @@ export default function AdminMasterData() {
                   <TableHead>Nama Guru</TableHead>
                   <TableHead>NIP / Username</TableHead>
                   <TableHead>No. WA</TableHead>
+                  <TableHead>Wali Kelas</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.filter(u => u.role === 'guru').length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center py-10 text-slate-400">Belum ada data guru.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center py-10 text-slate-400">Belum ada data guru.</TableCell></TableRow>
                 ) : (
                   users.filter(u => u.role === 'guru').map(g => (
                     <TableRow key={g.id}>
                       <TableCell className="font-bold text-slate-700">{g.displayName}</TableCell>
                       <TableCell className="font-mono text-xs">{g.nip || g.email.split('@')[0]}</TableCell>
                       <TableCell className="text-slate-600">{g.nomorWa || '-'}</TableCell>
+                      <TableCell className="font-bold text-blue-600">{g.waliKelas || '-'}</TableCell>
                       <TableCell className="flex justify-end gap-1">
-                         <Button variant="ghost" size="sm" onClick={() => { setEditingGuru(g); setGuruForm({nama:g.displayName, nip:g.nip||'', password:'', nomorWa: g.nomorWa || ''}); }} className="text-blue-500">
+                         <Button variant="ghost" size="sm" onClick={() => { setEditingGuru(g); setGuruForm({nama:g.displayName, nip:g.nip||'', password:'', nomorWa: g.nomorWa || '', waliKelas: g.waliKelas || ''}); }} className="text-blue-500">
                            <Pencil className="w-4 h-4" />
                          </Button>
                          <Button variant="ghost" size="sm" onClick={() => hapusData('users', g.id)} className="text-rose-500">

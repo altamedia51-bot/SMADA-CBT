@@ -17,10 +17,25 @@ export function useAppSettings() {
     const unsub = onSnapshot(doc(db, 'settings', 'general'), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setSettings({
+        const newSettings = {
           logo: data.logo || '',
           appName: data.appName || 'CBT System',
-        });
+        };
+        setSettings(newSettings);
+        
+        // Update document title
+        document.title = newSettings.appName;
+        
+        // Update favicon
+        if (newSettings.logo) {
+          let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+          if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.head.appendChild(link);
+          }
+          link.href = newSettings.logo;
+        }
       }
       setLoading(false);
     }, (error) => {

@@ -16,6 +16,7 @@ export default function AdminLayout() {
 
   const [isMasterDataOpen, setIsMasterDataOpen] = useState(true);
   const [isAdministrasiOpen, setIsAdministrasiOpen] = useState(false);
+  const [isManajemenUjianOpen, setIsManajemenUjianOpen] = useState(false);
 
   const navItems = [
     { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
@@ -36,9 +37,14 @@ export default function AdminLayout() {
         { label: 'Data Mapel', path: '/admin/administrasi?tab=mapel', icon: Library }
       ]
     },
-    { label: 'Bank Soal', path: '/admin/bank-soal', icon: FileText },
-    { label: 'Jadwal Ujian', path: '/admin/ujian', icon: Calendar },
-    { label: 'Hasil Ujian', path: '/admin/hasil', icon: ClipboardCheck },
+    { label: 'Manajemen Ujian', path: '/admin/bank-soal', icon: FileText,
+      id: 'manajemen-ujian',
+      subItems: [
+        { label: 'Bank Soal', path: '/admin/bank-soal', icon: FileText },
+        { label: 'Jadwal Ujian', path: '/admin/ujian', icon: Calendar },
+        { label: 'Hasil Ujian', path: '/admin/hasil', icon: ClipboardCheck }
+      ]
+    },
     { label: 'Cetak', path: '/admin/cetak', icon: Printer },
     { label: 'Reset Data', path: '/admin/reset', icon: Trash2 },
     { label: 'Administrator', path: '/admin/users', icon: Users },
@@ -63,12 +69,12 @@ export default function AdminLayout() {
 
         <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
            {navItems.map((item) => {
-             const isActive = location.pathname === item.path || (item.subItems && location.pathname.startsWith(item.path));
+             const isActive = location.pathname === item.path || (item.subItems && item.subItems.some(sub => location.pathname.startsWith(sub.path.split('?')[0])));
              const Icon = item.icon;
              
              if (item.subItems) {
-               const isOpen = item.id === 'master-data' ? isMasterDataOpen : isAdministrasiOpen;
-               const setIsOpen = item.id === 'master-data' ? setIsMasterDataOpen : setIsAdministrasiOpen;
+               const isOpen = item.id === 'master-data' ? isMasterDataOpen : item.id === 'administrasi' ? isAdministrasiOpen : isManajemenUjianOpen;
+               const setIsOpen = item.id === 'master-data' ? setIsMasterDataOpen : item.id === 'administrasi' ? setIsAdministrasiOpen : setIsManajemenUjianOpen;
                
                return (
                  <div key={item.path} className="space-y-1">
@@ -93,9 +99,11 @@ export default function AdminLayout() {
                        {item.subItems.map(subItem => {
                          const searchParams = new URLSearchParams(location.search);
                          const currentTab = searchParams.get('tab');
-                         const subItemTab = new URLSearchParams(subItem.path.split('?')[1]).get('tab');
+                         const subItemTab = subItem.path.includes('?') ? new URLSearchParams(subItem.path.split('?')[1]).get('tab') : null;
                          
-                         const isSubActive = currentTab === subItemTab || (!currentTab && location.pathname === item.path && ((item.id === 'master-data' && subItemTab === 'ruang') || (item.id === 'administrasi' && subItemTab === 'siswa')));
+                         const isSubActive = (subItemTab && currentTab === subItemTab) || 
+                            (!subItemTab && location.pathname === subItem.path) ||
+                            (!currentTab && location.pathname === item.path && ((item.id === 'master-data' && subItemTab === 'ruang') || (item.id === 'administrasi' && subItemTab === 'siswa')));
                          return (
                            <button
                              key={subItem.path}

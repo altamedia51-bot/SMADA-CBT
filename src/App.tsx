@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './components/AuthProvider';
+import { AppGlobalSettings } from './components/AppGlobalSettings';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Login from './pages/Login';
 import AdminLayout from './layouts/AdminLayout';
@@ -18,6 +19,7 @@ import GuruDashboard from './pages/guru/GuruDashboard';
 import GuruPaketSoal from './pages/guru/GuruPaketSoal';
 import GuruSoalDetail from './pages/guru/GuruSoalDetail';
 import GuruProfil from './pages/guru/GuruProfil';
+import GuruDataSiswa from './pages/guru/GuruDataSiswa';
 import GuruScanLjk from './pages/guru/GuruScanLjk';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
 import UjianSession from './pages/siswa/UjianSession';
@@ -31,6 +33,7 @@ import Panduan from './pages/shared/Panduan';
 export default function App() {
   return (
     <AuthProvider>
+      <AppGlobalSettings />
       <Toaster />
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -63,6 +66,7 @@ export default function App() {
             <Route index element={<Navigate to="paket-soal" replace />} />
             <Route path="paket-soal" element={<GuruPaketSoal />} />
             <Route path="paket-soal/:paketId" element={<GuruSoalDetail />} />
+            <Route path="data-siswa" element={<GuruDataSiswa />} />
             <Route path="hasil" element={<AdminHasil />} />
             <Route path="profil" element={<GuruProfil />} />
             <Route path="panduan" element={<Panduan />} />
