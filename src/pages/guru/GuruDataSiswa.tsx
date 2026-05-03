@@ -17,6 +17,7 @@ export default function GuruDataSiswa() {
   const [users, setUsers] = useState<any[]>([]);
   const [sesi, setSesi] = useState<any[]>([]);
   const [kelasData, setKelasData] = useState<any>(null);
+  const [allKelas, setAllKelas] = useState<any[]>([]);
   const [editingSiswa, setEditingSiswa] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -57,10 +58,16 @@ export default function GuruDataSiswa() {
         }
     });
 
+    // Fetch all kelas
+    const unsubAllKelas = onSnapshot(collection(db, 'kelas'), (snap) => {
+        setAllKelas(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
     return () => {
       unsubSesi();
       unsubUsers();
       unsubKelas();
+      unsubAllKelas();
     };
   }, [profile?.waliKelas]);
 
@@ -73,38 +80,27 @@ export default function GuruDataSiswa() {
       let lulusStatus = kelasData.tingkat === 12 || kelasAsli.startsWith('XII');
       setIsLulus(lulusStatus);
       
-      let initialTarget = kelasAsli;
-      if (lulusStatus) {
-         initialTarget = kelasAsli.replace('XII', 'X'); 
-      } else {
-         if (kelasAsli.startsWith('XI ')) {
-             initialTarget = kelasAsli.replace('XI', 'XII');
-         } else if (kelasAsli.startsWith('X ')) {
-             initialTarget = kelasAsli.replace('X', 'XI');
-         }
-      }
-      setPromoTargetName(initialTarget);
+      setPromoTargetName('');
       setShowPromoteDialog(true);
   };
 
   const executePromotion = async () => {
       if (!promoTargetName) {
-          toast.error('Nama tujuan tidak boleh kosong!');
+          toast.error('Kelas tujuan belum dipilih!');
           return;
       }
       try {
-          // Validation: Check if destination class already exists
-          if (promoTargetName !== 'ALUMNI' && promoTargetName !== profile?.waliKelas) {
-              const qExistingClass = query(collection(db, 'kelas'), where('name', '==', promoTargetName));
-              const snapExisting = await getDocs(qExistingClass);
+          // Validation: Check if destination class has students
+          if (promoTargetName !== 'ALUMNI') {
+              const qExistingStudents = query(collection(db, 'users'), where('role', '==', 'siswa'), where('kelas', '==', promoTargetName));
+              const snapExisting = await getDocs(qExistingStudents);
               if (!snapExisting.empty) {
-                  toast.error(`Kelas ${promoTargetName} masih ada! Alur harus berurutan. Harap naikkan/luluskan kelas ${promoTargetName} terlebih dahulu.`);
+                  toast.error(`Kelas ${promoTargetName} masih memiliki siswa! Harap naikkan/luluskan kelas tujuan tersebut terlebih dahulu.`);
                   return;
               }
           }
 
           const batch = writeBatch(db);
-          
           let oldKelasName = profile?.waliKelas;
           
           const qSiswa = query(collection(db, 'users'), where('role', '==', 'siswa'), where('kelas', '==', oldKelasName));
@@ -120,35 +116,29 @@ export default function GuruDataSiswa() {
              snapGuru.docs.forEach(d => {
                  batch.update(d.ref, { waliKelas: promoTargetName });
              });
-             if (kelasData?.id) {
-                 batch.update(doc(db, 'kelas', kelasData.id), {
-                     name: promoTargetName,
-                     tingkat: 10
-                 });
-             }
           } else {
-             let newTingkat = kelasData?.tingkat || 11;
-             if (kelasData?.tingkat === 10) newTingkat = 11;
-             if (kelasData?.tingkat === 11) newTingkat = 12;
-
              snapSiswa.docs.forEach(d => {
                  batch.update(d.ref, { kelas: promoTargetName });
              });
              snapGuru.docs.forEach(d => {
                  batch.update(d.ref, { waliKelas: promoTargetName });
              });
-             if (kelasData?.id) {
-                 batch.update(doc(db, 'kelas', kelasData.id), {
-                     name: promoTargetName,
-                     tingkat: newTingkat
-                 });
-             }
           }
+          
+          // Update wali_kelas pointer on target class document
+          if (promoTargetName !== 'ALUMNI') {
+               const targetClassDoc = allKelas.find(k => k.name === promoTargetName);
+               if (targetClassDoc) {
+                   batch.update(doc(db, 'kelas', targetClassDoc.id), { waliKelas: profile?.uid || '' });
+               }
+          }
+          if (kelasData?.id) {
+               batch.update(doc(db, 'kelas', kelasData.id), { waliKelas: '' });
+          }
+
           await batch.commit();
           toast.success(isLulus ? 'Kelas lulus dan Wali Kelas dirotasi!' : 'Kelas berhasil dinaikkan!');
           setShowPromoteDialog(false);
-          // profile will auto-update if the auth.store fetches continuously, or user must relogin.
-          // In most cases, a reload will force new profile state
           setTimeout(() => window.location.reload(), 1500);
       } catch(err:any) {
           toast.error('Gagal melakukan operasi kelas: ' + err.message);
@@ -276,18 +266,25 @@ export default function GuruDataSiswa() {
             <div className="space-y-4 py-4">
                <div className="space-y-2">
                    <label className="text-sm font-bold text-slate-700">
-                      {isLulus ? 'Nama Kelas X Tujuan (Untuk Anda):' : 'Nama Kelas Tujuan:'}
+                      {isLulus ? 'Nama Kelas X Tujuan (Untuk Anda):' : 'Beralih ke Kelas:'}
                    </label>
-                   <Input 
-                      value={promoTargetName}
-                      onChange={e => setPromoTargetName(e.target.value)}
-                      placeholder={isLulus ? "Cth: X MIPA 1" : "Cth: XI MIPA 1"}
-                      className="h-11 font-bold text-indigo-700"
-                   />
-                   <p className="text-xs text-slate-500">
+                   
+                   <Select value={promoTargetName} onValueChange={setPromoTargetName}>
+                       <SelectTrigger className="h-11 font-bold text-indigo-700 w-full border-slate-300">
+                           <SelectValue placeholder="-- Plih Kelas Tujuan --" />
+                       </SelectTrigger>
+                       <SelectContent>
+                           {isLulus && <SelectItem value="ALUMNI">LULUS / ALUMNI</SelectItem>}
+                           {allKelas.sort((a,b) => a.name.localeCompare(b.name)).map(k => (
+                               <SelectItem key={k.id} value={k.name}>{k.name} (Tingkat {k.tingkat})</SelectItem>
+                           ))}
+                       </SelectContent>
+                   </Select>
+
+                   <p className="text-xs text-slate-500 mt-2">
                       {isLulus
-                         ? 'Pastikan nama ini belum dipakai oleh kelas lain, atau hapus kelas lama jika konflik.'
-                         : 'Nama ini akan diterapkan pada siswa dan data kelas.'
+                         ? 'Wali kelas akan dipindahkan ke kelas yang dipilih. Pilih LULUS/ALUMNI jika Anda juga dikeluarkan dari peran Wali Kelas.'
+                         : 'Siswa dan Anda (Wali Kelas) akan dipindahkan ke kelas yang dipilih.'
                       }
                    </p>
                </div>
