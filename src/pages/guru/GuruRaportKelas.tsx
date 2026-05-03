@@ -141,17 +141,60 @@ export default function GuruRaportKelas() {
 
   // Calculate Average and Rank
   const rataRataSiswa: Record<string, number> = {};
+  const jumlahNilaiSiswa: Record<string, number> = {};
+
   siswaList.forEach(s => {
     const nilai = raportData[s.id] || {};
-    const scores = Object.values(nilai).map((v: any) => v.nilai);
+    const scores = Object.values(nilai).map((v: any) => v.nilai).filter(n => typeof n === 'number' && !isNaN(n));
     if (scores.length > 0) {
-      rataRataSiswa[s.id] = scores.reduce((a, b) => a + b, 0) / scores.length;
+      jumlahNilaiSiswa[s.id] = scores.reduce((a, b) => a + b, 0);
+      rataRataSiswa[s.id] = jumlahNilaiSiswa[s.id] / scores.length;
     } else {
+      jumlahNilaiSiswa[s.id] = 0;
       rataRataSiswa[s.id] = 0;
     }
   });
 
-  const rankedSiswa = [...siswaList].sort((a, b) => rataRataSiswa[b.id] - rataRataSiswa[a.id]);
+  const sortedByRataRata = [...siswaList].sort((a, b) => rataRataSiswa[b.id] - rataRataSiswa[a.id]);
+  const rankSiswa: Record<string, number> = {};
+  sortedByRataRata.forEach((s, i) => {
+      rankSiswa[s.id] = i + 1;
+  });
+
+  // usedMapel: mapped ones that have scores
+  const usedMapel = mapelList.filter(m => siswaList.some(s => raportData[s.id]?.[m.id]));
+
+  // stats calculation
+  const mapelStats: Record<string, { min: number, max: number, avg: number, stdDev: number }> = {};
+  usedMapel.forEach(m => {
+     const scores = siswaList.map(s => raportData[s.id]?.[m.id]?.nilai).filter(n => typeof n === 'number' && !isNaN(n));
+     if (scores.length > 0) {
+        const min = Math.min(...scores);
+        const max = Math.max(...scores);
+        const avg = scores.reduce((a,b) => a+b, 0) / scores.length;
+        const variance = scores.reduce((a,b) => a + Math.pow(b - avg, 2), 0) / scores.length;
+        const stdDev = Math.sqrt(variance);
+        mapelStats[m.id] = { min, max, avg, stdDev };
+     } else {
+        mapelStats[m.id] = { min: 0, max: 0, avg: 0, stdDev: 0 };
+     }
+  });
+
+  const allTotals = Object.values(jumlahNilaiSiswa).filter(t => t > 0);
+  const totalStats = {
+     min: allTotals.length ? Math.min(...allTotals) : 0,
+     max: allTotals.length ? Math.max(...allTotals) : 0,
+     avg: allTotals.length ? allTotals.reduce((a,b)=>a+b,0)/allTotals.length : 0,
+     stdDev: allTotals.length ? Math.sqrt(allTotals.reduce((a,b) => a + Math.pow(b - (allTotals.reduce((x,y)=>x+y,0)/allTotals.length), 2), 0) / allTotals.length) : 0,
+  };
+
+  const allAvgs = Object.values(rataRataSiswa).filter(a => a > 0);
+  const avgStats = {
+     min: allAvgs.length ? Math.min(...allAvgs) : 0,
+     max: allAvgs.length ? Math.max(...allAvgs) : 0,
+     avg: allAvgs.length ? allAvgs.reduce((a,b)=>a+b,0)/allAvgs.length : 0,
+     stdDev: allAvgs.length ? Math.sqrt(allAvgs.reduce((a,b) => a + Math.pow(b - (allAvgs.reduce((x,y)=>x+y,0)/allAvgs.length), 2), 0) / allAvgs.length) : 0,
+  };
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -203,101 +246,106 @@ export default function GuruRaportKelas() {
         <div className="p-10 text-center animate-pulse text-slate-400">Memuat data...</div>
       ) : (
         <div className="space-y-8">
-           {rankedSiswa.length > 0 && (
+           {siswaList.length > 0 && (
               <Card className="overflow-hidden border border-slate-200">
                  <CardHeader className="bg-slate-50 border-b">
                     <CardTitle className="text-lg">Ledger Nilai Kelas</CardTitle>
-                    <CardDescription>Daftar nilai seluruh mapel yang ditempuh dan rata-ratanya</CardDescription>
+                    <CardDescription>Daftar nilai seluruh mapel yang ditempuh dan rata-ratanya.</CardDescription>
                  </CardHeader>
                  <CardContent className="p-0 overflow-x-auto">
-                    <Table>
-                       <TableHeader className="bg-slate-50">
-                          <TableRow>
-                             <TableHead className="w-[50px] text-center border-r">Rnk</TableHead>
-                             <TableHead className="w-[250px] border-r">Nama Siswa</TableHead>
-                             {mapelList.filter(m => rankedSiswa.some(s => raportData[s.id]?.[m.id])).map(m => (
-                                <TableHead key={m.id} className="text-center min-w-[100px] border-r">{m.name}</TableHead>
+                    <div className="min-w-max p-4">
+                       <table className="w-full text-xs border-collapse border border-slate-400">
+                          <thead>
+                             <tr>
+                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">NO</th>
+                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-20">NIS/NISN</th>
+                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center min-w-[200px]">NAMA</th>
+                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">L/P</th>
+                                <th colSpan={usedMapel.length} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center">MATA PELAJARAN</th>
+                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Jumlah</div></th>
+                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Rerata</div></th>
+                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Ranking</div></th>
+                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-4 py-1 text-center">Catatan / Pembinaan</th>
+                             </tr>
+                             <tr>
+                                {usedMapel.map(m => (
+                                   <th key={m.id} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center h-[120px] w-8">
+                                      <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap">{m.name}</div>
+                                   </th>
+                                ))}
+                             </tr>
+                          </thead>
+                          <tbody>
+                             {siswaList.map((siswa, index) => (
+                                <tr key={siswa.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                                   <td className="border border-slate-400 px-2 py-1 text-center font-medium">{index + 1}</td>
+                                   <td className="border border-slate-400 px-2 py-1 text-center">{siswa.nisn || '-'}</td>
+                                   <td className="border border-slate-400 px-2 py-1 font-semibold">{siswa.displayName}</td>
+                                   <td className="border border-slate-400 px-2 py-1 text-center">{siswa.jenisKelamin === 'Perempuan' ? 'P' : (siswa.jenisKelamin === 'Laki-laki' ? 'L' : '-')}</td>
+                                   {usedMapel.map(m => {
+                                      const nilaiMapel = raportData[siswa.id]?.[m.id]?.nilai;
+                                      return (
+                                         <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">
+                                            {nilaiMapel ? nilaiMapel : ''}
+                                         </td>
+                                      );
+                                   })}
+                                   <td className="border border-slate-400 px-2 py-1 text-center font-bold text-slate-700">{jumlahNilaiSiswa[siswa.id] || ''}</td>
+                                   <td className="border border-slate-400 px-2 py-1 text-center font-bold text-blue-700">{rataRataSiswa[siswa.id]?.toFixed(1) || ''}</td>
+                                   <td className="border border-slate-400 px-2 py-1 text-center font-bold text-amber-700">{rankSiswa[siswa.id] || ''}</td>
+                                   <td className="border border-slate-400 p-0">
+                                      <input 
+                                         type="text" 
+                                         className="w-full h-full px-2 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-xs" 
+                                         placeholder="-"
+                                         value={pembinaanData[siswa.id] || ''}
+                                         onChange={(e) => setPembinaanData({ ...pembinaanData, [siswa.id]: e.target.value })}
+                                      />
+                                   </td>
+                                </tr>
                              ))}
-                             <TableHead className="text-center w-[100px] border-r">Rata-rata</TableHead>
-                          </TableRow>
-                       </TableHeader>
-                       <TableBody>
-                          {rankedSiswa.map((siswa, index) => (
-                             <TableRow key={siswa.id} className="hover:bg-slate-50/50">
-                                <TableCell className="text-center font-bold border-r">{index + 1}</TableCell>
-                                <TableCell className="font-semibold border-r">{siswa.displayName}</TableCell>
-                                {mapelList.filter(m => rankedSiswa.some(s => raportData[s.id]?.[m.id])).map(m => {
-                                   const nilaiMapel = raportData[siswa.id]?.[m.id]?.nilai;
-                                   return (
-                                      <TableCell key={m.id} className="text-center border-r">
-                                         {nilaiMapel ? <span className="font-medium text-slate-700">{nilaiMapel}</span> : <span className="text-slate-300">-</span>}
-                                      </TableCell>
-                                   );
-                                })}
-                                <TableCell className="text-center font-bold text-blue-600 border-r">{rataRataSiswa[siswa.id]?.toFixed(2)}</TableCell>
-                             </TableRow>
-                          ))}
-                       </TableBody>
-                    </Table>
+                             
+                             {/* Bottom Stats Rows */}
+                             <tr className="bg-slate-100 font-bold">
+                                <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Nilai Terendah</td>
+                                {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].min || ''}</td>)}
+                                <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.min || ''}</td>
+                                <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.min ? avgStats.min.toFixed(1) : ''}</td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                             </tr>
+                             <tr className="bg-slate-100 font-bold">
+                                <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Nilai Tertinggi</td>
+                                {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].max || ''}</td>)}
+                                <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.max || ''}</td>
+                                <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.max ? avgStats.max.toFixed(1) : ''}</td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                             </tr>
+                             <tr className="bg-slate-100 font-bold">
+                                <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Rata-rata Nilai</td>
+                                {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].avg ? Math.round(mapelStats[m.id].avg) : ''}</td>)}
+                                <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.avg ? Math.round(totalStats.avg) : ''}</td>
+                                <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.avg ? avgStats.avg.toFixed(1) : ''}</td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                             </tr>
+                             <tr className="bg-slate-100 font-bold text-xs text-slate-600">
+                                <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Standar Deviasi</td>
+                                {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].stdDev ? mapelStats[m.id].stdDev.toFixed(1) : ''}</td>)}
+                                <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.stdDev ? totalStats.stdDev.toFixed(1) : ''}</td>
+                                <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.stdDev ? avgStats.stdDev.toFixed(1) : ''}</td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                             </tr>
+                          </tbody>
+                       </table>
+                    </div>
                  </CardContent>
               </Card>
            )}
 
-           {rankedSiswa.map((siswa, index) => (
-             <Card key={siswa.id} className="overflow-hidden border-slate-200">
-               <CardHeader className="bg-slate-50 py-3 border-b flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg font-bold text-slate-800">{siswa.displayName}</CardTitle>
-                    <CardDescription className="text-sm">NIS/NISN: {siswa.nisn || '-'} • Rata-rata: {rataRataSiswa[siswa.id]?.toFixed(2) || '0.00'}</CardDescription>
-                  </div>
-                  <div className="bg-blue-100 text-blue-800 font-bold px-4 py-2 rounded-lg text-lg border border-blue-200 shadow-sm">
-                    Ranking {index + 1}
-                  </div>
-               </CardHeader>
-               <CardContent className="p-0">
-                 <div className="overflow-x-auto">
-                   <Table>
-                      <TableHeader className="bg-slate-50">
-                        <TableRow>
-                          <TableHead className="w-[200px]">Mata Pelajaran</TableHead>
-                          <TableHead className="w-[100px] text-center">Nilai Akhir</TableHead>
-                          <TableHead>Deskripsi</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                         {mapelList.map(m => {
-                            const nilaiMapel = raportData[siswa.id]?.[m.id];
-                            if (!nilaiMapel) return null;
-                            return (
-                               <TableRow key={m.id}>
-                                  <TableCell className="font-semibold">{m.name}</TableCell>
-                                  <TableCell className="text-center font-bold text-lg">{nilaiMapel.nilai || '-'}</TableCell>
-                                  <TableCell className="text-sm text-slate-600 italic whitespace-pre-wrap">{nilaiMapel.deskripsi || '-'}</TableCell>
-                               </TableRow>
-                            );
-                         })}
-                         {Object.keys(raportData[siswa.id] || {}).length === 0 && (
-                            <TableRow>
-                               <TableCell colSpan={3} className="text-center text-slate-400 py-4">Belum ada nilai yang diinputkan</TableCell>
-                            </TableRow>
-                         )}
-                      </TableBody>
-                   </Table>
-                 </div>
-                 <div className="p-4 bg-amber-50/50 border-t">
-                    <label className="text-xs font-bold text-slate-700 block mb-2">Catatan/Pembinaan Wali Kelas</label>
-                    <Input 
-                       value={pembinaanData[siswa.id] || ''} 
-                       onChange={(e) => setPembinaanData({ ...pembinaanData, [siswa.id]: e.target.value })}
-                       placeholder="Masukkan catatan pengembangan karakter/pembinaan..."
-                       className="bg-white"
-                    />
-                 </div>
-               </CardContent>
-             </Card>
-           ))}
-
-           {rankedSiswa.length === 0 && (
+           {siswaList.length === 0 && (
              <div className="text-center text-slate-500 py-10">Tidak ada data siswa untuk kelas ini.</div>
            )}
         </div>
