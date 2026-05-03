@@ -28,6 +28,8 @@ export default function GuruNilaiRaport() {
   
   const [selectedKelas, setSelectedKelas] = useState('');
   const [selectedMapel, setSelectedMapel] = useState('');
+  const [tahunAjaran, setTahunAjaran] = useState('2024/2025');
+  const [semester, setSemester] = useState('Ganjil');
   
   const [siswaConfig, setSiswaConfig] = useState<any[]>([]);
   const [kkm, setKkm] = useState<number>(75);
@@ -66,13 +68,15 @@ export default function GuruNilaiRaport() {
        setSiswaConfig([]);
        setNilaiData({});
     }
-  }, [selectedKelas, selectedMapel]);
+  }, [selectedKelas, selectedMapel, tahunAjaran, semester]);
+
+  const getDocId = () => `${selectedKelas}_${selectedMapel}_${tahunAjaran.replace(/\//g, '-')}_${semester}`;
 
   const loadData = async () => {
      setLoading(true);
      try {
        // load settings for this mapel & kelas
-       const settingsRef = doc(db, 'settings_nilai', `${selectedKelas}_${selectedMapel}`);
+       const settingsRef = doc(db, 'settings_nilai', getDocId());
        
        onSnapshot(settingsRef, (snap) => {
           if (snap.exists()) {
@@ -95,7 +99,7 @@ export default function GuruNilaiRaport() {
        
        setSiswaConfig(filteredSiswa);
 
-       const nilaiRef = doc(db, 'nilai_raport', `${selectedKelas}_${selectedMapel}`);
+       const nilaiRef = doc(db, 'nilai_raport', getDocId());
        onSnapshot(nilaiRef, (snap) => {
           if (snap.exists() && snap.data().nilai) {
              setNilaiData(snap.data().nilai);
@@ -291,7 +295,7 @@ export default function GuruNilaiRaport() {
      if (!selectedKelas || !selectedMapel) return;
      setLoading(true);
      try {
-        await setDoc(doc(db, 'settings_nilai', `${selectedKelas}_${selectedMapel}`), {
+        await setDoc(doc(db, 'settings_nilai', getDocId()), {
            kkm: kkm,
            deskripsiFormatif,
            deskripsiSumatif
@@ -312,7 +316,7 @@ export default function GuruNilaiRaport() {
            };
         });
 
-        await setDoc(doc(db, 'nilai_raport', `${selectedKelas}_${selectedMapel}`), {
+        await setDoc(doc(db, 'nilai_raport', getDocId()), {
            nilai: toSave,
            updatedBy: profile?.uid,
            updatedAt: new Date()
@@ -444,8 +448,38 @@ export default function GuruNilaiRaport() {
 
       <Card>
          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-               <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+               <div className="space-y-4 lg:col-span-1">
+                  <div className="space-y-1">
+                     <label className="text-sm font-bold text-slate-700">Tahun Ajaran</label>
+                     <Select value={tahunAjaran} onValueChange={setTahunAjaran}>
+                        <SelectTrigger>
+                           <SelectValue placeholder="Pilih TA" />
+                        </SelectTrigger>
+                        <SelectContent>
+                           {Array.from({length: 5}).map((_, i) => {
+                              const startYear = new Date().getFullYear() - 2 + i;
+                              const ta = `${startYear}/${startYear + 1}`;
+                              return <SelectItem key={ta} value={ta}>{ta}</SelectItem>;
+                           })}
+                        </SelectContent>
+                     </Select>
+                  </div>
+                  <div className="space-y-1">
+                     <label className="text-sm font-bold text-slate-700">Semester</label>
+                     <Select value={semester} onValueChange={setSemester}>
+                        <SelectTrigger>
+                           <SelectValue placeholder="Pilih Semester" />
+                        </SelectTrigger>
+                        <SelectContent>
+                           <SelectItem value="Ganjil">Ganjil</SelectItem>
+                           <SelectItem value="Genap">Genap</SelectItem>
+                        </SelectContent>
+                     </Select>
+                  </div>
+               </div>
+
+               <div className="space-y-4 lg:col-span-2">
                   <div className="space-y-1">
                      <label className="text-sm font-bold text-slate-700">Mata Pelajaran</label>
                      <Select value={selectedMapel} onValueChange={setSelectedMapel}>

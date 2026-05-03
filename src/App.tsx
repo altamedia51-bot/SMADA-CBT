@@ -21,6 +21,7 @@ import GuruSoalDetail from './pages/guru/GuruSoalDetail';
 import GuruProfil from './pages/guru/GuruProfil';
 import GuruDataSiswa from './pages/guru/GuruDataSiswa';
 import GuruNilaiRaport from './pages/guru/GuruNilaiRaport';
+import GuruRaportKelas from './pages/guru/GuruRaportKelas';
 import GuruScanLjk from './pages/guru/GuruScanLjk';
 import SiswaDashboard from './pages/siswa/SiswaDashboard';
 import UjianSession from './pages/siswa/UjianSession';
@@ -69,6 +70,7 @@ export default function App() {
             <Route path="paket-soal/:paketId" element={<GuruSoalDetail />} />
             <Route path="data-siswa" element={<GuruDataSiswa />} />
             <Route path="nilai-raport" element={<GuruNilaiRaport />} />
+            <Route path="raport-kelas" element={<GuruRaportKelas />} />
             <Route path="hasil" element={<AdminHasil />} />
             <Route path="profil" element={<GuruProfil />} />
             <Route path="panduan" element={<Panduan />} />
