@@ -327,7 +327,7 @@ export default function GuruNilaiRaport() {
           "No", "ID", "NIS", "Nama Siswa", 
           "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8",
           "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
-          "PTS Awal", "PTS Katrol", "PSAS Awal", "PSAS Katrol", "Deskripsi"
+          "PTS", "PSAS"
       ]);
 
       siswaConfig.forEach((siswa, idx) => {
@@ -340,10 +340,7 @@ export default function GuruNilaiRaport() {
               ...sData.formatif,
               ...sData.sumatif,
               sData.pts,
-              sData.katrol_pts,
-              sData.psas,
-              sData.katrol_psas,
-              sData.deskripsi || ''
+              sData.psas
           ]);
       });
 
@@ -353,7 +350,7 @@ export default function GuruNilaiRaport() {
       const colWidths = [
           { wch: 5 }, { wch: 20 }, { wch: 15 }, { wch: 30 },
           ...Array(16).fill({ wch: 6 }),
-          { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 50 },
+          { wch: 10 }, { wch: 10 }
       ];
       ws['!cols'] = colWidths;
       
@@ -401,19 +398,18 @@ export default function GuruNilaiRaport() {
                   }
                   
                   let pts = row[20] !== undefined && row[20] !== null && row[20] !== '' ? parseFloat(row[20]) : '';
-                  let k_pts = row[21] !== undefined && row[21] !== null && row[21] !== '' ? parseFloat(row[21]) : '';
-                  let psas = row[22] !== undefined && row[22] !== null && row[22] !== '' ? parseFloat(row[22]) : '';
-                  let k_psas = row[23] !== undefined && row[23] !== null && row[23] !== '' ? parseFloat(row[23]) : '';
-                  let desk = row[24] || '';
+                  let psas = row[21] !== undefined && row[21] !== null && row[21] !== '' ? parseFloat(row[21]) : '';
+
+                  const existingData = newData[siswaId] || { katrol_pts: '', katrol_psas: '', deskripsi: '' };
 
                   newData[siswaId] = {
                       formatif: form,
                       sumatif: sum,
                       pts: pts,
-                      katrol_pts: k_pts,
+                      katrol_pts: existingData.katrol_pts,
                       psas: psas,
-                      katrol_psas: k_psas,
-                      deskripsi: desk
+                      katrol_psas: existingData.katrol_psas,
+                      deskripsi: existingData.deskripsi
                   };
                   count++;
               }
