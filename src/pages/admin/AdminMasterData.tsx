@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, deleteDoc, doc, updateDoc, serverTimestamp, getDocs, writeBatch, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, AlertCircle, Upload, Loader2, Download, UserPlus, UserCircle, Pencil, Plus, FileSpreadsheet, CloudUpload, Hash } from 'lucide-react';
+import { Trash2, AlertCircle, Upload, Loader2, Download, UserPlus, UserCircle, Pencil, Plus, FileSpreadsheet, CloudUpload, Hash, ArrowUpCircle, GraduationCap } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import Papa from 'papaparse';
 import firebaseConfig from '../../../firebase-applet-config.json';
@@ -96,6 +97,11 @@ export default function AdminMasterData() {
   
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [showPromoteDialog, setShowPromoteDialog] = useState(false);
+  const [promoTargetName, setPromoTargetName] = useState('');
+  const [promoKelasData, setPromoKelasData] = useState<any>(null);
+  const [isLulus, setIsLulus] = useState(false);
 
   // Realtime Listeners
   useEffect(() => {
@@ -407,6 +413,86 @@ export default function AdminMasterData() {
     } catch (err: any) {
       toast.error('Gagal menyimpan data: ' + err.message);
     }
+  };
+
+  const openPromoteDialog = (k: any) => {
+      setPromoKelasData(k);
+      const kelasAsli = k.name || '';
+      let lulusStatus = k.tingkat === 12 || kelasAsli.startsWith('XII');
+      setIsLulus(lulusStatus);
+      
+      let initialTarget = kelasAsli;
+      if (lulusStatus) {
+         initialTarget = kelasAsli.replace('XII', 'X'); 
+      } else {
+         if (kelasAsli.startsWith('XI ')) {
+             initialTarget = kelasAsli.replace('XI', 'XII');
+         } else if (kelasAsli.startsWith('X ')) {
+             initialTarget = kelasAsli.replace('X', 'XI');
+         }
+      }
+      setPromoTargetName(initialTarget);
+      setShowPromoteDialog(true);
+  };
+
+  const executePromotion = async () => {
+      if (!promoTargetName || !promoKelasData) {
+          toast.error('Data tidak valid!');
+          return;
+      }
+      try {
+          // Validation: Check if destination class already exists
+          if (promoTargetName !== 'ALUMNI' && promoTargetName !== promoKelasData.name) {
+              const qExistingClass = query(collection(db, 'kelas'), where('name', '==', promoTargetName));
+              const snapExisting = await getDocs(qExistingClass);
+              if (!snapExisting.empty) {
+                  toast.error(`Kelas ${promoTargetName} masih ada! Alur harus berurutan. Harap naikkan/luluskan kelas ${promoTargetName} terlebih dahulu.`);
+                  return;
+              }
+          }
+
+          const batch = writeBatch(db);
+          let oldKelasName = promoKelasData.name;
+          
+          const qSiswa = query(collection(db, 'users'), where('role', '==', 'siswa'), where('kelas', '==', oldKelasName));
+          const snapSiswa = await getDocs(qSiswa);
+          
+          const qGuru = query(collection(db, 'users'), where('role', '==', 'guru'), where('waliKelas', '==', oldKelasName));
+          const snapGuru = await getDocs(qGuru);
+          
+          if (isLulus) {
+             snapSiswa.docs.forEach(d => {
+                 batch.update(d.ref, { kelas: 'ALUMNI', isActive: false });
+             });
+             snapGuru.docs.forEach(d => {
+                 batch.update(d.ref, { waliKelas: promoTargetName });
+             });
+             batch.update(doc(db, 'kelas', promoKelasData.id), {
+                 name: promoTargetName,
+                 tingkat: 10
+             });
+          } else {
+             let newTingkat = promoKelasData.tingkat || 11;
+             if (promoKelasData.tingkat === 10) newTingkat = 11;
+             if (promoKelasData.tingkat === 11) newTingkat = 12;
+
+             snapSiswa.docs.forEach(d => {
+                 batch.update(d.ref, { kelas: promoTargetName });
+             });
+             snapGuru.docs.forEach(d => {
+                 batch.update(d.ref, { waliKelas: promoTargetName });
+             });
+             batch.update(doc(db, 'kelas', promoKelasData.id), {
+                 name: promoTargetName,
+                 tingkat: newTingkat
+             });
+          }
+          await batch.commit();
+          toast.success(isLulus ? 'Kelas lulus dan Wali Kelas dirotasi!' : 'Kelas berhasil dinaikkan!');
+          setShowPromoteDialog(false);
+      } catch(err:any) {
+          toast.error('Gagal melakukan operasi kelas: ' + err.message);
+      }
   };
 
   // --- Student Management Functions ---
@@ -757,6 +843,50 @@ export default function AdminMasterData() {
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
+      
+      <Dialog open={showPromoteDialog} onOpenChange={setShowPromoteDialog}>
+         <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+               <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                   {isLulus ? <GraduationCap className="w-6 h-6 text-indigo-600" /> : <ArrowUpCircle className="w-6 h-6 text-indigo-600" />}
+                   {isLulus ? 'Kelulusan Kelas & Rotasi' : 'Kenaikan Kelas'}
+               </DialogTitle>
+               <DialogDescription>
+                   {isLulus ? (
+                       <>Siswa di kelas <b>{promoKelasData?.name}</b> akan diluluskan (dipindah ke LULUS/ALUMNI). Wali Kelas dan nama kelas ini akan berganti mengulang ke awal.</>
+                   ) : (
+                       <>Siswa dan Wali Kelas <b>{promoKelasData?.name}</b> akan dinaikkan ke tingkat selanjutnya secara bersamaan.</>
+                   )}
+               </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+               <div className="space-y-2">
+                   <label className="text-sm font-bold text-slate-700">
+                      {isLulus ? 'Nama Kelas Selanjutnya (Mengulang awal):' : 'Nama Kelas Selanjutnya:'}
+                   </label>
+                   <Input 
+                      value={promoTargetName}
+                      onChange={e => setPromoTargetName(e.target.value)}
+                      placeholder={isLulus ? "Cth: X MIPA 1" : "Cth: XI MIPA 1"}
+                      className="h-11 font-bold text-indigo-700"
+                   />
+                   <p className="text-xs text-slate-500">
+                      {isLulus
+                         ? 'Pastikan nama ini belum dipakai oleh kelas lain, atau hapus kelas lama jika konflik.'
+                         : 'Nama ini akan menimpa data siswa dan info kelas secara masal.'
+                      }
+                   </p>
+               </div>
+            </div>
+            <DialogFooter>
+               <Button variant="outline" onClick={() => setShowPromoteDialog(false)}>Batal</Button>
+               <Button onClick={executePromotion} className="bg-indigo-600 hover:bg-indigo-700">
+                   Konfirmasi {isLulus ? 'Lulus' : 'Naik'}
+               </Button>
+            </DialogFooter>
+         </DialogContent>
+      </Dialog>
+
       {/* Top Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-200 pb-5">
         <div>
@@ -1429,6 +1559,11 @@ export default function AdminMasterData() {
                            </td>
                            <td className="py-5 px-6 text-right">
                               <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => {
+                                   openPromoteDialog(k);
+                                }} className="text-indigo-500 hover:text-indigo-700 transition-colors" title={k.tingkat === 12 || k.name?.startsWith('XII') ? 'Kelulusan Kelas' : 'Kenaikan Kelas'}>
+                                   {k.tingkat === 12 || k.name?.startsWith('XII') ? <GraduationCap className="w-4 h-4" /> : <ArrowUpCircle className="w-4 h-4" />}
+                                </button>
                                 <button onClick={() => {
                                   setEditingKelas(k);
                                   setNewKelasName(k.name);

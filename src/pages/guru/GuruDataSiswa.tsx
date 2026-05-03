@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, doc, query, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, doc, query, onSnapshot, updateDoc, deleteDoc, serverTimestamp, getDocs, writeBatch, where } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Pencil, Trash2, UserPlus, Upload, Search } from 'lucide-react';
+import { Pencil, Trash2, UserPlus, Upload, Search, ArrowUpCircle, GraduationCap } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useAuthStore } from '../../store/auth.store';
 import firebaseConfig from '../../../firebase-applet-config.json';
@@ -15,8 +16,13 @@ export default function GuruDataSiswa() {
   const { profile } = useAuthStore();
   const [users, setUsers] = useState<any[]>([]);
   const [sesi, setSesi] = useState<any[]>([]);
+  const [kelasData, setKelasData] = useState<any>(null);
   const [editingSiswa, setEditingSiswa] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  const [showPromoteDialog, setShowPromoteDialog] = useState(false);
+  const [promoTargetName, setPromoTargetName] = useState('');
+  const [isLulus, setIsLulus] = useState(false);
   
   const [siswaForm, setSiswaForm] = useState({
     nama: '',
@@ -44,11 +50,110 @@ export default function GuruDataSiswa() {
       setUsers(siswaKelasIni);
     });
 
+    // Fetch kelas target for promotion
+    const unsubKelas = onSnapshot(query(collection(db, 'kelas'), where('name', '==', profile.waliKelas)), (snap) => {
+        if (!snap.empty) {
+            setKelasData({ id: snap.docs[0].id, ...snap.docs[0].data() });
+        }
+    });
+
     return () => {
       unsubSesi();
       unsubUsers();
+      unsubKelas();
     };
   }, [profile?.waliKelas]);
+
+  const openPromoteDialog = () => {
+      if (!kelasData) {
+          toast.error('Data kelas tidak ditemukan di master data!');
+          return;
+      }
+      const kelasAsli = profile?.waliKelas || '';
+      let lulusStatus = kelasData.tingkat === 12 || kelasAsli.startsWith('XII');
+      setIsLulus(lulusStatus);
+      
+      let initialTarget = kelasAsli;
+      if (lulusStatus) {
+         initialTarget = kelasAsli.replace('XII', 'X'); 
+      } else {
+         if (kelasAsli.startsWith('XI ')) {
+             initialTarget = kelasAsli.replace('XI', 'XII');
+         } else if (kelasAsli.startsWith('X ')) {
+             initialTarget = kelasAsli.replace('X', 'XI');
+         }
+      }
+      setPromoTargetName(initialTarget);
+      setShowPromoteDialog(true);
+  };
+
+  const executePromotion = async () => {
+      if (!promoTargetName) {
+          toast.error('Nama tujuan tidak boleh kosong!');
+          return;
+      }
+      try {
+          // Validation: Check if destination class already exists
+          if (promoTargetName !== 'ALUMNI' && promoTargetName !== profile?.waliKelas) {
+              const qExistingClass = query(collection(db, 'kelas'), where('name', '==', promoTargetName));
+              const snapExisting = await getDocs(qExistingClass);
+              if (!snapExisting.empty) {
+                  toast.error(`Kelas ${promoTargetName} masih ada! Alur harus berurutan. Harap naikkan/luluskan kelas ${promoTargetName} terlebih dahulu.`);
+                  return;
+              }
+          }
+
+          const batch = writeBatch(db);
+          
+          let oldKelasName = profile?.waliKelas;
+          
+          const qSiswa = query(collection(db, 'users'), where('role', '==', 'siswa'), where('kelas', '==', oldKelasName));
+          const snapSiswa = await getDocs(qSiswa);
+          
+          const qGuru = query(collection(db, 'users'), where('role', '==', 'guru'), where('waliKelas', '==', oldKelasName));
+          const snapGuru = await getDocs(qGuru);
+          
+          if (isLulus) {
+             snapSiswa.docs.forEach(d => {
+                 batch.update(d.ref, { kelas: 'ALUMNI', isActive: false });
+             });
+             snapGuru.docs.forEach(d => {
+                 batch.update(d.ref, { waliKelas: promoTargetName });
+             });
+             if (kelasData?.id) {
+                 batch.update(doc(db, 'kelas', kelasData.id), {
+                     name: promoTargetName,
+                     tingkat: 10
+                 });
+             }
+          } else {
+             let newTingkat = kelasData?.tingkat || 11;
+             if (kelasData?.tingkat === 10) newTingkat = 11;
+             if (kelasData?.tingkat === 11) newTingkat = 12;
+
+             snapSiswa.docs.forEach(d => {
+                 batch.update(d.ref, { kelas: promoTargetName });
+             });
+             snapGuru.docs.forEach(d => {
+                 batch.update(d.ref, { waliKelas: promoTargetName });
+             });
+             if (kelasData?.id) {
+                 batch.update(doc(db, 'kelas', kelasData.id), {
+                     name: promoTargetName,
+                     tingkat: newTingkat
+                 });
+             }
+          }
+          await batch.commit();
+          toast.success(isLulus ? 'Kelas lulus dan Wali Kelas dirotasi!' : 'Kelas berhasil dinaikkan!');
+          setShowPromoteDialog(false);
+          // profile will auto-update if the auth.store fetches continuously, or user must relogin.
+          // In most cases, a reload will force new profile state
+          setTimeout(() => window.location.reload(), 1500);
+      } catch(err:any) {
+          toast.error('Gagal melakukan operasi kelas: ' + err.message);
+      }
+  };
 
   const saveSiswa = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,7 +252,54 @@ export default function GuruDataSiswa() {
             <h1 className="text-2xl font-bold text-slate-800">Data Siswa - Kelas {profile.waliKelas}</h1>
             <p className="text-sm text-slate-500">Kelola data siswa yang ada di kelas Anda.</p>
          </div>
+         <Button onClick={openPromoteDialog} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 shadow-md shadow-indigo-600/20">
+            {profile?.waliKelas?.startsWith('XII') ? <GraduationCap className="w-5 h-5 mr-2" /> : <ArrowUpCircle className="w-5 h-5 mr-2" />}
+            {profile?.waliKelas?.startsWith('XII') ? 'Kelulusan Kelas' : 'Naik Kelas'}
+         </Button>
       </div>
+
+      <Dialog open={showPromoteDialog} onOpenChange={setShowPromoteDialog}>
+         <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+               <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                   {isLulus ? <GraduationCap className="w-6 h-6 text-indigo-600" /> : <ArrowUpCircle className="w-6 h-6 text-indigo-600" />}
+                   {isLulus ? 'Kelulusan Kelas & Rotasi' : 'Kenaikan Kelas'}
+               </DialogTitle>
+               <DialogDescription>
+                   {isLulus ? (
+                       <>Siswa di kelas <b>{profile?.waliKelas}</b> akan diluluskan (dipindah ke LULUS/ALUMNI). Wali Kelas (Anda) dan nama kelas akan berganti menjadi Kelas X baru.</>
+                   ) : (
+                       <>Siswa dan Wali Kelas <b>{profile?.waliKelas}</b> akan dinaikkan ke tingkat selanjutnya secara bersamaan.</>
+                   )}
+               </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+               <div className="space-y-2">
+                   <label className="text-sm font-bold text-slate-700">
+                      {isLulus ? 'Nama Kelas X Tujuan (Untuk Anda):' : 'Nama Kelas Tujuan:'}
+                   </label>
+                   <Input 
+                      value={promoTargetName}
+                      onChange={e => setPromoTargetName(e.target.value)}
+                      placeholder={isLulus ? "Cth: X MIPA 1" : "Cth: XI MIPA 1"}
+                      className="h-11 font-bold text-indigo-700"
+                   />
+                   <p className="text-xs text-slate-500">
+                      {isLulus
+                         ? 'Pastikan nama ini belum dipakai oleh kelas lain, atau hapus kelas lama jika konflik.'
+                         : 'Nama ini akan diterapkan pada siswa dan data kelas.'
+                      }
+                   </p>
+               </div>
+            </div>
+            <DialogFooter>
+               <Button variant="outline" onClick={() => setShowPromoteDialog(false)}>Batal</Button>
+               <Button onClick={executePromotion} className="bg-indigo-600 hover:bg-indigo-700">
+                   Konfirmasi {isLulus ? 'Lulus' : 'Naik'}
+               </Button>
+            </DialogFooter>
+         </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
          <div className="md:col-span-1">
