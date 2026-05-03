@@ -25,6 +25,8 @@ import { Toaster } from '@/components/ui/sonner';
 
 import AdminLeger from './pages/admin/AdminLeger';
 
+import Panduan from './pages/shared/Panduan';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -47,6 +49,7 @@ export default function App() {
             <Route path="reset" element={<AdminReset />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="docs" element={<AdminDocs />} />
+            <Route path="panduan" element={<Panduan />} />
           </Route>
           {/* Fullscreen tools */}
           <Route path="/admin/scan-ljk" element={<AdminScanLjk />} />
@@ -60,6 +63,7 @@ export default function App() {
             <Route path="paket-soal/:paketId" element={<GuruSoalDetail />} />
             <Route path="hasil" element={<AdminHasil />} />
             <Route path="profil" element={<GuruProfil />} />
+            <Route path="panduan" element={<Panduan />} />
           </Route>
         </Route>
 

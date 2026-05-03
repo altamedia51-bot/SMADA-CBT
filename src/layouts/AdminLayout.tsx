@@ -40,7 +40,7 @@ export default function AdminLayout() {
     { label: 'Cetak', path: '/admin/cetak', icon: Printer },
     { label: 'Reset Data', path: '/admin/reset', icon: Trash2 },
     { label: 'Administrator', path: '/admin/users', icon: Users },
-    { label: 'Documentation', path: '/admin/docs', icon: BookOpen },
+    { label: 'Panduan Penggunaan', path: '/admin/panduan', icon: BookOpen },
   ];
 
   return (
