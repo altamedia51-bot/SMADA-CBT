@@ -10,6 +10,15 @@ import { toast } from 'sonner';
 import { useAuthStore } from '../../store/auth.store';
 import { Save, Loader2 } from 'lucide-react';
 
+interface NilaiSiswa {
+  formatif: number[];
+  sumatif: number[];
+  pts: number;
+  katrol_pts: number;
+  psas: number;
+  katrol_psas: number;
+}
+
 export default function GuruNilaiRaport() {
   const { profile } = useAuthStore();
   const [kelas, setKelas] = useState<any[]>([]);
@@ -22,7 +31,7 @@ export default function GuruNilaiRaport() {
   const [kkm, setKkm] = useState<number>(75);
   const [namaBab, setNamaBab] = useState<string>('');
   
-  const [nilaiData, setNilaiData] = useState<Record<string, { formatif: number, sumatif: number, katrol: number }>>({});
+  const [nilaiData, setNilaiData] = useState<Record<string, NilaiSiswa>>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -81,33 +90,68 @@ export default function GuruNilaiRaport() {
      setLoading(false);
   };
 
-  const handleNilaiChange = (siswaId: string, field: 'formatif' | 'sumatif' | 'katrol', value: string) => {
+  const handleArrayNilaiChange = (siswaId: string, type: 'formatif' | 'sumatif', index: number, value: string) => {
      const numVal = parseFloat(value) || 0;
-     setNilaiData(prev => ({
-        ...prev,
-        [siswaId]: {
-           ...prev[siswaId],
-           [field]: numVal
-        }
-     }));
+     setNilaiData(prev => {
+        const studentData = prev[siswaId] || { formatif: Array(8).fill(0), sumatif: Array(8).fill(0), pts: 0, katrol_pts: 0, psas: 0, katrol_psas: 0 };
+        const newArray = [...studentData[type]];
+        newArray[index] = numVal;
+        return {
+           ...prev,
+           [siswaId]: {
+              ...studentData,
+              [type]: newArray
+           }
+        };
+     });
+  };
+
+  const handleSingleNilaiChange = (siswaId: string, field: 'pts' | 'katrol_pts' | 'psas' | 'katrol_psas', value: string) => {
+     const numVal = parseFloat(value) || 0;
+     setNilaiData(prev => {
+        const studentData = prev[siswaId] || { formatif: Array(8).fill(0), sumatif: Array(8).fill(0), pts: 0, katrol_pts: 0, psas: 0, katrol_psas: 0 };
+        return {
+           ...prev,
+           [siswaId]: {
+              ...studentData,
+              [field]: numVal
+           }
+        };
+     });
+  };
+
+  const calculateNilaiAkhir = (data: NilaiSiswa | undefined) => {
+     if (!data) return 0;
+     
+     const fValid = data.formatif.filter(v => v > 0);
+     const avgF = fValid.length > 0 ? fValid.reduce((a,b) => a+b, 0) / fValid.length : 0;
+     
+     const sValid = data.sumatif.filter(v => v > 0);
+     const avgS = sValid.length > 0 ? sValid.reduce((a,b) => a+b, 0) / sValid.length : 0;
+     
+     const finalPts = data.katrol_pts > 0 ? data.katrol_pts : data.pts;
+     const finalPsas = data.katrol_psas > 0 ? data.katrol_psas : data.psas;
+     
+     const components = [];
+     if (avgF > 0) components.push(avgF);
+     if (avgS > 0) components.push(avgS);
+     if (finalPts > 0) components.push(finalPts);
+     if (finalPsas > 0) components.push(finalPsas);
+     
+     if (components.length === 0) return 0;
+     return Math.round(components.reduce((a,b) => a+b, 0) / components.length);
   };
 
   const generateDeskripsi = (nilaiAkhir: number) => {
-     if (!namaBab) return "-";
+     if (!namaBab || nilaiAkhir === 0) return "-";
      const thresholdSangatBaik = kkm + ((100 - kkm) / 2);
      if (nilaiAkhir >= thresholdSangatBaik) {
         return `Sangat baik dalam memahami materi ${namaBab}.`;
      } else if (nilaiAkhir >= kkm) {
         return `Menunjukkan penguasaan yang baik dalam materi ${namaBab}.`;
      } else {
-        return `Perlu bimbingan dan peningkatan pemahaman pada materi ${namaBab}.`;
+        return `Perlu peningkatan pemahaman pada materi ${namaBab}.`;
      }
-  };
-
-  const calculateNilaiAkhir = (formatif: number, sumatif: number, katrol: number) => {
-     if (katrol > 0) return katrol;
-     // Contoh bobot: Formatif 60%, Sumatif 40% (Bisa disesuaikan institusi)
-     return Math.round((formatif * 0.6) + (sumatif * 0.4));
   };
 
   const saveAll = async () => {
@@ -122,7 +166,7 @@ export default function GuruNilaiRaport() {
         // Build data
         const toSave: Record<string, any> = {};
         siswaConfig.forEach(s => {
-           toSave[s.id] = nilaiData[s.id] || { formatif: 0, sumatif: 0, katrol: 0 };
+           toSave[s.id] = nilaiData[s.id] || { formatif: Array(8).fill(0), sumatif: Array(8).fill(0), pts: 0, katrol_pts: 0, psas: 0, katrol_psas: 0 };
         });
 
         await setDoc(doc(db, 'nilai_raport', `${selectedKelas}_${selectedMapel}`), {
@@ -143,7 +187,7 @@ export default function GuruNilaiRaport() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
          <div>
             <h1 className="text-2xl font-bold text-slate-800">Input Nilai Raport (Kurikulum Merdeka)</h1>
-            <p className="text-sm text-slate-500">Isi form di bawah untuk generate deskripsi otomatis berdasarkan KKM.</p>
+            <p className="text-sm text-slate-500">Kelola nilai Formatif, Sumatif, PTS, dan PSAS dengan fasilitas katrol nilai.</p>
          </div>
       </div>
 
@@ -190,7 +234,7 @@ export default function GuruNilaiRaport() {
                      />
                   </div>
                   <div className="space-y-1">
-                     <label className="text-sm font-bold text-slate-700">Nama Bab / Materi</label>
+                     <label className="text-sm font-bold text-slate-700">Nama Bab / Materi (Untuk Deskripsi)</label>
                      <Input 
                         placeholder="Contoh: Bilangan Bulat, Aljabar Dasar" 
                         value={namaBab} 
@@ -211,65 +255,124 @@ export default function GuruNilaiRaport() {
             )}
 
             {selectedKelas && selectedMapel && siswaConfig.length > 0 && (
-               <div className="overflow-x-auto border rounded-xl">
-                  <Table>
+               <div className="overflow-x-auto border rounded-xl relative max-w-full">
+                  <Table className="min-w-[max-content]">
                      <TableHeader className="bg-slate-50">
                         <TableRow>
-                           <TableHead className="w-10 text-center">No</TableHead>
-                           <TableHead>Nama Siswa</TableHead>
-                           <TableHead className="w-24 text-center">Formatif</TableHead>
-                           <TableHead className="w-24 text-center">Sumatif</TableHead>
-                           <TableHead className="w-24 text-center">Katrol</TableHead>
-                           <TableHead className="w-20 text-center">Akhir</TableHead>
-                           <TableHead className="min-w-[250px]">Deskripsi Otomatis</TableHead>
+                           <TableHead className="w-10 text-center sticky left-0 z-20 bg-slate-100 shadow-[1px_0_0_0_#e2e8f0]" rowSpan={2}>No</TableHead>
+                           <TableHead className="w-48 sticky left-[40px] z-20 bg-slate-100 shadow-[1px_0_0_0_#e2e8f0]" rowSpan={2}>Nama Siswa</TableHead>
+                           <TableHead className="text-center border-x bg-slate-50" colSpan={8}>Nilai Formatif</TableHead>
+                           <TableHead className="text-center border-x bg-slate-50" colSpan={8}>Nilai Sumatif</TableHead>
+                           <TableHead className="text-center border-x bg-yellow-50/50" colSpan={2}>PTS</TableHead>
+                           <TableHead className="text-center border-x bg-emerald-50/50" colSpan={2}>PSAS</TableHead>
+                           <TableHead className="w-20 text-center sticky right-[250px] z-20 bg-slate-100 shadow-[-1px_0_0_0_#e2e8f0]" rowSpan={2}>Akhir</TableHead>
+                           <TableHead className="w-[250px] sticky right-0 z-20 bg-slate-100 shadow-[-1px_0_0_0_#e2e8f0]" rowSpan={2}>Deskripsi Otomatis</TableHead>
+                        </TableRow>
+                        <TableRow>
+                           {/* Formatif columns */}
+                           {Array.from({length: 8}).map((_,i) => (
+                              <TableHead key={`hf${i}`} className="text-center w-[70px] p-1 border-x bg-slate-50 font-mono text-xs">F{i+1}</TableHead>
+                           ))}
+                           {/* Sumatif columns */}
+                           {Array.from({length: 8}).map((_,i) => (
+                              <TableHead key={`hs${i}`} className="text-center w-[70px] p-1 border-x bg-slate-50 font-mono text-xs">S{i+1}</TableHead>
+                           ))}
+                           
+                           {/* PTS */}
+                           <TableHead className="text-center w-[70px] p-1 border-l bg-yellow-50/50 text-xs">Awal</TableHead>
+                           <TableHead className="text-center w-[70px] p-1 border-r text-blue-600 bg-yellow-50/50 text-xs">Katrol</TableHead>
+                           
+                           {/* PSAS */}
+                           <TableHead className="text-center w-[70px] p-1 border-l bg-emerald-50/50 text-xs">Awal</TableHead>
+                           <TableHead className="text-center w-[70px] p-1 border-r text-blue-600 bg-emerald-50/50 text-xs">Katrol</TableHead>
                         </TableRow>
                      </TableHeader>
                      <TableBody>
                         {siswaConfig.map((siswa, idx) => {
-                           const formatif = nilaiData[siswa.id]?.formatif || 0;
-                           const sumatif = nilaiData[siswa.id]?.sumatif || 0;
-                           const katrol = nilaiData[siswa.id]?.katrol || 0;
-                           const nilaiAkhir = calculateNilaiAkhir(formatif, sumatif, katrol);
+                           const sData = nilaiData[siswa.id] || { formatif: Array(8).fill(0), sumatif: Array(8).fill(0), pts: 0, katrol_pts: 0, psas: 0, katrol_psas: 0 };
+                           const nilaiAkhir = calculateNilaiAkhir(sData);
                            const deskripsi = generateDeskripsi(nilaiAkhir);
 
                            return (
-                              <TableRow key={siswa.id}>
-                                 <TableCell className="text-center text-slate-500">{idx + 1}</TableCell>
-                                 <TableCell>
+                              <TableRow key={siswa.id} className="hover:bg-slate-50/50">
+                                 <TableCell className="text-center text-slate-500 sticky left-0 z-10 bg-white shadow-[1px_0_0_0_#e2e8f0] group-hover:bg-slate-50/50">{idx + 1}</TableCell>
+                                 <TableCell className="sticky left-[40px] z-10 bg-white shadow-[1px_0_0_0_#e2e8f0] group-hover:bg-slate-50/50 min-w-[200px]">
                                     <p className="font-bold text-slate-700 text-xs md:text-sm">{siswa.displayName}</p>
-                                    <p className="text-[10px] text-slate-500">{siswa.nis || '-'}</p>
+                                    <p className="text-[10px] text-slate-500 font-mono">{siswa.nis || '-'}</p>
                                  </TableCell>
-                                 <TableCell className="p-2">
+                                 
+                                 {/* Formatif Inputs */}
+                                 {Array.from({length: 8}).map((_, i) => (
+                                    <TableCell key={`f${i}`} className="p-1 border-x relative">
+                                       <Input 
+                                          type="number" 
+                                          className="w-[60px] text-center h-8 text-xs mx-auto px-1" 
+                                          placeholder="-"
+                                          value={sData.formatif[i] || ''} 
+                                          onChange={e => handleArrayNilaiChange(siswa.id, 'formatif', i, e.target.value)} 
+                                       />
+                                    </TableCell>
+                                 ))}
+
+                                 {/* Sumatif Inputs */}
+                                 {Array.from({length: 8}).map((_, i) => (
+                                    <TableCell key={`s${i}`} className="p-1 border-x relative">
+                                       <Input 
+                                          type="number" 
+                                          className="w-[60px] text-center h-8 text-xs mx-auto px-1" 
+                                          placeholder="-"
+                                          value={sData.sumatif[i] || ''} 
+                                          onChange={e => handleArrayNilaiChange(siswa.id, 'sumatif', i, e.target.value)} 
+                                       />
+                                    </TableCell>
+                                 ))}
+
+                                 {/* PTS */}
+                                 <TableCell className="p-1 border-l bg-yellow-50/20">
                                     <Input 
                                        type="number" 
-                                       className="w-full text-center h-8 text-sm" 
-                                       value={formatif || ''} 
-                                       onChange={e => handleNilaiChange(siswa.id, 'formatif', e.target.value)} 
-                                    />
-                                 </TableCell>
-                                 <TableCell className="p-2">
-                                    <Input 
-                                       type="number" 
-                                       className="w-full text-center h-8 text-sm" 
-                                       value={sumatif || ''} 
-                                       onChange={e => handleNilaiChange(siswa.id, 'sumatif', e.target.value)} 
-                                    />
-                                 </TableCell>
-                                 <TableCell className="p-2">
-                                    <Input 
-                                       type="number" 
-                                       className="w-full text-center h-8 text-sm placeholder:text-slate-300" 
+                                       className="w-[60px] text-center h-8 text-xs mx-auto px-1 border-yellow-200 focus-visible:ring-yellow-400" 
                                        placeholder="-"
-                                       value={katrol || ''} 
-                                       onChange={e => handleNilaiChange(siswa.id, 'katrol', e.target.value)} 
+                                       value={sData.pts || ''} 
+                                       onChange={e => handleSingleNilaiChange(siswa.id, 'pts', e.target.value)} 
                                     />
                                  </TableCell>
-                                 <TableCell className="text-center font-bold">
+                                 <TableCell className="p-1 border-r bg-yellow-50/20">
+                                    <Input 
+                                       type="number" 
+                                       className="w-[60px] text-center h-8 text-xs mx-auto px-1 border-blue-200 text-blue-600 focus-visible:ring-blue-400 font-bold" 
+                                       placeholder="-"
+                                       value={sData.katrol_pts || ''} 
+                                       onChange={e => handleSingleNilaiChange(siswa.id, 'katrol_pts', e.target.value)} 
+                                    />
+                                 </TableCell>
+
+                                 {/* PSAS */}
+                                 <TableCell className="p-1 border-l bg-emerald-50/20">
+                                    <Input 
+                                       type="number" 
+                                       className="w-[60px] text-center h-8 text-xs mx-auto px-1 border-emerald-200 focus-visible:ring-emerald-400" 
+                                       placeholder="-"
+                                       value={sData.psas || ''} 
+                                       onChange={e => handleSingleNilaiChange(siswa.id, 'psas', e.target.value)} 
+                                    />
+                                 </TableCell>
+                                 <TableCell className="p-1 border-r bg-emerald-50/20">
+                                    <Input 
+                                       type="number" 
+                                       className="w-[60px] text-center h-8 text-xs mx-auto px-1 border-blue-200 text-blue-600 focus-visible:ring-blue-400 font-bold" 
+                                       placeholder="-"
+                                       value={sData.katrol_psas || ''} 
+                                       onChange={e => handleSingleNilaiChange(siswa.id, 'katrol_psas', e.target.value)} 
+                                    />
+                                 </TableCell>
+
+                                 <TableCell className="text-center font-bold sticky right-[250px] z-10 bg-white shadow-[-1px_0_0_0_#e2e8f0] group-hover:bg-slate-50/50">
                                     <span className={nilaiAkhir >= kkm ? 'text-emerald-600' : 'text-rose-500'}>
                                        {nilaiAkhir}
                                     </span>
                                  </TableCell>
-                                 <TableCell className="text-xs text-slate-600 italic">
+                                 <TableCell className="text-[11px] leading-tight text-slate-600 italic sticky right-0 z-10 bg-white shadow-[-1px_0_0_0_#e2e8f0] group-hover:bg-slate-50/50 min-w-[250px]">
                                     {deskripsi}
                                  </TableCell>
                               </TableRow>
@@ -281,7 +384,7 @@ export default function GuruNilaiRaport() {
             )}
             
             {selectedKelas && selectedMapel && siswaConfig.length === 0 && !loading && (
-               <div className="text-center p-8 text-slate-500 bg-slate-50 rounded-xl">
+               <div className="text-center p-8 text-slate-500 bg-slate-50 rounded-xl mt-6">
                   Tidak ada siswa di kelas ini.
                </div>
             )}
