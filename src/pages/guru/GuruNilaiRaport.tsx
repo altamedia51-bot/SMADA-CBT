@@ -42,6 +42,13 @@ export default function GuruNilaiRaport() {
   const [katrolPsasMin, setKatrolPsasMin] = useState(70);
   const [katrolPsasMax, setKatrolPsasMax] = useState(92);
 
+  // Check authorization
+  const selectedMapelId = mapel.find(m => m.name === selectedMapel)?.id;
+  const isWaliKelasOfSelected = profile?.waliKelas === selectedKelas;
+  const isPengampuOfSelected = profile?.mengampuMapel?.includes(selectedMapelId);
+  const isAdmin = profile?.role === 'admin';
+  const isAuthorized = isAdmin || isWaliKelasOfSelected || isPengampuOfSelected;
+
   useEffect(() => {
     const unsubKelas = onSnapshot(collection(db, 'kelas'), snap => {
       setKelas(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -430,7 +437,7 @@ export default function GuruNilaiRaport() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Input Nilai Raport (Kurikulum Merdeka)</h1>
+            <h1 className="text-2xl font-bold text-slate-800">Input Nilai Mapel (Kurikulum Merdeka)</h1>
             <p className="text-sm text-slate-500">Kelola nilai Formatif, Sumatif, PTS, dan PSAS dengan batasan nilai 0-100 dan fitur katrol nilai otomatis.</p>
          </div>
       </div>
@@ -446,7 +453,11 @@ export default function GuruNilaiRaport() {
                            <SelectValue placeholder="Pilih Mata Pelajaran" />
                         </SelectTrigger>
                         <SelectContent>
-                           {mapel.map(m => (
+                           {mapel.filter(m => {
+                              return profile?.role === 'admin' 
+                                 || profile?.waliKelas 
+                                 || (profile?.mengampuMapel && profile.mengampuMapel.includes(m.id));
+                           }).map(m => (
                               <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
                            ))}
                         </SelectContent>
@@ -459,7 +470,11 @@ export default function GuruNilaiRaport() {
                            <SelectValue placeholder="Pilih Kelas" />
                         </SelectTrigger>
                         <SelectContent>
-                           {kelas.sort((a,b)=>a.name.localeCompare(b.name)).map(k => (
+                           {kelas.sort((a,b)=>a.name.localeCompare(b.name)).filter(k => {
+                              return profile?.role === 'admin' 
+                                 || (profile?.mengampuMapel && profile.mengampuMapel.length > 0)
+                                 || profile?.waliKelas === k.name;
+                           }).map(k => (
                               <SelectItem key={k.id} value={k.name}>{k.name}</SelectItem>
                            ))}
                         </SelectContent>
@@ -481,7 +496,7 @@ export default function GuruNilaiRaport() {
                </div>
             </div>
 
-            {selectedKelas && selectedMapel && (
+            {selectedKelas && selectedMapel && isAuthorized && (
                <Card className="mb-6 border-slate-200">
                   <CardHeader className="py-3 px-4 bg-slate-50 border-b">
                      <CardTitle className="text-sm font-bold text-slate-800">Capaian Pembelajaran (Untuk Deskripsi Otomatis Tiap Kolom)</CardTitle>
@@ -533,7 +548,7 @@ export default function GuruNilaiRaport() {
                </Card>
             )}
 
-            {selectedKelas && selectedMapel && (
+            {selectedKelas && selectedMapel && isAuthorized && (
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                    <Card className="bg-yellow-50/50 border-yellow-200">
                        <CardContent className="p-4 flex flex-col items-start gap-3">
@@ -562,7 +577,16 @@ export default function GuruNilaiRaport() {
                </div>
             )}
 
-            {selectedKelas && selectedMapel && (
+            {selectedKelas && selectedMapel && !isAuthorized && (
+               <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-6 flex items-center gap-3 border border-red-200">
+                  <div className="flex-1">
+                     <p className="font-bold">Akses Ditolak</p>
+                     <p className="text-sm">Anda tidak diizinkan untuk mengisi nilai pada Mata Pelajaran dan Kelas ini. Hanya Guru Pengampu mapel ini dan Wali Kelas yang dapat mengubah data.</p>
+                  </div>
+               </div>
+            )}
+
+            {selectedKelas && selectedMapel && isAuthorized && (
                <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
                   <div className="flex flex-wrap items-center gap-2">
                      <Button onClick={handleGenerateDeskripsi} disabled={loading} variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50 flex items-center gap-2">
@@ -640,7 +664,8 @@ export default function GuruNilaiRaport() {
                                           className="w-[50px] text-center h-8 text-xs mx-auto px-1 border-blue-200 bg-blue-50/10 focus-visible:ring-blue-400" 
                                           placeholder="-"
                                           value={sData.formatif[i] ?? ''} 
-                                          onChange={e => handleArrayNilaiChange(siswa.id, 'formatif', i, e.target.value)} 
+                                          onChange={e => handleArrayNilaiChange(siswa.id, 'formatif', i, e.target.value)}
+                                          disabled={!isAuthorized} 
                                        />
                                     </TableCell>
                                  ))}
@@ -653,12 +678,13 @@ export default function GuruNilaiRaport() {
                                           className="w-[50px] text-center h-8 text-xs mx-auto px-1 border-fuchsia-200 bg-fuchsia-50/10 focus-visible:ring-fuchsia-400" 
                                           placeholder="-"
                                           value={sData.sumatif[i] ?? ''} 
-                                          onChange={e => handleArrayNilaiChange(siswa.id, 'sumatif', i, e.target.value)} 
+                                          onChange={e => handleArrayNilaiChange(siswa.id, 'sumatif', i, e.target.value)}
+                                          disabled={!isAuthorized} 
                                        />
                                     </TableCell>
                                  ))}
 
-                                 {/* PTS */}
+                                  {/* PTS */}
                                  <TableCell className="p-1 border-l bg-yellow-50/10">
                                     <Input 
                                        type="number" 
@@ -666,6 +692,7 @@ export default function GuruNilaiRaport() {
                                        placeholder="-"
                                        value={sData.pts ?? ''} 
                                        onChange={e => handleSingleNilaiChange(siswa.id, 'pts', e.target.value)} 
+                                       disabled={!isAuthorized}
                                     />
                                  </TableCell>
                                  <TableCell className="p-1 border-r bg-yellow-50/10">
@@ -675,6 +702,7 @@ export default function GuruNilaiRaport() {
                                        placeholder="-"
                                        value={sData.katrol_pts ?? ''} 
                                        onChange={e => handleSingleNilaiChange(siswa.id, 'katrol_pts', e.target.value)} 
+                                       disabled={!isAuthorized}
                                     />
                                  </TableCell>
 
@@ -686,6 +714,7 @@ export default function GuruNilaiRaport() {
                                        placeholder="-"
                                        value={sData.psas ?? ''} 
                                        onChange={e => handleSingleNilaiChange(siswa.id, 'psas', e.target.value)} 
+                                       disabled={!isAuthorized}
                                     />
                                  </TableCell>
                                  <TableCell className="p-1 border-r bg-emerald-50/10">
@@ -695,6 +724,7 @@ export default function GuruNilaiRaport() {
                                        placeholder="-"
                                        value={sData.katrol_psas ?? ''} 
                                        onChange={e => handleSingleNilaiChange(siswa.id, 'katrol_psas', e.target.value)} 
+                                       disabled={!isAuthorized}
                                     />
                                  </TableCell>
 
@@ -710,6 +740,7 @@ export default function GuruNilaiRaport() {
                                        onChange={e => handleSingleNilaiChange(siswa.id, 'deskripsi', e.target.value)}
                                        placeholder="-"
                                        spellCheck="false"
+                                       disabled={!isAuthorized}
                                     />
                                  </TableCell>
                               </TableRow>

@@ -10,6 +10,7 @@ interface UserProfile {
   role: UserRole;
   isActive: boolean;
   waliKelas?: string;
+  mengampuMapel?: string[];
 }
 
 interface AuthState {

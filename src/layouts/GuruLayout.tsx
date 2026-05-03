@@ -16,7 +16,7 @@ export default function GuruLayout() {
   const navItems = [
     { label: 'Paket Soal', path: '/guru/paket-soal', icon: BookOpen },
     { label: 'Hasil Ujian', path: '/guru/hasil', icon: ClipboardCheck },
-    { label: 'Nilai Raport', path: '/guru/nilai-raport', icon: GraduationCap },
+    { label: 'Input Nilai Mapel', path: '/guru/nilai-raport', icon: GraduationCap },
     ...(profile?.waliKelas ? [{ label: 'Data Siswa', path: '/guru/data-siswa', icon: Users }] : []),
     { label: 'Panduan', path: '/guru/panduan', icon: HelpCircle },
     { label: 'Profil', path: '/guru/profil', icon: UserRound },
