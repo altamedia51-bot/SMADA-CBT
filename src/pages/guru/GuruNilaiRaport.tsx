@@ -30,7 +30,8 @@ export default function GuruNilaiRaport() {
   
   const [siswaConfig, setSiswaConfig] = useState<any[]>([]);
   const [kkm, setKkm] = useState<number>(75);
-  const [namaBab, setNamaBab] = useState<string>('');
+  const [deskripsiFormatif, setDeskripsiFormatif] = useState<string[]>(Array(8).fill(''));
+  const [deskripsiSumatif, setDeskripsiSumatif] = useState<string[]>(Array(8).fill(''));
   
   const [nilaiData, setNilaiData] = useState<Record<string, NilaiSiswa>>({});
   const [loading, setLoading] = useState(false);
@@ -68,7 +69,12 @@ export default function GuruNilaiRaport() {
        onSnapshot(settingsRef, (snap) => {
           if (snap.exists()) {
              setKkm(snap.data().kkm || 75);
-             setNamaBab(snap.data().namaBab || '');
+             setDeskripsiFormatif(snap.data().deskripsiFormatif || Array(8).fill(''));
+             setDeskripsiSumatif(snap.data().deskripsiSumatif || Array(8).fill(''));
+          } else {
+             setKkm(75);
+             setDeskripsiFormatif(Array(8).fill(''));
+             setDeskripsiSumatif(Array(8).fill(''));
           }
        });
 
@@ -205,43 +211,67 @@ export default function GuruNilaiRaport() {
   const handleGenerateDeskripsi = () => {
        const newData = { ...nilaiData };
        let count = 0;
+       
+       const thresholdSangatBaik = kkm + ((100 - kkm) / 2);
+
        siswaConfig.forEach(s => {
            const data = newData[s.id];
            if (data) {
-               const filledF = data.formatif.map((v, i) => typeof v === 'number' ? (i+1) : null).filter(v => v !== null);
-               const filledS = data.sumatif.map((v, i) => typeof v === 'number' ? (i+1) : null).filter(v => v !== null);
+               let tinggi: string[] = [];
+               let sangatTinggi: string[] = [];
+               let rendah: string[] = [];
 
-               const actF = filledF.length > 0 ? `Formatif ${filledF.join(', ')}` : '';
-               const actS = filledS.length > 0 ? `Sumatif ${filledS.join(', ')}` : '';
-               const actParts = [actF, actS].filter(v => v).join(' dan ');
-
-               const nilaiAkhir = calculateNilaiAkhir(data);
-               let desk = '';
-               
-               if (nilaiAkhir > 0) {
-                   const mat = namaBab ? `materi ${namaBab}` : 'materi ini';
-                   const ctx = actParts ? ` (berdasarkan nilai ${actParts})` : '';
-                   const thresholdSangatBaik = kkm + ((100 - kkm) / 2);
-                   
-                   if (nilaiAkhir >= thresholdSangatBaik) {
-                       desk = `Menunjukkan penguasaan yang sangat baik dalam ${mat}${ctx}.`;
-                   } else if (nilaiAkhir >= kkm) {
-                       desk = `Menunjukkan penguasaan yang baik dalam ${mat}${ctx}.`;
-                   } else {
-                       desk = `Perlu bimbingan dan peningkatan pemahaman dalam ${mat}${ctx}.`;
+               data.formatif.forEach((v, i) => {
+                   if (typeof v === 'number' && deskripsiFormatif[i]) {
+                       if (v >= thresholdSangatBaik) sangatTinggi.push(deskripsiFormatif[i]);
+                       else if (v >= kkm) tinggi.push(deskripsiFormatif[i]);
+                       else rendah.push(deskripsiFormatif[i]);
                    }
+               });
+
+               data.sumatif.forEach((v, i) => {
+                   if (typeof v === 'number' && deskripsiSumatif[i]) {
+                       if (v >= thresholdSangatBaik) sangatTinggi.push(deskripsiSumatif[i]);
+                       else if (v >= kkm) tinggi.push(deskripsiSumatif[i]);
+                       else rendah.push(deskripsiSumatif[i]);
+                   }
+               });
+               
+               let deskTexts = [];
+               
+               if (sangatTinggi.length > 0) {
+                   deskTexts.push(`sangat baik dalam ${[...new Set(sangatTinggi)].join(', ')}`);
+               }
+               if (tinggi.length > 0) {
+                   deskTexts.push(`baik dalam ${[...new Set(tinggi)].join(', ')}`);
+               }
+               
+               let finalDesk = '';
+               if (deskTexts.length > 0) {
+                   finalDesk += `Menunjukkan penguasaan yang ${deskTexts.join(', dan ')}. `;
+               }
+               
+               if (rendah.length > 0) {
+                   finalDesk += `Perlu bimbingan dalam ${[...new Set(rendah)].join(', ')}.`;
+               }
+
+               if (!finalDesk && calculateNilaiAkhir(data) > 0) {
+                   const val = calculateNilaiAkhir(data);
+                   if (val >= thresholdSangatBaik) finalDesk = "Menunjukkan penguasaan materi yang sangat baik.";
+                   else if (val >= kkm) finalDesk = "Menunjukkan penguasaan materi yang baik.";
+                   else finalDesk = "Perlu peningkatan pemahaman materi.";
                }
 
                newData[s.id] = {
                    ...data,
-                   deskripsi: desk
+                   deskripsi: finalDesk.trim()
                };
                count++;
            }
        });
        if (count > 0) {
           setNilaiData(newData);
-          toast.success("Deskripsi otomatis berhasil dibuat untuk " + count + " siswa.");
+          toast.success("Deskripsi otomatis berhasil dibuat untuk " + count + " siswa berdasarkan materi kolom F dan S.");
        } else {
           toast.error("Belum ada data nilai untuk di-generate deskripsinya.");
        }
@@ -253,7 +283,8 @@ export default function GuruNilaiRaport() {
      try {
         await setDoc(doc(db, 'settings_nilai', `${selectedKelas}_${selectedMapel}`), {
            kkm: kkm,
-           namaBab: namaBab
+           deskripsiFormatif,
+           deskripsiSumatif
         }, { merge: true });
 
         // Build data
@@ -333,19 +364,63 @@ export default function GuruNilaiRaport() {
                         value={kkm} 
                         onChange={e => setKkm(parseInt(e.target.value) || 0)} 
                         disabled={!selectedKelas || !selectedMapel}
-                     />
-                  </div>
-                  <div className="space-y-1">
-                     <label className="text-sm font-bold text-slate-700">Nama Bab / Materi (Untuk Deskripsi Otomatis)</label>
-                     <Input 
-                        placeholder="Contoh: Bilangan Bulat, Aljabar Dasar" 
-                        value={namaBab} 
-                        onChange={e => setNamaBab(e.target.value)} 
-                        disabled={!selectedKelas || !selectedMapel}
+                        className="max-w-[200px]"
                      />
                   </div>
                </div>
             </div>
+
+            {selectedKelas && selectedMapel && (
+               <Card className="mb-6 border-slate-200">
+                  <CardHeader className="py-3 px-4 bg-slate-50 border-b">
+                     <CardTitle className="text-sm font-bold text-slate-800">Capaian Pembelajaran (Untuk Deskripsi Otomatis Tiap Kolom)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div>
+                             <h4 className="text-sm font-bold text-blue-800 mb-3">Materi / TP Formatif</h4>
+                             <div className="space-y-2">
+                                 {Array.from({length: 8}).map((_, i) => (
+                                     <div key={`df${i}`} className="flex items-center gap-2">
+                                         <span className="w-8 text-xs font-bold text-slate-500">F{i+1}</span>
+                                         <Input 
+                                             className="h-8 text-xs bg-white border-blue-200 focus-visible:ring-blue-400" 
+                                             placeholder={`Deskripsi Materi Formatif ${i+1}`} 
+                                             value={deskripsiFormatif[i]} 
+                                             onChange={e => {
+                                                 const newArr = [...deskripsiFormatif];
+                                                 newArr[i] = e.target.value;
+                                                 setDeskripsiFormatif(newArr);
+                                             }} 
+                                         />
+                                     </div>
+                                 ))}
+                             </div>
+                         </div>
+                         <div>
+                             <h4 className="text-sm font-bold text-fuchsia-800 mb-3">Materi / TP Sumatif</h4>
+                             <div className="space-y-2">
+                                 {Array.from({length: 8}).map((_, i) => (
+                                     <div key={`ds${i}`} className="flex items-center gap-2">
+                                         <span className="w-8 text-xs font-bold text-slate-500">S{i+1}</span>
+                                         <Input 
+                                             className="h-8 text-xs bg-white border-fuchsia-200 focus-visible:ring-fuchsia-400" 
+                                             placeholder={`Deskripsi Materi Sumatif ${i+1}`} 
+                                             value={deskripsiSumatif[i]} 
+                                             onChange={e => {
+                                                 const newArr = [...deskripsiSumatif];
+                                                 newArr[i] = e.target.value;
+                                                 setDeskripsiSumatif(newArr);
+                                             }} 
+                                         />
+                                     </div>
+                                 ))}
+                             </div>
+                         </div>
+                     </div>
+                  </CardContent>
+               </Card>
+            )}
 
             {selectedKelas && selectedMapel && (
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
