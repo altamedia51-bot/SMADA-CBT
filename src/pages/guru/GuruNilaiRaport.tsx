@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, onSnapshot, doc, getDocs, updateDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { useAuthStore } from '../../store/auth.store';
-import { Save, Loader2, Wand2 } from 'lucide-react';
+import { Save, Loader2, Wand2, FileDown, Upload } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface NilaiSiswa {
   formatif: (number | '')[];
@@ -144,6 +145,8 @@ export default function GuruNilaiRaport() {
         };
      });
   };
+
+  const excelInputRef = useRef<HTMLInputElement>(null);
 
   const calculateNilaiAkhir = (data: NilaiSiswa | undefined) => {
      if (!data) return 0;
@@ -315,6 +318,118 @@ export default function GuruNilaiRaport() {
      setLoading(false);
   };
 
+  const handleDownloadTemplate = () => {
+      if (!selectedKelas || !selectedMapel || siswaConfig.length === 0) return;
+      
+      const wsData: any[][] = [];
+      // Headers
+      wsData.push([
+          "No", "ID", "NIS", "Nama Siswa", 
+          "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8",
+          "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8",
+          "PTS Awal", "PTS Katrol", "PSAS Awal", "PSAS Katrol", "Deskripsi"
+      ]);
+
+      siswaConfig.forEach((siswa, idx) => {
+          const sData = nilaiData[siswa.id] || { formatif: Array(8).fill(''), sumatif: Array(8).fill(''), pts: '', katrol_pts: '', psas: '', katrol_psas: '', deskripsi: '' };
+          wsData.push([
+              idx + 1,
+              siswa.id,
+              siswa.nis || '',
+              siswa.displayName,
+              ...sData.formatif,
+              ...sData.sumatif,
+              sData.pts,
+              sData.katrol_pts,
+              sData.psas,
+              sData.katrol_psas,
+              sData.deskripsi || ''
+          ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      
+      // Auto-fit columns
+      const colWidths = [
+          { wch: 5 }, { wch: 20 }, { wch: 15 }, { wch: 30 },
+          ...Array(16).fill({ wch: 6 }),
+          { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 50 },
+      ];
+      ws['!cols'] = colWidths;
+      
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Nilai");
+      XLSX.writeFile(wb, `Template_Nilai_${selectedKelas.replace(/\s+/g, '_')}_${selectedMapel.replace(/\s+/g, '_')}.xlsx`);
+  };
+
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+          try {
+              const bstr = evt.target?.result;
+              const wb = XLSX.read(bstr, { type: 'binary' });
+              const wsname = wb.SheetNames[0];
+              const ws = wb.Sheets[wsname];
+              const data = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1 });
+              
+              if (data.length < 2) {
+                  toast.error("File excel kosong atau format tidak sesuai.");
+                  return;
+              }
+
+              const newData = { ...nilaiData };
+              let count = 0;
+
+              for (let i = 1; i < data.length; i++) {
+                  const row = data[i];
+                  if (!row || row.length < 4) continue;
+                  
+                  const siswaId = row[1]; // ID
+                  if (!siswaId || !siswaConfig.find(s => s.id === siswaId)) continue;
+                  
+                  const form = Array(8).fill('');
+                  const sum = Array(8).fill('');
+                  for(let j=0; j<8; j++) {
+                      let fv = row[4+j];
+                      if (fv !== undefined && fv !== null && fv !== '') form[j] = parseFloat(fv) || '';
+                      
+                      let sv = row[12+j];
+                      if (sv !== undefined && sv !== null && sv !== '') sum[j] = parseFloat(sv) || '';
+                  }
+                  
+                  let pts = row[20] !== undefined && row[20] !== null && row[20] !== '' ? parseFloat(row[20]) : '';
+                  let k_pts = row[21] !== undefined && row[21] !== null && row[21] !== '' ? parseFloat(row[21]) : '';
+                  let psas = row[22] !== undefined && row[22] !== null && row[22] !== '' ? parseFloat(row[22]) : '';
+                  let k_psas = row[23] !== undefined && row[23] !== null && row[23] !== '' ? parseFloat(row[23]) : '';
+                  let desk = row[24] || '';
+
+                  newData[siswaId] = {
+                      formatif: form,
+                      sumatif: sum,
+                      pts: pts,
+                      katrol_pts: k_pts,
+                      psas: psas,
+                      katrol_psas: k_psas,
+                      deskripsi: desk
+                  };
+                  count++;
+              }
+              
+              setNilaiData(newData);
+              toast.success(`Berhasil mengimpor nilai untuk ${count} siswa.`);
+          } catch(err) {
+              toast.error("Gagal memproses file excel.");
+              console.error(err);
+          } finally {
+              if (excelInputRef.current) excelInputRef.current.value = '';
+          }
+      };
+      reader.readAsBinaryString(file);
+  };
+
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -453,10 +568,21 @@ export default function GuruNilaiRaport() {
 
             {selectedKelas && selectedMapel && (
                <div className="flex flex-col md:flex-row justify-between mb-4 gap-4">
-                  <Button onClick={handleGenerateDeskripsi} disabled={loading} variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50 flex items-center gap-2">
-                     <Wand2 className="w-4 h-4" />
-                     Generate Deskripsi Otomatis
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                     <Button onClick={handleGenerateDeskripsi} disabled={loading} variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50 flex items-center gap-2">
+                        <Wand2 className="w-4 h-4" />
+                        Generate Deskripsi Otomatis
+                     </Button>
+                     <Button onClick={handleDownloadTemplate} disabled={loading} variant="outline" className="border-green-300 text-green-700 hover:bg-green-50 flex items-center gap-2">
+                        <FileDown className="w-4 h-4" />
+                        Template Excel
+                     </Button>
+                     <Button onClick={() => excelInputRef.current?.click()} disabled={loading} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50 flex items-center gap-2">
+                        <Upload className="w-4 h-4" />
+                        Import Excel
+                     </Button>
+                     <input type="file" ref={excelInputRef} onChange={handleImportExcel} accept=".xlsx, .xls" className="hidden" />
+                  </div>
                   <Button onClick={saveAll} disabled={loading} className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                      Simpan Semua Data
