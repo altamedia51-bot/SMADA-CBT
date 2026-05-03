@@ -2,13 +2,15 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, Database, FileText, ClipboardCheck, LineChart, ChevronDown, ChevronRight, Calendar, Printer, BookOpen, Users, Box, Clock, Tags, GraduationCap, School, Library, Trash2 } from 'lucide-react';
+import { LogOut, LayoutDashboard, Database, FileText, ClipboardCheck, LineChart, ChevronDown, ChevronRight, Calendar, Printer, BookOpen, Users, Box, Clock, Tags, GraduationCap, School, Library, Trash2, Settings } from 'lucide-react';
 import { useIdleLogout } from '../hooks/useIdleLogout';
+import { useAppSettings } from '../hooks/useAppSettings';
 
 export default function AdminLayout() {
   const { profile } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const { settings } = useAppSettings();
 
   useIdleLogout(10); // Auto logout 10 menit
 
@@ -40,6 +42,7 @@ export default function AdminLayout() {
     { label: 'Cetak', path: '/admin/cetak', icon: Printer },
     { label: 'Reset Data', path: '/admin/reset', icon: Trash2 },
     { label: 'Administrator', path: '/admin/users', icon: Users },
+    { label: 'Pengaturan', path: '/admin/pengaturan', icon: Settings },
     { label: 'Panduan Penggunaan', path: '/admin/panduan', icon: BookOpen },
   ];
 
@@ -48,10 +51,14 @@ export default function AdminLayout() {
       {/* Sidebar - Dark theme like the image */}
       <aside className="w-[260px] bg-[#0E1726] text-slate-300 flex flex-col hidden md:flex shrink-0 border-r border-[#1a2942]">
         <div className="h-20 flex items-center px-6 border-b border-[#1a2942]">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30 text-xs">
-            SMA
-          </div>
-          <span className="font-extrabold text-xl tracking-tight ml-3 text-white">CBT System</span>
+          {settings.logo ? (
+            <img src={settings.logo} alt="Logo" className="w-8 h-8 object-contain drop-shadow-md rounded shrink-0 bg-white p-0.5" />
+          ) : (
+            <div className="w-8 h-8 bg-blue-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30 text-xs">
+              SMA
+            </div>
+          )}
+          <span className="font-extrabold text-xl tracking-tight ml-3 text-white truncate">{settings.appName || 'CBT System'}</span>
         </div>
 
         <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">

@@ -9,9 +9,11 @@ import { Navigate } from 'react-router-dom';
 import { GraduationCap, User, Lock, ChevronDown, Search, ArrowLeft, EyeOff, Eye } from 'lucide-react';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { toast } from 'sonner';
+import { useAppSettings } from '../hooks/useAppSettings';
 
 export default function Login() {
   const { user, profile } = useAuthStore();
+  const { settings } = useAppSettings();
   
   // Login Mode: 'siswa' or 'manual' (guru/admin)
   const [loginMode, setLoginMode] = useState<'siswa' | 'manual'>('siswa');
@@ -144,11 +146,17 @@ export default function Login() {
         <Card className="shadow-[0_8px_30px_rgb(0,0,0,0.06)] border-0 overflow-hidden rounded-[24px] bg-white">
           <CardContent className="p-8 md:p-10">
             <div className="text-center space-y-6 mb-8">
-              <div className="mx-auto bg-indigo-50 w-20 h-20 rounded-full flex items-center justify-center ring-4 ring-indigo-50/50 shadow-inner">
-                <User className="h-10 w-10 text-indigo-500" />
+              <div className="mx-auto w-24 h-24 rounded-full flex items-center justify-center">
+                {settings.logo ? (
+                   <img src={settings.logo} alt="Logo" className="w-full h-full object-contain drop-shadow-md" />
+                ) : (
+                   <div className="bg-indigo-50 w-20 h-20 rounded-full flex items-center justify-center ring-4 ring-indigo-50/50 shadow-inner">
+                     <User className="h-10 w-10 text-indigo-500" />
+                   </div>
+                )}
               </div>
               <div>
-                <h1 className="text-[28px] font-black text-slate-800 tracking-tight leading-tight">Selamat Datang!</h1>
+                <h1 className="text-[28px] font-black text-slate-800 tracking-tight leading-tight">{settings.appName || 'Selamat Datang!'}</h1>
                 <p className="text-slate-500 font-medium mt-1">Masuk untuk memulai ujian.</p>
               </div>
             </div>

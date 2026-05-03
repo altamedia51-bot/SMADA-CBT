@@ -24,6 +24,7 @@ import UjianSession from './pages/siswa/UjianSession';
 import { Toaster } from '@/components/ui/sonner';
 
 import AdminLeger from './pages/admin/AdminLeger';
+import AdminPengaturan from './pages/admin/AdminPengaturan';
 
 import Panduan from './pages/shared/Panduan';
 
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="reset" element={<AdminReset />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="docs" element={<AdminDocs />} />
+            <Route path="pengaturan" element={<AdminPengaturan />} />
             <Route path="panduan" element={<Panduan />} />
           </Route>
           {/* Fullscreen tools */}

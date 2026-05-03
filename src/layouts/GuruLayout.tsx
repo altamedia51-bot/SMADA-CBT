@@ -3,11 +3,13 @@ import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store/auth.store';
 import { LogOut, LayoutDashboard, ClipboardCheck, BookOpen, Printer, UserRound, HelpCircle } from 'lucide-react';
 import { useIdleLogout } from '../hooks/useIdleLogout';
+import { useAppSettings } from '../hooks/useAppSettings';
 
 export default function GuruLayout() {
   const { profile } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const { settings } = useAppSettings();
 
   useIdleLogout(10); // Auto logout 10 menit
 
@@ -22,12 +24,16 @@ export default function GuruLayout() {
     <div className="min-h-screen flex font-sans bg-slate-50">
       {/* Sidebar - Dark theme like admin */}
       <aside className="w-[260px] bg-[#0E1726] text-slate-300 flex flex-col hidden md:flex shrink-0 border-r border-[#1a2942]">
-        <div className="h-20 flex items-center px-6 border-b border-[#1a2942]">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30 text-xs">
-            SMA
-          </div>
-          <span className="font-extrabold text-xl tracking-tight ml-3 text-white">CBT System</span>
-          <span className="ml-2 bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+        <div className="h-20 flex items-center px-4 border-b border-[#1a2942]">
+          {settings.logo ? (
+            <img src={settings.logo} alt="Logo" className="w-8 h-8 object-contain drop-shadow-md rounded shrink-0 bg-white p-0.5" />
+          ) : (
+            <div className="w-8 h-8 bg-blue-500 rounded-lg shrink-0 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30 text-xs">
+              SMA
+            </div>
+          )}
+          <span className="font-extrabold text-xl tracking-tight ml-3 text-white truncate max-w-[120px]">{settings.appName || 'CBT System'}</span>
+          <span className="ml-2 bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0">
             GURU
           </span>
         </div>
