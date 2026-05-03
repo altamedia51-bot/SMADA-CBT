@@ -93,14 +93,31 @@ export default function Login() {
     }
 
     setIsLoading(true);
+    let success = false;
+    let errorMessage = '';
+
     try {
       await signInWithEmailAndPassword(auth, emailToUse, password);
+      success = true;
     } catch (error: any) {
-      console.error(error);
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        toast.error('Kredensial salah. Pastikan password sudah benar.');
-      } else {
-        toast.error('Gagal login: ' + error.message);
+      if (loginMode === 'manual' && !username.includes('@') && !username.toLowerCase().startsWith('guru_') && username.toLowerCase() !== 'admin') {
+         try {
+            const alternativeEmail = `guru_${username.toLowerCase().trim()}@edutest.local`;
+            await signInWithEmailAndPassword(auth, alternativeEmail, password);
+            success = true;
+         } catch (altError: any) {
+            errorMessage = altError.code || altError.message;
+         }
+      }
+
+      if (!success) {
+        errorMessage = errorMessage || error.code || error.message;
+        console.error(error);
+        if (errorMessage === 'auth/user-not-found' || errorMessage === 'auth/wrong-password' || errorMessage === 'auth/invalid-credential') {
+          toast.error('Kredensial salah. Pastikan password atau NIP sudah benar.');
+        } else {
+          toast.error('Gagal login: ' + errorMessage);
+        }
       }
     } finally {
       setIsLoading(false);
