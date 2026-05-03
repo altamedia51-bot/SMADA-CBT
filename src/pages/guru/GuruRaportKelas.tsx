@@ -193,7 +193,7 @@ export default function GuruRaportKelas() {
                   </Select>
                </div>
                <Button onClick={savePembinaan} className="bg-blue-600 hover:bg-blue-700 text-white ml-auto">
-                  Simpan Catatan
+                  Simpan Catatan Wali Kelas
                </Button>
             </div>
           </CardContent>
@@ -203,6 +203,46 @@ export default function GuruRaportKelas() {
         <div className="p-10 text-center animate-pulse text-slate-400">Memuat data...</div>
       ) : (
         <div className="space-y-8">
+           {rankedSiswa.length > 0 && (
+              <Card className="overflow-hidden border border-slate-200">
+                 <CardHeader className="bg-slate-50 border-b">
+                    <CardTitle className="text-lg">Ledger Nilai Kelas</CardTitle>
+                    <CardDescription>Daftar nilai seluruh mapel yang ditempuh dan rata-ratanya</CardDescription>
+                 </CardHeader>
+                 <CardContent className="p-0 overflow-x-auto">
+                    <Table>
+                       <TableHeader className="bg-slate-50">
+                          <TableRow>
+                             <TableHead className="w-[50px] text-center border-r">Rnk</TableHead>
+                             <TableHead className="w-[250px] border-r">Nama Siswa</TableHead>
+                             {mapelList.filter(m => rankedSiswa.some(s => raportData[s.id]?.[m.id])).map(m => (
+                                <TableHead key={m.id} className="text-center min-w-[100px] border-r">{m.name}</TableHead>
+                             ))}
+                             <TableHead className="text-center w-[100px] border-r">Rata-rata</TableHead>
+                          </TableRow>
+                       </TableHeader>
+                       <TableBody>
+                          {rankedSiswa.map((siswa, index) => (
+                             <TableRow key={siswa.id} className="hover:bg-slate-50/50">
+                                <TableCell className="text-center font-bold border-r">{index + 1}</TableCell>
+                                <TableCell className="font-semibold border-r">{siswa.displayName}</TableCell>
+                                {mapelList.filter(m => rankedSiswa.some(s => raportData[s.id]?.[m.id])).map(m => {
+                                   const nilaiMapel = raportData[siswa.id]?.[m.id]?.nilai;
+                                   return (
+                                      <TableCell key={m.id} className="text-center border-r">
+                                         {nilaiMapel ? <span className="font-medium text-slate-700">{nilaiMapel}</span> : <span className="text-slate-300">-</span>}
+                                      </TableCell>
+                                   );
+                                })}
+                                <TableCell className="text-center font-bold text-blue-600 border-r">{rataRataSiswa[siswa.id]?.toFixed(2)}</TableCell>
+                             </TableRow>
+                          ))}
+                       </TableBody>
+                    </Table>
+                 </CardContent>
+              </Card>
+           )}
+
            {rankedSiswa.map((siswa, index) => (
              <Card key={siswa.id} className="overflow-hidden border-slate-200">
                <CardHeader className="bg-slate-50 py-3 border-b flex flex-row items-center justify-between">
