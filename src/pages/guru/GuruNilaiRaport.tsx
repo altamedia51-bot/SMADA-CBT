@@ -45,7 +45,7 @@ export default function GuruNilaiRaport() {
   // Check authorization
   const selectedMapelId = mapel.find(m => m.name === selectedMapel)?.id;
   const isWaliKelasOfSelected = profile?.waliKelas === selectedKelas;
-  const isPengampuOfSelected = profile?.mengampuMapel?.includes(selectedMapelId);
+  const isPengampuOfSelected = profile?.mengampuMapel?.includes(selectedMapelId) && profile?.mengampuKelas?.includes(selectedKelas);
   const isAdmin = profile?.role === 'admin';
   const isAuthorized = isAdmin || isWaliKelasOfSelected || isPengampuOfSelected;
 
@@ -472,7 +472,7 @@ export default function GuruNilaiRaport() {
                         <SelectContent>
                            {kelas.sort((a,b)=>a.name.localeCompare(b.name)).filter(k => {
                               return profile?.role === 'admin' 
-                                 || (profile?.mengampuMapel && profile.mengampuMapel.length > 0)
+                                 || (profile?.mengampuKelas && profile.mengampuKelas.includes(k.name))
                                  || profile?.waliKelas === k.name;
                            }).map(k => (
                               <SelectItem key={k.id} value={k.name}>{k.name}</SelectItem>
