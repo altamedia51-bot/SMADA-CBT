@@ -45,7 +45,7 @@ export default function GuruNilaiRaport() {
   // Check authorization
   const selectedMapelId = mapel.find(m => m.name === selectedMapel)?.id;
   const isWaliKelasOfSelected = profile?.waliKelas === selectedKelas;
-  const isPengampuOfSelected = profile?.mengampuMapel?.includes(selectedMapelId) && profile?.mengampuKelas?.includes(selectedKelas);
+  const isPengampuOfSelected = profile?.mengampu?.some(m => m.mapelId === selectedMapelId && m.kelas.includes(selectedKelas));
   const isAdmin = profile?.role === 'admin';
   const isAuthorized = isAdmin || isWaliKelasOfSelected || isPengampuOfSelected;
 
@@ -456,7 +456,7 @@ export default function GuruNilaiRaport() {
                            {mapel.filter(m => {
                               return profile?.role === 'admin' 
                                  || profile?.waliKelas 
-                                 || (profile?.mengampuMapel && profile.mengampuMapel.includes(m.id));
+                                 || profile?.mengampu?.some(mengampu => mengampu.mapelId === m.id);
                            }).map(m => (
                               <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
                            ))}
@@ -472,7 +472,7 @@ export default function GuruNilaiRaport() {
                         <SelectContent>
                            {kelas.sort((a,b)=>a.name.localeCompare(b.name)).filter(k => {
                               return profile?.role === 'admin' 
-                                 || (profile?.mengampuKelas && profile.mengampuKelas.includes(k.name))
+                                 || (profile?.mengampu && profile.mengampu.some(m => (!selectedMapelId || m.mapelId === selectedMapelId) && m.kelas.includes(k.name)))
                                  || profile?.waliKelas === k.name;
                            }).map(k => (
                               <SelectItem key={k.id} value={k.name}>{k.name}</SelectItem>

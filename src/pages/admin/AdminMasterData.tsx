@@ -68,8 +68,11 @@ export default function AdminMasterData() {
     password: '',
     nomorWa: '',
     waliKelas: '',
-    mengampuMapel: [] as string[],
-    mengampuKelas: [] as string[]
+    mengampu: [
+      { mapelId: '', kelas: [] as string[] },
+      { mapelId: '', kelas: [] as string[] },
+      { mapelId: '', kelas: [] as string[] }
+    ]
   });
 
   // Visibility states
@@ -474,8 +477,7 @@ export default function AdminMasterData() {
           nip: guruForm.nip,
           nomorWa: guruForm.nomorWa,
           waliKelas: guruForm.waliKelas,
-          mengampuMapel: guruForm.mengampuMapel.filter(Boolean),
-          mengampuKelas: guruForm.mengampuKelas,
+          mengampu: guruForm.mengampu.filter(m => m.mapelId),
           updatedAt: serverTimestamp()
         });
         toast.success(`Data guru ${guruForm.nama} diperbarui.`);
@@ -492,12 +494,12 @@ export default function AdminMasterData() {
         const uid = data.localId;
         const { setDoc } = await import('firebase/firestore');
         await setDoc(doc(db, 'users', uid), {
-          uid, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampuMapel: guruForm.mengampuMapel.filter(Boolean), mengampuKelas: guruForm.mengampuKelas, isActive: true, createdAt: serverTimestamp()
+          uid, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
         }, { merge: true });
         toast.success(`Guru ${guruForm.nama} ditambahkan.`);
       }
       setEditingGuru(null);
-      setGuruForm({ nama: '', nip: '', password: '', nomorWa: '', waliKelas: '', mengampuMapel: [], mengampuKelas: [] });
+      setGuruForm({ nama: '', nip: '', password: '', nomorWa: '', waliKelas: '', mengampu: [{ mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }] });
     } catch (err: any) {
       toast.error('Eror: ' + err.message);
     }
@@ -990,56 +992,64 @@ export default function AdminMasterData() {
                    </select>
                 </div>
                 <div className="md:col-span-2 space-y-2">
-                   <label className="text-sm font-bold text-slate-700">Mengampu Mapel (Maks 3)</label>
-                   <div className="flex flex-col gap-2">
-                      {[0, 1, 2].map(index => (
-                         <select 
-                            key={`mapel-${index}`}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            value={guruForm.mengampuMapel[index] || ''}
-                            onChange={(e) => {
-                               const newMapel = [...guruForm.mengampuMapel];
-                               newMapel[index] = e.target.value;
-                               setGuruForm(prev => ({ ...prev, mengampuMapel: newMapel }));
-                            }}
-                         >
-                            <option value="">-- Pilih Mapel {index + 1} --</option>
-                            {mapel.map(m => (
-                               <option key={m.id} value={m.id}>{m.name}</option>
-                            ))}
-                         </select>
-                      ))}
-                   </div>
-                </div>
-                <div className="md:col-span-2 space-y-2">
-                   <label className="text-sm font-bold text-slate-700">Mengampu Kelas</label>
-                   <div className="flex flex-wrap gap-2">
-                      {kelas.sort((a,b)=>a.name.localeCompare(b.name)).map(k => (
-                         <label key={k.id} className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded cursor-pointer hover:bg-blue-50 transition-colors">
-                            <input 
-                               type="checkbox" 
-                               checked={guruForm.mengampuKelas.includes(k.name)}
-                               onChange={(e) => {
-                                  if (e.target.checked) {
-                                     setGuruForm(prev => ({ ...prev, mengampuKelas: [...prev.mengampuKelas, k.name] }));
-                                  } else {
-                                     setGuruForm(prev => ({ ...prev, mengampuKelas: prev.mengampuKelas.filter(name => name !== k.name) }));
-                                  }
-                               }}
-                               className="accent-blue-600 rounded"
-                            />
-                            <span className="text-sm">{k.name}</span>
-                         </label>
-                      ))}
-                      {kelas.length === 0 && <span className="text-xs text-slate-500 italic">Belum ada kelas terdaftar</span>}
-                   </div>
-                </div>
-                <div className="flex gap-2 w-full md:col-span-2">
+                    <label className="text-sm font-bold text-slate-700">Mengampu Mapel & Kelas (Maks 3)</label>
+                    <div className="flex flex-col gap-3">
+                       {[0, 1, 2].map(index => (
+                          <div key={`mengampu-${index}`} className="border rounded p-3 bg-slate-50 space-y-3">
+                             <div>
+                                <label className="text-xs font-bold text-slate-700">Mapel {index + 1}</label>
+                                <select 
+                                   className="mt-1 flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                   value={guruForm.mengampu[index].mapelId || ''}
+                                   onChange={(e) => {
+                                      const newMengampu = [...guruForm.mengampu];
+                                      newMengampu[index].mapelId = e.target.value;
+                                      if (!e.target.value) newMengampu[index].kelas = [];
+                                      setGuruForm(prev => ({ ...prev, mengampu: newMengampu }));
+                                   }}
+                                >
+                                   <option value="">-- Pilih Mapel --</option>
+                                   {mapel.map(m => (
+                                      <option key={m.id} value={m.id}>{m.name}</option>
+                                   ))}
+                                </select>
+                             </div>
+                             {guruForm.mengampu[index].mapelId && (
+                                <div>
+                                   <label className="text-xs font-bold text-slate-700">Kelas Diampu</label>
+                                   <div className="flex flex-wrap gap-2 mt-1.5">
+                                      {kelas.sort((a,b)=>a.name.localeCompare(b.name)).map(k => (
+                                         <label key={k.id} className="flex items-center gap-1.5 bg-white border border-slate-200 px-2 py-1 rounded cursor-pointer hover:bg-blue-50 transition-colors">
+                                            <input 
+                                               type="checkbox" 
+                                               checked={guruForm.mengampu[index].kelas.includes(k.name)}
+                                               onChange={(e) => {
+                                                  const newMengampu = [...guruForm.mengampu];
+                                                  if (e.target.checked) {
+                                                     newMengampu[index].kelas = [...newMengampu[index].kelas, k.name];
+                                                  } else {
+                                                     newMengampu[index].kelas = newMengampu[index].kelas.filter(name => name !== k.name);
+                                                  }
+                                                  setGuruForm(prev => ({ ...prev, mengampu: newMengampu }));
+                                               }}
+                                               className="accent-blue-600 rounded w-3.5 h-3.5"
+                                            />
+                                            <span className="text-[11px] font-medium">{k.name}</span>
+                                         </label>
+                                      ))}
+                                   </div>
+                                </div>
+                             )}
+                          </div>
+                       ))}
+                    </div>
+                 </div>
+                 <div className="flex gap-2 w-full md:col-span-2">
                   <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold h-10">
                     Simpan Data Guru
                   </Button>
                   {editingGuru && (
-                    <Button type="button" variant="outline" onClick={() => { setEditingGuru(null); setGuruForm({nama:'', nip:'', password:'', nomorWa: '', waliKelas: '', mengampuMapel: []}); }} className="h-10">
+                    <Button type="button" variant="outline" onClick={() => { setEditingGuru(null); setGuruForm({nama:'', nip:'', password:'', nomorWa: '', waliKelas: '', mengampu: [{mapelId:'',kelas:[]},{mapelId:'',kelas:[]},{mapelId:'',kelas:[]}]}); }} className="h-10">
                       Batal
                     </Button>
                   )}
@@ -1071,17 +1081,24 @@ export default function AdminMasterData() {
                       <TableCell className="text-slate-600">{g.nomorWa || '-'}</TableCell>
                       <TableCell className="font-bold text-blue-600">{g.waliKelas || '-'}</TableCell>
                       <TableCell className="text-xs text-slate-500">
-                         {g.mengampuMapel && g.mengampuMapel.length > 0 
-                            ? g.mengampuMapel.map((mid: string) => mapel.find(m => m.id === mid)?.name || mid).join(', ')
+                         {g.mengampu && g.mengampu.length > 0 
+                            ? g.mengampu.map((m: any) => mapel.find((map:any) => map.id === m.mapelId)?.name || m.mapelId).join(', ')
                             : '-'}
                       </TableCell>
                       <TableCell className="text-xs text-slate-500">
-                         {g.mengampuKelas && g.mengampuKelas.length > 0
-                            ? g.mengampuKelas.join(', ')
+                         {g.mengampu && g.mengampu.length > 0
+                            ? g.mengampu.map((m: any) => m.kelas.join(', ')).filter(Boolean).join(' | ')
                             : '-'}
                       </TableCell>
                       <TableCell className="flex justify-end gap-1">
-                         <Button variant="ghost" size="sm" onClick={() => { setEditingGuru(g); setGuruForm({nama:g.displayName, nip:g.nip||'', password:'', nomorWa: g.nomorWa || '', waliKelas: g.waliKelas || '', mengampuMapel: g.mengampuMapel || [], mengampuKelas: g.mengampuKelas || []}); }} className="text-blue-500">
+                         <Button variant="ghost" size="sm" onClick={() => { 
+                            let initMengampu = g.mengampu || [];
+                            // Ensure 3 items
+                            let parsedMengampu = [...initMengampu];
+                            while(parsedMengampu.length < 3) parsedMengampu.push({ mapelId:'', kelas:[] });
+                            setEditingGuru(g); 
+                            setGuruForm({nama:g.displayName, nip:g.nip||'', password:'', nomorWa: g.nomorWa || '', waliKelas: g.waliKelas || '', mengampu: parsedMengampu }); 
+                         }} className="text-blue-500">
                            <Pencil className="w-4 h-4" />
                          </Button>
                          <Button variant="ghost" size="sm" onClick={() => hapusData('users', g.id)} className="text-rose-500">
