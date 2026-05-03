@@ -33,6 +33,12 @@ export default function GuruRaportKelas() {
   const [nipKepalaSekolah, setNipKepalaSekolah] = useState('');
   // format YYYY-MM-DD for input date type
   const [tanggalRaportInput, setTanggalRaportInput] = useState(new Date().toISOString().split('T')[0]);
+  const [printConfig, setPrintConfig] = useState<any>(null);
+
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('printConfig');
+    if (savedConfig) setPrintConfig(JSON.parse(savedConfig));
+  }, []);
 
   const handlePrint = (mode: 'raport' | 'ledger') => {
       setPrintMode(mode);
@@ -158,24 +164,29 @@ export default function GuruRaportKelas() {
           if (!allNilai[siswaId]) allNilai[siswaId] = {};
           
           let nilaiAkhir = 0;
-          if (stData.katrol_psas) {
-            nilaiAkhir = Number(stData.katrol_psas);
-          } else if (stData.psas) {
-            nilaiAkhir = Number(stData.psas);
-          } else if (stData.katrol_pts) {
-             nilaiAkhir = Number(stData.katrol_pts);
-          } else {
-             // avergae form/sumatif
-             const forN = Array.isArray(stData.formatif) ? stData.formatif.map(Number).filter(Boolean) : [];
-             const sumN = Array.isArray(stData.sumatif) ? stData.sumatif.map(Number).filter(Boolean) : [];
-             const allM = [...forN, ...sumN];
-             if (allM.length > 0) {
-                nilaiAkhir = allM.reduce((a, b) => a + b, 0) / allM.length;
+          if (stData) {
+             const fValid = Array.isArray(stData.formatif) ? stData.formatif.filter((v:any) => typeof v === 'number') as number[] : [];
+             const avgF = fValid.length > 0 ? fValid.reduce((a,b) => a+b, 0) / fValid.length : 0;
+             
+             const sValid = Array.isArray(stData.sumatif) ? stData.sumatif.filter((v:any) => typeof v === 'number') as number[] : [];
+             const avgS = sValid.length > 0 ? sValid.reduce((a,b) => a+b, 0) / sValid.length : 0;
+             
+             const finalPts = typeof stData.katrol_pts === 'number' && stData.katrol_pts > 0 ? stData.katrol_pts : (typeof stData.pts === 'number' ? stData.pts : 0);
+             const finalPsas = typeof stData.katrol_psas === 'number' && stData.katrol_psas > 0 ? stData.katrol_psas : (typeof stData.psas === 'number' ? stData.psas : 0);
+             
+             const components = [];
+             if (avgF > 0) components.push(avgF);
+             if (avgS > 0) components.push(avgS);
+             if (finalPts > 0) components.push(finalPts);
+             if (finalPsas > 0) components.push(finalPsas);
+             
+             if (components.length > 0) {
+                 nilaiAkhir = Math.round(components.reduce((a,b) => a+b, 0) / components.length);
              }
           }
 
           allNilai[siswaId][m.id] = {
-            nilai: Math.round(nilaiAkhir),
+            nilai: nilaiAkhir,
             deskripsi: stData.deskripsi || ''
           };
         }
@@ -325,9 +336,27 @@ export default function GuruRaportKelas() {
             
             {printMode === 'ledger' && (
               <div className="bg-white p-4">
-                 <div className="text-center mb-8 border-b-2 border-black pb-4 mt-4 mx-4">
-                    <h1 className="text-xl font-bold uppercase tracking-widest">LEDGER NILAI KELAS {profile.waliKelas}</h1>
-                    <h2 className="text-lg uppercase">SEKOLAH MENENGAH ATAS</h2>
+                 {printConfig ? (
+                    <div className="text-center border-b-[3px] border-black pb-4 mb-6 mt-4 mx-4 relative">
+                        {printConfig.kopKiri && <img src={printConfig.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
+                        {printConfig.kopKanan && <img src={printConfig.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
+                        <h2 className="font-bold text-base">{printConfig.kop1}</h2>
+                        <h2 className="font-bold text-base">{printConfig.kop2}</h2>
+                        <h1 className="text-xl font-black uppercase tracking-wider">{printConfig.sekolah}</h1>
+                        <p className="text-xs">{printConfig.alamat}</p>
+                        <p className="text-[10px] mt-0.5">
+                           {printConfig.notelp && <span className="mr-3">Telp. {printConfig.notelp}</span>}
+                        </p>
+                    </div>
+                 ) : (
+                    <div className="text-center mb-8 border-b-[3px] border-black pb-4 mt-4 mx-4 relative">
+                       <h2 className="font-bold">PEMERINTAH PROVINSI</h2>
+                       <h2 className="font-bold">DINAS PENDIDIKAN</h2>
+                       <h1 className="text-2xl font-black uppercase">SEKOLAH MENENGAH ATAS</h1>
+                    </div>
+                 )}
+                 <div className="text-center mb-6">
+                    <h3 className="text-xl font-bold uppercase tracking-widest underline">LEDGER NILAI KELAS {profile.waliKelas}</h3>
                  </div>
                  <div className="overflow-x-auto">
                     <div className="min-w-max">
@@ -401,13 +430,9 @@ export default function GuruRaportKelas() {
                            </tbody>
                        </table>
 
-                       <div className="flex justify-between px-10 mt-12 font-semibold pb-10 text-sm">
-                           <div className="text-center">
-                              <p>Mengetahui,</p>
-                              <p>Kepala Sekolah</p>
-                              <br /><br /><br /><br />
-                              <p className="underline font-bold">{kepalaSekolah || '_________________________'}</p>
-                              <p>NIP. {nipKepalaSekolah || '_________________________'}</p>
+                       <div className="flex justify-between px-10 mt-12 font-semibold pb-10 text-sm relative z-0">
+                           <div className="text-center invisible">
+                               {/* Placeholder for alignment if needed, not actually rendering */}
                            </div>
                            <div className="text-center">
                               <p>Banyuwangi, {tanggalRaportInput ? new Date(tanggalRaportInput).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '_________________'}</p>
@@ -417,6 +442,15 @@ export default function GuruRaportKelas() {
                               <p>NIP. {profile.nip || '_________________________'}</p>
                            </div>
                        </div>
+                       <div className="flex justify-center -mt-16 font-semibold pb-10 text-sm relative z-10 w-full text-center">
+                           <div className="text-center mx-auto">
+                              <p>Mengetahui,</p>
+                              <p>Kepala Sekolah</p>
+                              <br /><br /><br /><br />
+                              <p className="underline font-bold">{kepalaSekolah || '_________________________'}</p>
+                              <p>NIP. {nipKepalaSekolah || '_________________________'}</p>
+                           </div>
+                       </div>
                     </div>
                  </div>
               </div>
@@ -424,10 +458,27 @@ export default function GuruRaportKelas() {
 
             {printMode === 'raport' && siswaList.map((siswa, i) => (
                <div key={siswa.id} className={`pdf-page w-full print:relative bg-white font-sans text-sm pb-10 ${i > 0 ? "mt-8 print:mt-0 print:break-before-page page-break" : ""}`} style={{ minHeight: '297mm', padding: '10mm' }}>
-                  <div className="text-center mb-8 border-b-2 border-black pb-4 mt-2">
-                     <h1 className="text-2xl font-bold uppercase tracking-widest">RAPOR PELAJAR</h1>
-                     <h2 className="text-xl font-bold uppercase">SEKOLAH MENENGAH ATAS</h2>
-                  </div>
+                  {printConfig ? (
+                    <div className="text-center border-b-[3px] border-black pb-4 mb-6 mt-2 relative">
+                        {printConfig.kopKiri && <img src={printConfig.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
+                        {printConfig.kopKanan && <img src={printConfig.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
+                        <h2 className="font-bold text-base">{printConfig.kop1}</h2>
+                        <h2 className="font-bold text-base">{printConfig.kop2}</h2>
+                        <h1 className="text-xl font-black uppercase tracking-wider">{printConfig.sekolah}</h1>
+                        <p className="text-xs">{printConfig.alamat}</p>
+                        <p className="text-[10px] mt-0.5">
+                           {printConfig.notelp && <span className="mr-3">Telp. {printConfig.notelp}</span>}
+                        </p>
+                    </div>
+                 ) : (
+                    <div className="text-center mb-8 border-b-[3px] border-black pb-4 mt-2">
+                       <h1 className="text-2xl font-bold uppercase tracking-widest">RAPOR PELAJAR</h1>
+                       <h2 className="text-xl font-bold uppercase">SEKOLAH MENENGAH ATAS</h2>
+                    </div>
+                 )}
+                 <div className="text-center mb-6 mt-2">
+                    <h3 className="text-lg font-bold uppercase tracking-widest underline">RAPOR PELAJAR</h3>
+                 </div>
                   
                   <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-semibold">
                      <div className="space-y-1">
@@ -473,19 +524,12 @@ export default function GuruRaportKelas() {
                      </div>
                   )}
 
-                  <div className="flex justify-between px-10 mt-16 font-semibold pb-10">
+                  <div className="flex justify-between px-10 mt-16 font-semibold relative z-0">
                      <div className="text-center">
                         <p>Mengetahui,</p>
                         <p>Orang Tua/Wali</p>
                         <br /><br /><br /><br />
                         <p className="border-b border-black inline-block min-w-[200px]"></p>
-                     </div>
-                     <div className="text-center">
-                        <p>Mengetahui,</p>
-                        <p>Kepala Sekolah</p>
-                        <br /><br /><br /><br />
-                        <p className="underline font-bold">{kepalaSekolah || '_________________________'}</p>
-                        <p>NIP. {nipKepalaSekolah || '_________________________'}</p>
                      </div>
                      <div className="text-center">
                         <p>Banyuwangi, {tanggalRaportInput ? new Date(tanggalRaportInput).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '_________________'}</p>
@@ -494,6 +538,15 @@ export default function GuruRaportKelas() {
                         <p className="underline font-bold capitalize">{profile.displayName}</p>
                         <p>NIP. {profile.nip || '_________________________'}</p>
                      </div>
+                  </div>
+                  <div className="flex justify-center -mt-10 font-semibold pb-10 relative z-10 w-full text-center">
+                      <div className="text-center mx-auto">
+                        <p>Mengetahui,</p>
+                        <p>Kepala Sekolah</p>
+                        <br /><br /><br /><br />
+                        <p className="underline font-bold">{kepalaSekolah || '_________________________'}</p>
+                        <p>NIP. {nipKepalaSekolah || '_________________________'}</p>
+                      </div>
                   </div>
                </div>
             ))}
