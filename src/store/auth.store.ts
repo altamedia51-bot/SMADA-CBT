@@ -11,6 +11,7 @@ interface UserProfile {
   isActive: boolean;
   waliKelas?: string;
   mengampu?: { mapelId: string; kelas: string[] }[];
+  nip?: string;
 }
 
 interface AuthState {

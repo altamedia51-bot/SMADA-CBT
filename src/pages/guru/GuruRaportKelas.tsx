@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Settings, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function GuruRaportKelas() {
@@ -21,6 +23,22 @@ export default function GuruRaportKelas() {
   const [pembinaanData, setPembinaanData] = useState<Record<string, string>>({}); // siswaId -> catatan
 
   const [loading, setLoading] = useState(false);
+  const [printMode, setPrintMode] = useState<'raport' | 'ledger' | null>(null);
+  
+  // Settings Raport
+  const [kepalaSekolah, setKepalaSekolah] = useState('');
+  const [nipKepalaSekolah, setNipKepalaSekolah] = useState('');
+  // format YYYY-MM-DD for input date type
+  const [tanggalRaportInput, setTanggalRaportInput] = useState(new Date().toISOString().split('T')[0]);
+
+  const handlePrint = (mode: 'raport' | 'ledger') => {
+      setPrintMode(mode);
+      setTimeout(() => {
+          window.print();
+          setPrintMode(null);
+      }, 500);
+  };
+
 
   useEffect(() => {
     const unsubMapel = onSnapshot(collection(db, 'mapel'), snap => {
@@ -198,15 +216,15 @@ export default function GuruRaportKelas() {
 
    return (
     <>
-    <div className="p-4 md:p-8 space-y-6 print:hidden">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className={`p-4 md:p-8 space-y-6 ${printMode === 'ledger' ? 'print:block print:p-0 bg-white' : 'print:hidden'}`}>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
          <div>
             <h1 className="text-2xl font-bold text-slate-800">Raport Kelas {profile.waliKelas}</h1>
             <p className="text-sm text-slate-500">Rekapitulasi Nilai Akhir dari semua mapel, Ranking, dan Catatan Wali Kelas.</p>
          </div>
       </div>
 
-      <Card>
+      <Card className="print:hidden">
          <CardContent className="p-6">
             <div className="flex flex-col md:flex-row gap-6 mb-4 items-end">
                <div className="space-y-1">
@@ -236,10 +254,57 @@ export default function GuruRaportKelas() {
                      </SelectContent>
                   </Select>
                </div>
-               <div className="ml-auto flex gap-2">
-                 <Button onClick={() => window.print()} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+               <div className="ml-auto flex gap-2 flex-wrap items-end justify-end">
+                 <Dialog>
+                   <DialogTrigger asChild>
+                     <Button variant="outline" className="border-slate-300">
+                       <Settings className="w-4 h-4 mr-2" />
+                       Pengaturan Raport
+                     </Button>
+                   </DialogTrigger>
+                   <DialogContent className="sm:max-w-[425px]">
+                     <DialogHeader>
+                       <DialogTitle>Pengaturan Cetak Raport</DialogTitle>
+                     </DialogHeader>
+                     <div className="grid gap-4 py-4">
+                       <div className="space-y-2">
+                         <label className="text-sm font-medium">Nama Kepala Sekolah</label>
+                         <Input 
+                           placeholder="Contoh: Drs. H. Ahmad, M.Pd." 
+                           value={kepalaSekolah}
+                           onChange={(e) => setKepalaSekolah(e.target.value)}
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-sm font-medium">NIP Kepala Sekolah</label>
+                         <Input 
+                           placeholder="Contoh: 19700101 199512 1 001" 
+                           value={nipKepalaSekolah}
+                           onChange={(e) => setNipKepalaSekolah(e.target.value)}
+                         />
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-sm font-medium">Tanggal Raport</label>
+                         <Input 
+                           type="date"
+                           value={tanggalRaportInput}
+                           onChange={(e) => setTanggalRaportInput(e.target.value)}
+                         />
+                       </div>
+                     </div>
+                   </DialogContent>
+                 </Dialog>
+
+                 <Button onClick={() => handlePrint('ledger')} variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                    <Printer className="w-4 h-4 mr-2" />
+                    Cetak Ledger
+                 </Button>
+
+                 <Button onClick={() => handlePrint('raport')} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                    <Printer className="w-4 h-4 mr-2" />
                     Cetak Raport
                  </Button>
+                 
                  <Button onClick={savePembinaan} className="bg-blue-600 hover:bg-blue-700 text-white">
                     Simpan Catatan Wali Kelas
                  </Button>
@@ -253,13 +318,13 @@ export default function GuruRaportKelas() {
       ) : (
         <div className="space-y-8">
            {siswaList.length > 0 && (
-              <Card className="overflow-hidden border border-slate-200">
-                 <CardHeader className="bg-slate-50 border-b">
+              <Card className="overflow-hidden border border-slate-200 print:shadow-none print:border-none">
+                 <CardHeader className="bg-slate-50 border-b print:bg-white print:border-none print:px-0">
                     <CardTitle className="text-lg">Ledger Nilai Kelas</CardTitle>
-                    <CardDescription>Daftar nilai seluruh mapel yang ditempuh dan rata-ratanya.</CardDescription>
+                    <CardDescription className="print:hidden">Daftar nilai seluruh mapel yang ditempuh dan rata-ratanya.</CardDescription>
                  </CardHeader>
-                 <CardContent className="p-0 overflow-x-auto">
-                    <div className="min-w-max p-4">
+                 <CardContent className="p-0 overflow-x-auto print:overflow-visible">
+                    <div className="min-w-max p-4 print:p-0">
                        <table className="w-full text-xs border-collapse border border-slate-400">
                           <thead>
                              <tr>
@@ -346,6 +411,23 @@ export default function GuruRaportKelas() {
                              </tr>
                           </tbody>
                        </table>
+
+                       <div className="hidden print:flex justify-between px-10 mt-16 font-semibold pb-10 text-sm">
+                           <div className="text-center">
+                              <p>Mengetahui,</p>
+                              <p>Kepala Sekolah</p>
+                              <br /><br /><br /><br />
+                              <p className="underline font-bold">{kepalaSekolah || '_________________________'}</p>
+                              <p>NIP. {nipKepalaSekolah || '_________________________'}</p>
+                           </div>
+                           <div className="text-center">
+                              <p>Banyuwangi, {tanggalRaportInput ? new Date(tanggalRaportInput).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '_________________'}</p>
+                              <p>Wali Kelas {profile.waliKelas}</p>
+                              <br /><br /><br /><br />
+                              <p className="underline font-bold capitalize">{profile.displayName}</p>
+                              <p>NIP. {profile.nip || '_________________________'}</p>
+                           </div>
+                       </div>
                     </div>
                  </CardContent>
               </Card>
@@ -359,7 +441,7 @@ export default function GuruRaportKelas() {
     </div>
     
     {/* PRINTER FRIENDLY REPORT CARDS */}
-    <div className="hidden print:block print-only print:p-0 m-0 w-full text-black">
+    <div className={`hidden ${printMode === 'raport' ? 'print:block print-only print:p-0' : 'print:hidden'} m-0 w-full text-black`}>
       {siswaList.map((siswa, i) => (
          <div key={siswa.id} className="page-break w-full min-h-[100vh] print:relative bg-white font-sans text-sm pb-10">
             <div className="text-center mb-8 border-b-2 border-black pb-4 mt-8">
@@ -420,11 +502,18 @@ export default function GuruRaportKelas() {
                   <p className="border-b border-black inline-block min-w-[200px]"></p>
                </div>
                <div className="text-center">
-                  <p>Banyuwangi, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <p>Mengetahui,</p>
+                  <p>Kepala Sekolah</p>
+                  <br /><br /><br /><br />
+                  <p className="underline font-bold">{kepalaSekolah || '_________________________'}</p>
+                  <p>NIP. {nipKepalaSekolah || '_________________________'}</p>
+               </div>
+               <div className="text-center">
+                  <p>Banyuwangi, {tanggalRaportInput ? new Date(tanggalRaportInput).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '_________________'}</p>
                   <p>Wali Kelas {profile.waliKelas}</p>
                   <br /><br /><br /><br />
                   <p className="underline font-bold capitalize">{profile.displayName}</p>
-                  <p>NIP. {profile.nip || '-'}</p>
+                  <p>NIP. {profile.nip || '_________________________'}</p>
                </div>
             </div>
          </div>
