@@ -10,7 +10,10 @@ import { Search, Download, FileText, CheckCircle, XCircle, AlertTriangle, Hash, 
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
+import { useAuthStore } from '../../store/auth.store';
+
 export default function AdminHasil() {
+  const { profile } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'sesi' | 'riwayat'>('sesi');
   
   // -- STATE FOR TAB 1: Analisis Sesi --
@@ -329,6 +332,19 @@ export default function AdminHasil() {
 
 
   // --- LOGIC TAB 2: Riwayat Kelas (Buku Nilai) ---
+  const allowedUjianList = profile?.role === 'guru' 
+    ? ujianList.filter(u => {
+        const pkt = paketAll.find(p => p.id === u.paketId);
+        return pkt?.guruId === profile?.uid;
+      })
+    : ujianList;
+
+  const allowedMapelData = profile?.role === 'guru'
+    ? mapelData.filter(m => {
+        return paketAll.some(p => p.mapelId === m.id && p.guruId === profile?.uid);
+      })
+    : mapelData;
+
   useEffect(() => {
     if (activeTab !== 'riwayat') return;
     if (!selectedKelasRiwayat) return;
@@ -348,7 +364,7 @@ export default function AdminHasil() {
         }
 
         // 2. Fetch all Ujian finished/ongoing that involve this class
-        let relatedExams = ujianList.filter(u => u.kelasId === selectedKelasRiwayat || !u.kelasId); // if null/empty = all classes
+        let relatedExams = allowedUjianList.filter(u => u.kelasId === selectedKelasRiwayat || !u.kelasId); // if null/empty = all classes
         
         // 3. Filter exams by mapel if selected
         if (selectedMapelRiwayat !== 'all') {
@@ -461,11 +477,11 @@ export default function AdminHasil() {
                   <Select value={selectedUjianId} onValueChange={setSelectedUjianId}>
                     <SelectTrigger className="w-full bg-slate-50 border-slate-200 font-medium h-11">
                       <SelectValue placeholder="Pilih Ujian...">
-                        {ujianList.find(u=>u.id===selectedUjianId)?.title}
+                        {allowedUjianList.find(u=>u.id===selectedUjianId)?.title}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {ujianList.map(u => (
+                      {allowedUjianList.map(u => (
                         <SelectItem key={u.id} value={u.id}>{u.title}</SelectItem>
                       ))}
                     </SelectContent>
@@ -698,12 +714,12 @@ export default function AdminHasil() {
                 <Select value={selectedMapelRiwayat} onValueChange={setSelectedMapelRiwayat}>
                   <SelectTrigger className="h-12 bg-slate-50 border-slate-200 focus:ring-indigo-500 font-bold text-slate-700">
                     <SelectValue placeholder="Semua Mapel">
-                      {selectedMapelRiwayat === 'all' ? 'Semua Mata Pelajaran' : mapelData.find(m=>m.id===selectedMapelRiwayat)?.name || 'Semua Mapel'}
+                      {selectedMapelRiwayat === 'all' ? 'Semua Mata Pelajaran' : allowedMapelData.find(m=>m.id===selectedMapelRiwayat)?.name || 'Semua Mapel'}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua Mata Pelajaran</SelectItem>
-                    {mapelData.map(m => (
+                    {allowedMapelData.map(m => (
                       <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
                     ))}
                   </SelectContent>

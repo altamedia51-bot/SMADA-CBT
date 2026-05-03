@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { useAuthStore } from '../../store/auth.store';
 import { UserRound, Mail, School, KeyRound, ShieldCheck, Asterisk } from 'lucide-react';
 import { toast } from 'sonner';
+import { updatePassword } from 'firebase/auth';
+import { auth } from '../../lib/firebase';
 
 export default function GuruProfil() {
   const { profile } = useAuthStore();
@@ -12,20 +14,33 @@ export default function GuruProfil() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleUpdatePassword = () => {
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      toast.error('Gagal', { description: 'Semua kolom password harus diisi.' });
+  const handleUpdatePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error('Gagal', { description: 'Kolom password baru harus diisi.' });
       return;
     }
     if (newPassword !== confirmPassword) {
       toast.error('Gagal', { description: 'Password baru dan konfirmasi tidak cocok.' });
       return;
     }
-    // TODO: implement firebase update password if email/password auth is used
-    toast.success('Berhasil', { description: 'Pengaturan profil telah disimpan. (Simulasi)' });
-    setOldPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    
+    try {
+      if (auth.currentUser) {
+        await updatePassword(auth.currentUser, newPassword);
+        toast.success('Berhasil', { description: 'Password berhasil diperbarui.' });
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        toast.error('Sesi tidak valid.');
+      }
+    } catch (e: any) {
+       if (e.code === 'auth/requires-recent-login') {
+          toast.error('Sesi Kadaluarsa', { description: 'Silahkan logout dan login kembali untuk mengubah password.' });
+       } else {
+          toast.error('Gagal', { description: 'Gagal merubah password. ' + e.message });
+       }
+    }
   };
 
   return (

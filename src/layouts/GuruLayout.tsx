@@ -12,9 +12,7 @@ export default function GuruLayout() {
   useIdleLogout(10); // Auto logout 10 menit
 
   const navItems = [
-    { label: 'Dashboard', path: '/guru', icon: LayoutDashboard },
     { label: 'Paket Soal', path: '/guru/paket-soal', icon: BookOpen },
-    { label: 'Cetak Soal', path: '/guru/cetak', icon: Printer },
     { label: 'Hasil Ujian', path: '/guru/hasil', icon: ClipboardCheck },
     { label: 'Profil', path: '/guru/profil', icon: UserRound },
   ];

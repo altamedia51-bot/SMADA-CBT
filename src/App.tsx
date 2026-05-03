@@ -55,14 +55,12 @@ export default function App() {
         {/* Guru Routes */}
         <Route element={<ProtectedRoute allowedRoles={['guru']} />}>
           <Route path="/guru" element={<GuruLayout />}>
-            <Route index element={<GuruDashboard />} />
+            <Route index element={<Navigate to="paket-soal" replace />} />
             <Route path="paket-soal" element={<GuruPaketSoal />} />
             <Route path="paket-soal/:paketId" element={<GuruSoalDetail />} />
             <Route path="hasil" element={<AdminHasil />} />
-            <Route path="cetak" element={<AdminCetak />} />
             <Route path="profil" element={<GuruProfil />} />
           </Route>
-          <Route path="/guru/scan" element={<GuruScanLjk />} />
         </Route>
 
         {/* Siswa Routes */}
