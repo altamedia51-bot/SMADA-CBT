@@ -156,6 +156,72 @@ export default function AdminMasterData() {
     }
   };
 
+  const downloadTemplateMapel = () => {
+    const csvContent = "NAMA_MAPEL,JENJANG\nMatematika Peminatan,SMA\nIlmu Pengetahuan Alam,SMP";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'template_mapel.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const mapelFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleMapelFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const rows = results.data as any[];
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const row of rows) {
+          const mapelName = (row.NAMA_MAPEL || row.nama_mapel || row.Nama_Mapel || '').trim();
+          const jenjang = (row.JENJANG || row.jenjang || row.Jenjang || 'SMA').trim();
+
+          if (mapelName) {
+            try {
+              await addDoc(collection(db, 'mapel'), {
+                name: mapelName,
+                jenjang: jenjang
+              });
+              successCount++;
+            } catch (err) {
+              failCount++;
+            }
+          } else {
+             failCount++;
+          }
+        }
+
+        setIsImporting(false);
+        if (successCount > 0) {
+          toast.success(`Berhasil mengimpor ${successCount} mapel.`);
+        }
+        if (failCount > 0) {
+          toast.error(`Gagal mengimpor ${failCount} baris data (format tidak valid).`);
+        }
+        
+        // Reset file input
+        e.target.value = '';
+      },
+      error: (error) => {
+        setIsImporting(false);
+        toast.error("Gagal membaca file CSV: " + error.message);
+      }
+    });
+  };
+
+
   const tanganiTambahRuang = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRuangName) return;
@@ -1117,7 +1183,25 @@ export default function AdminMasterData() {
         {currentTab === 'mapel' && (
         <div className="space-y-6">
           <Card className="p-6 bg-card">
-            <h3 className="font-semibold mb-4">{editingMapel ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran'}</h3>
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between mb-4">
+              <h3 className="font-semibold">{editingMapel ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran'}</h3>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="file" 
+                  accept=".csv" 
+                  className="hidden" 
+                  ref={mapelFileInputRef}
+                  onChange={handleMapelFileUpload}
+                  disabled={isImporting}
+                />
+                <Button variant="outline" size="sm" onClick={downloadTemplateMapel} className="h-8 border-slate-200 text-slate-600 bg-slate-50">
+                  <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" /> Template
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => mapelFileInputRef.current?.click()} className="h-8 border-blue-200 text-blue-600 bg-blue-50">
+                  <CloudUpload className="w-3.5 h-3.5 mr-1.5" /> Upload CSV
+                </Button>
+              </div>
+            </div>
             <form onSubmit={tanganiTambahMapel} className="flex gap-4 items-end">
               <div className="grid gap-2 flex-1">
                 <label className="text-sm font-medium">Nama Mapel</label>
