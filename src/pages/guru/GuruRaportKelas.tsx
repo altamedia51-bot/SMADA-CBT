@@ -25,7 +25,7 @@ export default function GuruRaportKelas() {
   const [pembinaanData, setPembinaanData] = useState<Record<string, string>>({}); // siswaId -> catatan
 
   const [loading, setLoading] = useState(false);
-  const [printMode, setPrintMode] = useState<'raport' | 'ledger' | null>(null);
+  const [printMode, setPrintMode] = useState<'raport' | 'ledger' | 'raport_pts' | 'ledger_pts' | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   
   // Settings Raport
@@ -40,7 +40,7 @@ export default function GuruRaportKelas() {
     if (savedConfig) setPrintConfig(JSON.parse(savedConfig));
   }, []);
 
-  const handlePrint = (mode: 'raport' | 'ledger') => {
+  const handlePrint = (mode: 'raport' | 'ledger' | 'raport_pts' | 'ledger_pts') => {
       setPrintMode(mode);
   };
 
@@ -63,7 +63,7 @@ export default function GuruRaportKelas() {
       element.classList.remove('my-8', 'shadow-2xl', 'mx-auto');
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      const isLandscape = printMode === 'ledger';
+      const isLandscape = printMode.startsWith('ledger');
       const pdf = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -186,8 +186,9 @@ export default function GuruRaportKelas() {
           }
 
           allNilai[siswaId][m.id] = {
-            nilai: nilaiAkhir,
-            deskripsi: stData.deskripsi || ''
+            nilai: Math.round(nilaiAkhir),
+            nilai_pts: typeof stData?.pts === 'number' ? Math.round(stData.pts) : null,
+            deskripsi: stData?.deskripsi || ''
           };
         }
       }
@@ -232,12 +233,13 @@ export default function GuruRaportKelas() {
   }
 
   // Calculate Average and Rank
+  const isPtsMode = printMode === 'raport_pts' || printMode === 'ledger_pts';
   const rataRataSiswa: Record<string, number> = {};
   const jumlahNilaiSiswa: Record<string, number> = {};
 
   siswaList.forEach(s => {
     const nilai = raportData[s.id] || {};
-    const scores = Object.values(nilai).map((v: any) => v.nilai).filter(n => typeof n === 'number' && !isNaN(n));
+    const scores = Object.values(nilai).map((v: any) => isPtsMode ? v.nilai_pts : v.nilai).filter(n => typeof n === 'number' && !isNaN(n));
     if (scores.length > 0) {
       jumlahNilaiSiswa[s.id] = scores.reduce((a, b) => a + b, 0);
       rataRataSiswa[s.id] = jumlahNilaiSiswa[s.id] / scores.length;
@@ -254,12 +256,18 @@ export default function GuruRaportKelas() {
   });
 
   // usedMapel: mapped ones that have scores
-  const usedMapel = mapelList.filter(m => siswaList.some(s => raportData[s.id]?.[m.id]));
+  const usedMapel = mapelList.filter(m => siswaList.some(s => {
+      const data = raportData[s.id]?.[m.id];
+      return data && (isPtsMode ? typeof data.nilai_pts === 'number' : true);
+  }));
 
   // stats calculation
   const mapelStats: Record<string, { min: number, max: number, avg: number, stdDev: number }> = {};
   usedMapel.forEach(m => {
-     const scores = siswaList.map(s => raportData[s.id]?.[m.id]?.nilai).filter(n => typeof n === 'number' && !isNaN(n));
+     const scores = siswaList.map(s => {
+         const data = raportData[s.id]?.[m.id];
+         return isPtsMode ? data?.nilai_pts : data?.nilai;
+     }).filter(n => typeof n === 'number' && !isNaN(n));
      if (scores.length > 0) {
         const min = Math.min(...scores);
         const max = Math.max(...scores);
@@ -317,7 +325,7 @@ export default function GuruRaportKelas() {
          `}</style>
          <div className="no-print sticky top-0 bg-white border-b shadow-sm w-full p-4 flex justify-between items-center z-10 px-8">
             <div>
-               <h2 className="text-xl font-bold text-slate-800">Preview {printMode === 'raport' ? 'Raport' : 'Ledger Nilai'}</h2>
+               <h2 className="text-xl font-bold text-slate-800">Preview {printMode.startsWith('raport') ? `Raport${printMode.includes('pts') ? ' PTS' : ''}` : `Ledger Nilai${printMode.includes('pts') ? ' PTS' : ''}`}</h2>
             </div>
             <div className="flex gap-3">
                <Button variant="outline" onClick={() => setPrintMode(null)} className="h-11">Kembali</Button>
@@ -332,9 +340,9 @@ export default function GuruRaportKelas() {
 
          <div id="print-container" 
               className="mx-auto bg-white shadow-2xl my-8 print:my-0 print:shadow-none font-sans text-slate-900"
-              style={{ width: printMode === 'ledger' ? '100%' : '210mm', minHeight: '297mm', padding: '0mm' }}>
+              style={{ width: printMode.startsWith('ledger') ? '100%' : '210mm', minHeight: '297mm', padding: '0mm' }}>
             
-            {printMode === 'ledger' && (
+            {printMode.startsWith('ledger') && (
               <div className="bg-white p-4">
                  {printConfig ? (
                     <div className="text-center border-b-[3px] border-black pb-4 mb-6 mt-4 mx-4 relative">
@@ -356,7 +364,7 @@ export default function GuruRaportKelas() {
                     </div>
                  )}
                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold uppercase tracking-widest underline">LEDGER NILAI KELAS {profile.waliKelas}</h3>
+                    <h3 className="text-xl font-bold uppercase tracking-widest underline">LEDGER NILAI {printMode.includes('pts') ? 'PTS ' : ''}KELAS {profile.waliKelas}</h3>
                  </div>
                  <div className="overflow-x-auto">
                     <div className="min-w-max">
@@ -389,7 +397,8 @@ export default function GuruRaportKelas() {
                                     <td className="border border-slate-400 px-2 py-1 font-semibold">{siswa.displayName}</td>
                                     <td className="border border-slate-400 px-2 py-1 text-center">{siswa.jenisKelamin === 'Perempuan' ? 'P' : (siswa.jenisKelamin === 'Laki-laki' ? 'L' : '-')}</td>
                                     {usedMapel.map(m => {
-                                       const nilaiMapel = raportData[siswa.id]?.[m.id]?.nilai;
+                                       const dataMapel = raportData[siswa.id]?.[m.id];
+                                       const nilaiMapel = isPtsMode ? dataMapel?.nilai_pts : dataMapel?.nilai;
                                        return (
                                           <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">
                                              {nilaiMapel ? nilaiMapel : ''}
@@ -456,7 +465,7 @@ export default function GuruRaportKelas() {
               </div>
             )}
 
-            {printMode === 'raport' && siswaList.map((siswa, i) => (
+            {printMode.startsWith('raport') && siswaList.map((siswa, i) => (
                <div key={siswa.id} className={`pdf-page w-full print:relative bg-white font-sans text-sm pb-10 ${i > 0 ? "mt-8 print:mt-0 print:break-before-page page-break" : ""}`} style={{ minHeight: '297mm', padding: '10mm' }}>
                   {printConfig ? (
                     <div className="text-center border-b-[3px] border-black pb-4 mb-6 mt-2 relative">
@@ -477,7 +486,7 @@ export default function GuruRaportKelas() {
                     </div>
                  )}
                  <div className="text-center mb-6 mt-2">
-                    <h3 className="text-lg font-bold uppercase tracking-widest underline">RAPOR PELAJAR</h3>
+                    <h3 className="text-lg font-bold uppercase tracking-widest underline">RAPOR PELAJAR {printMode.includes('pts') ? 'TENGAH SEMESTER' : ''}</h3>
                  </div>
                   
                   <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-semibold">
@@ -509,7 +518,7 @@ export default function GuruRaportKelas() {
                               <tr key={m.id}>
                                  <td className="border border-black p-2 text-center align-top">{index + 1}</td>
                                  <td className="border border-black p-2 align-top">{m.name}</td>
-                                 <td className="border border-black p-2 text-center align-top font-bold text-lg">{nilaiData?.nilai || ''}</td>
+                                 <td className="border border-black p-2 text-center align-top font-bold text-lg">{isPtsMode ? (nilaiData?.nilai_pts || '') : (nilaiData?.nilai || '')}</td>
                                  <td className="border border-black p-2 align-top italic text-[11px] leading-relaxed whitespace-pre-wrap">{nilaiData?.deskripsi || '-'}</td>
                               </tr>
                            )
@@ -644,6 +653,16 @@ export default function GuruRaportKelas() {
                  <Button onClick={() => handlePrint('raport')} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
                     <Printer className="w-4 h-4 mr-2" />
                     Cetak Raport
+                 </Button>
+
+                 <Button onClick={() => handlePrint('ledger_pts')} variant="outline" className="border-indigo-600 text-indigo-600 hover:bg-indigo-50">
+                    <Printer className="w-4 h-4 mr-2" />
+                    Ledger PTS
+                 </Button>
+
+                 <Button onClick={() => handlePrint('raport_pts')} variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50">
+                    <Printer className="w-4 h-4 mr-2" />
+                    Cetak PTS
                  </Button>
                  
                  <Button onClick={savePembinaan} className="bg-blue-600 hover:bg-blue-700 text-white">

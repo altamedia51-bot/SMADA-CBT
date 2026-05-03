@@ -131,5 +131,11 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (isAdmin() || isGuru());
     }
+
+    // 15. Pembinaan Wali
+    match /pembinaan_wali/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || isGuru());
+    }
   }
 }
