@@ -142,4 +142,13 @@
   .flex-1 {
     flex: none !important;
   }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .page-break {
+    page-break-after: always;
+  }
 }

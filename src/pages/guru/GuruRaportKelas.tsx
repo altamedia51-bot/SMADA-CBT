@@ -196,8 +196,9 @@ export default function GuruRaportKelas() {
      stdDev: allAvgs.length ? Math.sqrt(allAvgs.reduce((a,b) => a + Math.pow(b - (allAvgs.reduce((x,y)=>x+y,0)/allAvgs.length), 2), 0) / allAvgs.length) : 0,
   };
 
-  return (
-    <div className="p-4 md:p-8 space-y-6">
+   return (
+    <>
+    <div className="p-4 md:p-8 space-y-6 print:hidden">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
          <div>
             <h1 className="text-2xl font-bold text-slate-800">Raport Kelas {profile.waliKelas}</h1>
@@ -235,9 +236,14 @@ export default function GuruRaportKelas() {
                      </SelectContent>
                   </Select>
                </div>
-               <Button onClick={savePembinaan} className="bg-blue-600 hover:bg-blue-700 text-white ml-auto">
-                  Simpan Catatan Wali Kelas
-               </Button>
+               <div className="ml-auto flex gap-2">
+                 <Button onClick={() => window.print()} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                    Cetak Raport
+                 </Button>
+                 <Button onClick={savePembinaan} className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Simpan Catatan Wali Kelas
+                 </Button>
+               </div>
             </div>
           </CardContent>
       </Card>
@@ -351,5 +357,79 @@ export default function GuruRaportKelas() {
         </div>
       )}
     </div>
+    
+    {/* PRINTER FRIENDLY REPORT CARDS */}
+    <div className="hidden print:block print-only print:p-0 m-0 w-full text-black">
+      {siswaList.map((siswa, i) => (
+         <div key={siswa.id} className="page-break w-full min-h-[100vh] print:relative bg-white font-sans text-sm pb-10">
+            <div className="text-center mb-8 border-b-2 border-black pb-4 mt-8">
+               <h1 className="text-2xl font-bold uppercase tracking-widest">RAPOR PELAJAR</h1>
+               <h2 className="text-xl font-bold uppercase">SEKOLAH MENENGAH ATAS</h2>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-semibold">
+               <div className="space-y-1">
+                  <div className="grid grid-cols-[150px_10px_1fr]"><span>Nama Peserta Didik</span><span>:</span><span>{siswa.displayName}</span></div>
+                  <div className="grid grid-cols-[150px_10px_1fr]"><span>NISN</span><span>:</span><span>{siswa.nisn || '-'}</span></div>
+                  <div className="grid grid-cols-[150px_10px_1fr]"><span>Sekolah</span><span>:</span><span>SMA DARUSSALAM</span></div>
+               </div>
+               <div className="space-y-1">
+                  <div className="grid grid-cols-[120px_10px_1fr]"><span>Kelas</span><span>:</span><span>{profile.waliKelas}</span></div>
+                  <div className="grid grid-cols-[120px_10px_1fr]"><span>Semester</span><span>:</span><span>{semester}</span></div>
+                  <div className="grid grid-cols-[120px_10px_1fr]"><span>Tahun Pelajaran</span><span>:</span><span>{tahunAjaran}</span></div>
+               </div>
+            </div>
+
+            <table className="w-full border-collapse border border-black text-sm mb-6">
+               <thead>
+                  <tr className="bg-gray-100">
+                     <th className="border border-black p-2 w-[5%] text-center">No</th>
+                     <th className="border border-black p-2 w-[35%]">Mata Pelajaran</th>
+                     <th className="border border-black p-2 w-[15%] text-center">Nilai Akhir</th>
+                     <th className="border border-black p-2 w-[45%]">Capaian Kompetensi</th>
+                  </tr>
+               </thead>
+               <tbody>
+                  {usedMapel.map((m, index) => {
+                     const nilaiData = raportData[siswa.id]?.[m.id];
+                     return (
+                        <tr key={m.id}>
+                           <td className="border border-black p-2 text-center align-top">{index + 1}</td>
+                           <td className="border border-black p-2 align-top">{m.name}</td>
+                           <td className="border border-black p-2 text-center align-top font-bold text-lg">{nilaiData?.nilai || ''}</td>
+                           <td className="border border-black p-2 align-top italic text-xs leading-relaxed whitespace-pre-wrap">{nilaiData?.deskripsi || '-'}</td>
+                        </tr>
+                     )
+                  })}
+               </tbody>
+            </table>
+
+            {/* Pembinaan section */}
+            {pembinaanData[siswa.id] && (
+               <div className="border border-black p-4 mb-8">
+                  <h3 className="font-bold mb-2">Catatan Wali Kelas:</h3>
+                  <p className="italic text-sm">{pembinaanData[siswa.id]}</p>
+               </div>
+            )}
+
+            <div className="flex justify-between px-10 mt-16 font-semibold pb-10">
+               <div className="text-center">
+                  <p>Mengetahui,</p>
+                  <p>Orang Tua/Wali</p>
+                  <br /><br /><br /><br />
+                  <p className="border-b border-black inline-block min-w-[200px]"></p>
+               </div>
+               <div className="text-center">
+                  <p>Banyuwangi, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <p>Wali Kelas {profile.waliKelas}</p>
+                  <br /><br /><br /><br />
+                  <p className="underline font-bold capitalize">{profile.displayName}</p>
+                  <p>NIP. {profile.nip || '-'}</p>
+               </div>
+            </div>
+         </div>
+      ))}
+    </div>
+    </>
   );
 }
