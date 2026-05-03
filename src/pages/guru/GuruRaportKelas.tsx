@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Settings, Printer } from 'lucide-react';
+import { Settings, Printer, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import domtoimage from 'dom-to-image';
+import { jsPDF } from 'jspdf';
 
 export default function GuruRaportKelas() {
   const profile = useAuthStore(state => state.profile);
@@ -24,6 +26,7 @@ export default function GuruRaportKelas() {
 
   const [loading, setLoading] = useState(false);
   const [printMode, setPrintMode] = useState<'raport' | 'ledger' | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Settings Raport
   const [kepalaSekolah, setKepalaSekolah] = useState('');
@@ -33,10 +36,70 @@ export default function GuruRaportKelas() {
 
   const handlePrint = (mode: 'raport' | 'ledger') => {
       setPrintMode(mode);
-      setTimeout(() => {
-          window.print();
-          setPrintMode(null);
-      }, 500);
+  };
+
+  const handleExportPDF = async () => {
+    setIsExporting(true);
+    try {
+      const element = document.getElementById('print-container');
+      if (!element) return;
+      
+      const originalCssText = element.style.cssText;
+      element.style.width = '210mm'; 
+      element.style.maxWidth = 'none';
+      element.style.margin = '0';
+      if (!element.querySelector('.pdf-page')) {
+          element.style.padding = '10mm';
+      } else {
+          element.style.padding = '0';
+      }
+      
+      element.classList.remove('my-8', 'shadow-2xl', 'mx-auto');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const isLandscape = printMode === 'ledger';
+      const pdf = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      const pages = element.querySelectorAll('.pdf-page');
+
+      if (pages.length > 0) {
+        for (let i = 0; i < pages.length; i++) {
+          const pageEl = pages[i] as HTMLElement;
+          const dataUrl = await domtoimage.toJpeg(pageEl, { quality: 1, bgcolor: '#ffffff' });
+          if (i > 0) pdf.addPage();
+          const imgHeight = (pageEl.offsetHeight * pdfWidth) / pageEl.offsetWidth;
+          pdf.addImage(dataUrl, 'JPEG', 0, 0, pdfWidth, imgHeight);
+        }
+      } else {
+        const dataUrl = await domtoimage.toJpeg(element, { quality: 1, bgcolor: '#ffffff' });
+        const imgHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+        
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(dataUrl, 'JPEG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(dataUrl, 'JPEG', 0, position, pdfWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+      }
+
+      pdf.save(`Export_${printMode}_${profile?.waliKelas}_${new Date().getTime()}.pdf`);
+
+      element.style.cssText = originalCssText;
+      element.classList.add('my-8', 'shadow-2xl', 'mx-auto');
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Gagal mengekspor PDF: ' + (err?.message || 'Error tidak diketahui'));
+    } finally {
+      setIsExporting(false);
+    }
   };
 
 
@@ -213,6 +276,231 @@ export default function GuruRaportKelas() {
      avg: allAvgs.length ? allAvgs.reduce((a,b)=>a+b,0)/allAvgs.length : 0,
      stdDev: allAvgs.length ? Math.sqrt(allAvgs.reduce((a,b) => a + Math.pow(b - (allAvgs.reduce((x,y)=>x+y,0)/allAvgs.length), 2), 0) / allAvgs.length) : 0,
   };
+
+   if (printMode !== null) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-slate-200 overflow-y-auto w-full h-full print:static print:h-auto print:w-auto print:overflow-visible print:bg-white text-black">
+          <style>{`
+              .page-break { page-break-after: always; break-after: page; }
+              @media print {
+              html, body {
+                height: auto !important;
+                min-height: auto !important;
+                overflow: visible !important;
+                background-color: white !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              body > :not(#root) { display: none !important; }
+              #print-container {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background-color: white !important;
+              }
+              .no-print, .no-print * { display: none !important; visibility: hidden !important; }
+              aside, header, nav { display: none !important; }
+              @page { margin: 1cm; size: A4 portrait; }
+            }
+         `}</style>
+         <div className="no-print sticky top-0 bg-white border-b shadow-sm w-full p-4 flex justify-between items-center z-10 px-8">
+            <div>
+               <h2 className="text-xl font-bold text-slate-800">Preview {printMode === 'raport' ? 'Raport' : 'Ledger Nilai'}</h2>
+            </div>
+            <div className="flex gap-3">
+               <Button variant="outline" onClick={() => setPrintMode(null)} className="h-11">Kembali</Button>
+               <Button onClick={() => window.print()} variant="outline" className="h-11 border-green-600 text-green-600 hover:bg-green-50">
+                   <Printer className="w-4 h-4 mr-2" /> Cetak (Browser)
+               </Button>
+               <Button onClick={handleExportPDF} disabled={isExporting} className="h-11 bg-blue-600 hover:bg-blue-700 px-6 font-bold shadow-lg shadow-blue-500/20">
+                 <FileText className="w-4 h-4 mr-2" /> {isExporting ? 'Memproses...' : 'Ekspor PDF'}
+               </Button>
+            </div>
+         </div>
+
+         <div id="print-container" 
+              className="mx-auto bg-white shadow-2xl my-8 print:my-0 print:shadow-none font-sans text-slate-900"
+              style={{ width: printMode === 'ledger' ? '100%' : '210mm', minHeight: '297mm', padding: '0mm' }}>
+            
+            {printMode === 'ledger' && (
+              <div className="bg-white p-4">
+                 <div className="text-center mb-8 border-b-2 border-black pb-4 mt-4 mx-4">
+                    <h1 className="text-xl font-bold uppercase tracking-widest">LEDGER NILAI KELAS {profile.waliKelas}</h1>
+                    <h2 className="text-lg uppercase">SEKOLAH MENENGAH ATAS</h2>
+                 </div>
+                 <div className="overflow-x-auto">
+                    <div className="min-w-max">
+                       <table className="w-full text-[10px] border-collapse border border-slate-400">
+                           <thead>
+                              <tr>
+                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">NO</th>
+                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-20">NIS/NISN</th>
+                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center min-w-[200px]">NAMA</th>
+                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">L/P</th>
+                                 <th colSpan={usedMapel.length} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center">MATA PELAJARAN</th>
+                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Jumlah</div></th>
+                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Rerata</div></th>
+                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Ranking</div></th>
+                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-4 py-1 text-center">Catatan / Pembinaan</th>
+                              </tr>
+                              <tr>
+                                 {usedMapel.map(m => (
+                                    <th key={m.id} className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
+                                       <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">{m.name}</div>
+                                    </th>
+                                 ))}
+                              </tr>
+                           </thead>
+                           <tbody>
+                              {siswaList.map((siswa, index) => (
+                                 <tr key={siswa.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                                    <td className="border border-slate-400 px-2 py-1 text-center font-medium">{index + 1}</td>
+                                    <td className="border border-slate-400 px-2 py-1 text-center">{siswa.nisn || '-'}</td>
+                                    <td className="border border-slate-400 px-2 py-1 font-semibold">{siswa.displayName}</td>
+                                    <td className="border border-slate-400 px-2 py-1 text-center">{siswa.jenisKelamin === 'Perempuan' ? 'P' : (siswa.jenisKelamin === 'Laki-laki' ? 'L' : '-')}</td>
+                                    {usedMapel.map(m => {
+                                       const nilaiMapel = raportData[siswa.id]?.[m.id]?.nilai;
+                                       return (
+                                          <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">
+                                             {nilaiMapel ? nilaiMapel : ''}
+                                          </td>
+                                       );
+                                    })}
+                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-slate-700">{jumlahNilaiSiswa[siswa.id] || ''}</td>
+                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-blue-700">{rataRataSiswa[siswa.id]?.toFixed(1) || ''}</td>
+                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-amber-700">{rankSiswa[siswa.id] || ''}</td>
+                                    <td className="border border-slate-400 px-2 py-1 text-[10px]">{pembinaanData[siswa.id] || '-'}</td>
+                                 </tr>
+                              ))}
+                              
+                              <tr className="bg-slate-100 font-bold">
+                                 <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Nilai Terendah</td>
+                                 {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id]?.min || ''}</td>)}
+                                 <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.min || ''}</td>
+                                 <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.min ? avgStats.min.toFixed(1) : ''}</td>
+                                 <td className="border border-slate-400 bg-slate-200"></td>
+                                 <td className="border border-slate-400 bg-slate-200"></td>
+                              </tr>
+                              <tr className="bg-slate-100 font-bold">
+                                 <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Nilai Tertinggi</td>
+                                 {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id]?.max || ''}</td>)}
+                                 <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.max || ''}</td>
+                                 <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.max ? avgStats.max.toFixed(1) : ''}</td>
+                                 <td className="border border-slate-400 bg-slate-200"></td>
+                                 <td className="border border-slate-400 bg-slate-200"></td>
+                              </tr>
+                              <tr className="bg-slate-100 font-bold">
+                                 <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Rata-rata Nilai</td>
+                                 {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id]?.avg ? Math.round(mapelStats[m.id].avg) : ''}</td>)}
+                                 <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.avg ? Math.round(totalStats.avg) : ''}</td>
+                                 <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.avg ? avgStats.avg.toFixed(1) : ''}</td>
+                                 <td className="border border-slate-400 bg-slate-200"></td>
+                                 <td className="border border-slate-400 bg-slate-200"></td>
+                              </tr>
+                           </tbody>
+                       </table>
+
+                       <div className="flex justify-between px-10 mt-12 font-semibold pb-10 text-sm">
+                           <div className="text-center">
+                              <p>Mengetahui,</p>
+                              <p>Kepala Sekolah</p>
+                              <br /><br /><br /><br />
+                              <p className="underline font-bold">{kepalaSekolah || '_________________________'}</p>
+                              <p>NIP. {nipKepalaSekolah || '_________________________'}</p>
+                           </div>
+                           <div className="text-center">
+                              <p>Banyuwangi, {tanggalRaportInput ? new Date(tanggalRaportInput).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '_________________'}</p>
+                              <p>Wali Kelas {profile.waliKelas}</p>
+                              <br /><br /><br /><br />
+                              <p className="underline font-bold capitalize">{profile.displayName}</p>
+                              <p>NIP. {profile.nip || '_________________________'}</p>
+                           </div>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+            )}
+
+            {printMode === 'raport' && siswaList.map((siswa, i) => (
+               <div key={siswa.id} className={`pdf-page w-full print:relative bg-white font-sans text-sm pb-10 ${i > 0 ? "mt-8 print:mt-0 print:break-before-page page-break" : ""}`} style={{ minHeight: '297mm', padding: '10mm' }}>
+                  <div className="text-center mb-8 border-b-2 border-black pb-4 mt-2">
+                     <h1 className="text-2xl font-bold uppercase tracking-widest">RAPOR PELAJAR</h1>
+                     <h2 className="text-xl font-bold uppercase">SEKOLAH MENENGAH ATAS</h2>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-semibold">
+                     <div className="space-y-1">
+                        <div className="grid grid-cols-[150px_10px_1fr]"><span>Nama Peserta Didik</span><span>:</span><span>{siswa.displayName}</span></div>
+                        <div className="grid grid-cols-[150px_10px_1fr]"><span>NISN</span><span>:</span><span>{siswa.nisn || '-'}</span></div>
+                        <div className="grid grid-cols-[150px_10px_1fr]"><span>Sekolah</span><span>:</span><span>SMA DARUSSALAM</span></div>
+                     </div>
+                     <div className="space-y-1">
+                        <div className="grid grid-cols-[120px_10px_1fr]"><span>Kelas</span><span>:</span><span>{profile.waliKelas}</span></div>
+                        <div className="grid grid-cols-[120px_10px_1fr]"><span>Semester</span><span>:</span><span>{semester}</span></div>
+                        <div className="grid grid-cols-[120px_10px_1fr]"><span>Tahun Pelajaran</span><span>:</span><span>{tahunAjaran}</span></div>
+                     </div>
+                  </div>
+
+                  <table className="w-full border-collapse border border-black text-sm mb-6">
+                     <thead>
+                        <tr className="bg-gray-100">
+                           <th className="border border-black p-2 w-[5%] text-center">No</th>
+                           <th className="border border-black p-2 w-[35%]">Mata Pelajaran</th>
+                           <th className="border border-black p-2 w-[15%] text-center">Nilai Akhir</th>
+                           <th className="border border-black p-2 w-[45%]">Capaian Kompetensi</th>
+                        </tr>
+                     </thead>
+                     <tbody>
+                        {usedMapel.map((m, index) => {
+                           const nilaiData = raportData[siswa.id]?.[m.id];
+                           return (
+                              <tr key={m.id}>
+                                 <td className="border border-black p-2 text-center align-top">{index + 1}</td>
+                                 <td className="border border-black p-2 align-top">{m.name}</td>
+                                 <td className="border border-black p-2 text-center align-top font-bold text-lg">{nilaiData?.nilai || ''}</td>
+                                 <td className="border border-black p-2 align-top italic text-[11px] leading-relaxed whitespace-pre-wrap">{nilaiData?.deskripsi || '-'}</td>
+                              </tr>
+                           )
+                        })}
+                     </tbody>
+                  </table>
+
+                  {pembinaanData[siswa.id] && (
+                     <div className="border border-black p-4 mb-8">
+                        <h3 className="font-bold mb-2">Catatan Wali Kelas:</h3>
+                        <p className="italic text-sm">{pembinaanData[siswa.id]}</p>
+                     </div>
+                  )}
+
+                  <div className="flex justify-between px-10 mt-16 font-semibold pb-10">
+                     <div className="text-center">
+                        <p>Mengetahui,</p>
+                        <p>Orang Tua/Wali</p>
+                        <br /><br /><br /><br />
+                        <p className="border-b border-black inline-block min-w-[200px]"></p>
+                     </div>
+                     <div className="text-center">
+                        <p>Mengetahui,</p>
+                        <p>Kepala Sekolah</p>
+                        <br /><br /><br /><br />
+                        <p className="underline font-bold">{kepalaSekolah || '_________________________'}</p>
+                        <p>NIP. {nipKepalaSekolah || '_________________________'}</p>
+                     </div>
+                     <div className="text-center">
+                        <p>Banyuwangi, {tanggalRaportInput ? new Date(tanggalRaportInput).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '_________________'}</p>
+                        <p>Wali Kelas {profile.waliKelas}</p>
+                        <br /><br /><br /><br />
+                        <p className="underline font-bold capitalize">{profile.displayName}</p>
+                        <p>NIP. {profile.nip || '_________________________'}</p>
+                     </div>
+                  </div>
+               </div>
+            ))}
+         </div>
+      </div>
+    );
+  }
 
    return (
     <>
@@ -440,85 +728,6 @@ export default function GuruRaportKelas() {
       )}
     </div>
     
-    {/* PRINTER FRIENDLY REPORT CARDS */}
-    <div className={`hidden ${printMode === 'raport' ? 'print:block print-only print:p-0' : 'print:hidden'} m-0 w-full text-black`}>
-      {siswaList.map((siswa, i) => (
-         <div key={siswa.id} className="page-break w-full min-h-[100vh] print:relative bg-white font-sans text-sm pb-10">
-            <div className="text-center mb-8 border-b-2 border-black pb-4 mt-8">
-               <h1 className="text-2xl font-bold uppercase tracking-widest">RAPOR PELAJAR</h1>
-               <h2 className="text-xl font-bold uppercase">SEKOLAH MENENGAH ATAS</h2>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-6 text-sm font-semibold">
-               <div className="space-y-1">
-                  <div className="grid grid-cols-[150px_10px_1fr]"><span>Nama Peserta Didik</span><span>:</span><span>{siswa.displayName}</span></div>
-                  <div className="grid grid-cols-[150px_10px_1fr]"><span>NISN</span><span>:</span><span>{siswa.nisn || '-'}</span></div>
-                  <div className="grid grid-cols-[150px_10px_1fr]"><span>Sekolah</span><span>:</span><span>SMA DARUSSALAM</span></div>
-               </div>
-               <div className="space-y-1">
-                  <div className="grid grid-cols-[120px_10px_1fr]"><span>Kelas</span><span>:</span><span>{profile.waliKelas}</span></div>
-                  <div className="grid grid-cols-[120px_10px_1fr]"><span>Semester</span><span>:</span><span>{semester}</span></div>
-                  <div className="grid grid-cols-[120px_10px_1fr]"><span>Tahun Pelajaran</span><span>:</span><span>{tahunAjaran}</span></div>
-               </div>
-            </div>
-
-            <table className="w-full border-collapse border border-black text-sm mb-6">
-               <thead>
-                  <tr className="bg-gray-100">
-                     <th className="border border-black p-2 w-[5%] text-center">No</th>
-                     <th className="border border-black p-2 w-[35%]">Mata Pelajaran</th>
-                     <th className="border border-black p-2 w-[15%] text-center">Nilai Akhir</th>
-                     <th className="border border-black p-2 w-[45%]">Capaian Kompetensi</th>
-                  </tr>
-               </thead>
-               <tbody>
-                  {usedMapel.map((m, index) => {
-                     const nilaiData = raportData[siswa.id]?.[m.id];
-                     return (
-                        <tr key={m.id}>
-                           <td className="border border-black p-2 text-center align-top">{index + 1}</td>
-                           <td className="border border-black p-2 align-top">{m.name}</td>
-                           <td className="border border-black p-2 text-center align-top font-bold text-lg">{nilaiData?.nilai || ''}</td>
-                           <td className="border border-black p-2 align-top italic text-xs leading-relaxed whitespace-pre-wrap">{nilaiData?.deskripsi || '-'}</td>
-                        </tr>
-                     )
-                  })}
-               </tbody>
-            </table>
-
-            {/* Pembinaan section */}
-            {pembinaanData[siswa.id] && (
-               <div className="border border-black p-4 mb-8">
-                  <h3 className="font-bold mb-2">Catatan Wali Kelas:</h3>
-                  <p className="italic text-sm">{pembinaanData[siswa.id]}</p>
-               </div>
-            )}
-
-            <div className="flex justify-between px-10 mt-16 font-semibold pb-10">
-               <div className="text-center">
-                  <p>Mengetahui,</p>
-                  <p>Orang Tua/Wali</p>
-                  <br /><br /><br /><br />
-                  <p className="border-b border-black inline-block min-w-[200px]"></p>
-               </div>
-               <div className="text-center">
-                  <p>Mengetahui,</p>
-                  <p>Kepala Sekolah</p>
-                  <br /><br /><br /><br />
-                  <p className="underline font-bold">{kepalaSekolah || '_________________________'}</p>
-                  <p>NIP. {nipKepalaSekolah || '_________________________'}</p>
-               </div>
-               <div className="text-center">
-                  <p>Banyuwangi, {tanggalRaportInput ? new Date(tanggalRaportInput).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '_________________'}</p>
-                  <p>Wali Kelas {profile.waliKelas}</p>
-                  <br /><br /><br /><br />
-                  <p className="underline font-bold capitalize">{profile.displayName}</p>
-                  <p>NIP. {profile.nip || '_________________________'}</p>
-               </div>
-            </div>
-         </div>
-      ))}
-    </div>
     </>
   );
 }
