@@ -26,6 +26,7 @@ export default function GuruRaportKelas() {
   const [semester, setSemester] = useState('Ganjil');
   const [raportData, setRaportData] = useState<Record<string, Record<string, any>>>({}); // siswaId -> mapelId -> nilaiInfo
   const [pembinaanData, setPembinaanData] = useState<Record<string, string>>({}); // siswaId -> catatan
+  const [absensiData, setAbsensiData] = useState<Record<string, { sakit: string; izin: string; alpa: string }>>({}); // siswaId -> data
 
   useEffect(() => {
      if (authTahunAjaran) {
@@ -185,15 +186,20 @@ export default function GuruRaportKelas() {
           if (!allNilai[siswaId]) allNilai[siswaId] = {};
           
           let nilaiAkhir = 0;
+          let avgF = 0;
+          let avgS = 0;
+          let finalPts = 0;
+          let finalPsas = 0;
+
           if (stData) {
              const fValid = Array.isArray(stData.formatif) ? stData.formatif.filter((v:any) => typeof v === 'number') as number[] : [];
-             const avgF = fValid.length > 0 ? fValid.reduce((a,b) => a+b, 0) / fValid.length : 0;
+             avgF = fValid.length > 0 ? fValid.reduce((a,b) => a+b, 0) / fValid.length : 0;
              
              const sValid = Array.isArray(stData.sumatif) ? stData.sumatif.filter((v:any) => typeof v === 'number') as number[] : [];
-             const avgS = sValid.length > 0 ? sValid.reduce((a,b) => a+b, 0) / sValid.length : 0;
+             avgS = sValid.length > 0 ? sValid.reduce((a,b) => a+b, 0) / sValid.length : 0;
              
-             const finalPts = typeof stData.katrol_pts === 'number' && stData.katrol_pts > 0 ? stData.katrol_pts : (typeof stData.pts === 'number' ? stData.pts : 0);
-             const finalPsas = typeof stData.katrol_psas === 'number' && stData.katrol_psas > 0 ? stData.katrol_psas : (typeof stData.psas === 'number' ? stData.psas : 0);
+             finalPts = typeof stData.katrol_pts === 'number' && stData.katrol_pts > 0 ? stData.katrol_pts : (typeof stData.pts === 'number' ? stData.pts : 0);
+             finalPsas = typeof stData.katrol_psas === 'number' && stData.katrol_psas > 0 ? stData.katrol_psas : (typeof stData.psas === 'number' ? stData.psas : 0);
              
              const components = [];
              if (avgF > 0) components.push(avgF);
@@ -209,7 +215,11 @@ export default function GuruRaportKelas() {
           allNilai[siswaId][m.id] = {
             nilai: Math.round(nilaiAkhir),
             nilai_pts: typeof stData?.pts === 'number' ? Math.round(stData.pts) : null,
-            deskripsi: stData?.deskripsi || ''
+            deskripsi: stData?.deskripsi || '',
+            avgF: Math.round(avgF),
+            avgS: Math.round(avgS),
+            ptsVal: Math.round(finalPts),
+            psasVal: Math.round(finalPsas)
           };
         }
       }
@@ -223,6 +233,15 @@ export default function GuruRaportKelas() {
          setPembinaanData(pembinaanSnap.data().catatan || {});
       } else {
          setPembinaanData({});
+      }
+
+      // Load Absensi
+      const absensiRef = doc(db, 'absensi_wali', `${profile.waliKelas}_${tahunAjaran.replace(/\//g, '-')}_${semester}`);
+      const absensiSnap = await getDoc(absensiRef);
+      if (absensiSnap.exists()) {
+         setAbsensiData(absensiSnap.data().data || {});
+      } else {
+         setAbsensiData({});
       }
 
     } catch (err: any) {
@@ -239,7 +258,13 @@ export default function GuruRaportKelas() {
         updatedAt: new Date(),
         updatedBy: profile.uid
       });
-      toast.success('Catatan pembinaan berhasil disimpan');
+      // Save Absensi
+      await setDoc(doc(db, 'absensi_wali', `${profile.waliKelas}_${tahunAjaran.replace(/\//g, '-')}_${semester}`), {
+        data: absensiData,
+        updatedAt: new Date(),
+        updatedBy: profile.uid
+      });
+      toast.success('Data pembinaan dan absensi berhasil disimpan');
     } catch (err: any) {
       toast.error('Gagal menyimpan: ' + err.message);
     }
@@ -381,30 +406,56 @@ export default function GuruRaportKelas() {
             
             {(printMode.startsWith('ledger') || printMode === 'dkn') && (
               <div className="bg-white p-4">
-                 {printConfig ? (
-                    <div className="text-center border-b-[3px] border-black pb-4 mb-6 mt-4 mx-4 relative">
-                        {printConfig.kopKiri && <img src={printConfig.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
-                        {printConfig.kopKanan && <img src={printConfig.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
-                        <h2 className="font-bold text-base">{printConfig.kop1}</h2>
-                        <h2 className="font-bold text-base">{printConfig.kop2}</h2>
-                        <h1 className="text-xl font-black uppercase tracking-wider">{printConfig.sekolah}</h1>
-                        <p className="text-xs">{printConfig.alamat}</p>
-                        <p className="text-[10px] mt-0.5">
-                           {printConfig.notelp && <span className="mr-3">Telp. {printConfig.notelp}</span>}
-                        </p>
-                    </div>
+                 {printMode === 'dkn' ? (
+                     <>
+                        <div className="text-center font-bold mb-8 uppercase tracking-widest leading-tight">
+                           <h1 className="text-2xl underline decoration-2 underline-offset-4 mt-4">
+                              DAFTAR KUMPULAN NILAI RAPOR
+                           </h1>
+                        </div>
+                        <div className="grid grid-cols-4 text-[12px] font-bold mb-6 mt-4 italic text-left">
+                           <div className="col-span-2 space-y-1">
+                              <div>Sekolah : {printConfig?.sekolah || 'SMA NEGERI'}</div>
+                              <div>Alamat : {printConfig?.alamat || '-'}</div>
+                           </div>
+                           <div className="space-y-1">
+                              <div>Kelas : {profile.waliKelas}</div>
+                              <div>Fase : E</div>
+                           </div>
+                           <div className="space-y-1">
+                              <div>Semester : {semester === 'Ganjil' ? '1 (Satu)' : '2 (Dua)'}</div>
+                              <div>Tahun Pelj. : {tahunAjaran}</div>
+                           </div>
+                        </div>
+                     </>
                  ) : (
-                    <div className="text-center mb-8 border-b-[3px] border-black pb-4 mt-4 mx-4 relative">
-                       <h2 className="font-bold">PEMERINTAH PROVINSI</h2>
-                       <h2 className="font-bold">DINAS PENDIDIKAN</h2>
-                       <h1 className="text-2xl font-black uppercase">SEKOLAH MENENGAH ATAS</h1>
-                    </div>
+                    <>
+                     {printConfig ? (
+                        <div className="text-center border-b-[3px] border-black pb-4 mb-6 mt-4 mx-4 relative">
+                            {printConfig.kopKiri && <img src={printConfig.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
+                            {printConfig.kopKanan && <img src={printConfig.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
+                            <h2 className="font-bold text-base">{printConfig.kop1}</h2>
+                            <h2 className="font-bold text-base">{printConfig.kop2}</h2>
+                            <h1 className="text-xl font-black uppercase tracking-wider">{printConfig.sekolah}</h1>
+                            <p className="text-xs">{printConfig.alamat}</p>
+                            <p className="text-[10px] mt-0.5">
+                               {printConfig.notelp && <span className="mr-3">Telp. {printConfig.notelp}</span>}
+                            </p>
+                        </div>
+                     ) : (
+                        <div className="text-center mb-8 border-b-[3px] border-black pb-4 mt-4 mx-4 relative">
+                           <h2 className="font-bold">PEMERINTAH PROVINSI</h2>
+                           <h2 className="font-bold">DINAS PENDIDIKAN</h2>
+                           <h1 className="text-2xl font-black uppercase">SEKOLAH MENENGAH ATAS</h1>
+                        </div>
+                     )}
+                     <div className="text-center mb-6">
+                        <h3 className="text-xl font-bold uppercase tracking-widest underline">
+                           {`LEDGER NILAI ${printMode.includes('pts') ? 'PTS ' : ''}KELAS ${profile.waliKelas}`}
+                        </h3>
+                     </div>
+                    </>
                  )}
-                 <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold uppercase tracking-widest underline">
-                       {printMode === 'dkn' ? `DAFTAR KUMPULAN NILAI (DKN) KELAS ${profile.waliKelas}` : `LEDGER NILAI ${printMode.includes('pts') ? 'PTS ' : ''}KELAS ${profile.waliKelas}`}
-                    </h3>
-                 </div>
                  <div className="overflow-x-auto">
                     <div className="min-w-max">
                        <table className="w-full text-[10px] border-collapse border border-slate-400">
@@ -414,11 +465,14 @@ export default function GuruRaportKelas() {
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-20">NIS/NISN</th>
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center min-w-[200px]">NAMA</th>
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">L/P</th>
-                                 <th colSpan={usedMapel.length} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center">MATA PELAJARAN</th>
+                                 <th colSpan={printMode === 'dkn' ? usedMapel.length : usedMapel.length * 5} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">MATA PELAJARAN</th>
+                                 <th colSpan={3} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">ABSENSI</th>
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Jumlah</div></th>
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Rerata</div></th>
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Ranking</div></th>
-                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-4 py-1 text-center">Catatan / Pembinaan</th>
+                                 {printMode !== 'dkn' && (
+                                    <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-4 py-1 text-center">Catatan / Pembinaan</th>
+                                 )}
                               </tr>
                               <tr>
                                  {usedMapel.map(m => (
@@ -437,17 +491,34 @@ export default function GuruRaportKelas() {
                                     <td className="border border-slate-400 px-2 py-1 text-center">{siswa.jenisKelamin === 'Perempuan' ? 'P' : (siswa.jenisKelamin === 'Laki-laki' ? 'L' : '-')}</td>
                                     {usedMapel.map(m => {
                                        const dataMapel = raportData[siswa.id]?.[m.id];
-                                       const nilaiMapel = isPtsMode ? dataMapel?.nilai_pts : dataMapel?.nilai;
-                                       return (
-                                          <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">
-                                             {nilaiMapel ? nilaiMapel : ''}
-                                          </td>
-                                       );
+                                       if (printMode === 'dkn') {
+                                          const nilaiMapel = isPtsMode ? dataMapel?.nilai_pts : dataMapel?.nilai;
+                                          return (
+                                             <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">
+                                                {nilaiMapel ? nilaiMapel : ''}
+                                             </td>
+                                          );
+                                       } else {
+                                          return (
+                                             <React.Fragment key={m.id}>
+                                                <td className="border border-slate-400 px-1 py-1 text-center text-[7px]">{dataMapel?.avgF || ''}</td>
+                                                <td className="border border-slate-400 px-1 py-1 text-center text-[7px]">{dataMapel?.avgS || ''}</td>
+                                                <td className="border border-slate-400 px-1 py-1 text-center text-[7px]">{dataMapel?.ptsVal || ''}</td>
+                                                <td className="border border-slate-400 px-1 py-1 text-center text-[7px]">{dataMapel?.psasVal || ''}</td>
+                                                <td className="border border-slate-400 px-1 py-1 text-center text-[7px] bg-slate-50 font-bold">{dataMapel?.nilai || ''}</td>
+                                             </React.Fragment>
+                                          );
+                                       }
                                     })}
+                                    <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.sakit || '0'}</td>
+                                    <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.izin || '0'}</td>
+                                    <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.alpa || '0'}</td>
                                     <td className="border border-slate-400 px-2 py-1 text-center font-bold text-slate-700">{jumlahNilaiSiswa[siswa.id] || ''}</td>
                                     <td className="border border-slate-400 px-2 py-1 text-center font-bold text-blue-700">{rataRataSiswa[siswa.id]?.toFixed(1) || ''}</td>
                                     <td className="border border-slate-400 px-2 py-1 text-center font-bold text-amber-700">{rankSiswa[siswa.id] || ''}</td>
-                                    <td className="border border-slate-400 px-2 py-1 text-[10px]">{pembinaanData[siswa.id] || '-'}</td>
+                                    {printMode !== 'dkn' && (
+                                       <td className="border border-slate-400 px-2 py-1 text-[10px]">{pembinaanData[siswa.id] || '-'}</td>
+                                    )}
                                  </tr>
                               ))}
                               
@@ -457,7 +528,7 @@ export default function GuruRaportKelas() {
                                  <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.min || ''}</td>
                                  <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.min ? avgStats.min.toFixed(1) : ''}</td>
                                  <td className="border border-slate-400 bg-slate-200"></td>
-                                 <td className="border border-slate-400 bg-slate-200"></td>
+                                 {printMode !== 'dkn' && <td className="border border-slate-400 bg-slate-200"></td>}
                               </tr>
                               <tr className="bg-slate-100 font-bold">
                                  <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Nilai Tertinggi</td>
@@ -465,7 +536,7 @@ export default function GuruRaportKelas() {
                                  <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.max || ''}</td>
                                  <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.max ? avgStats.max.toFixed(1) : ''}</td>
                                  <td className="border border-slate-400 bg-slate-200"></td>
-                                 <td className="border border-slate-400 bg-slate-200"></td>
+                                 {printMode !== 'dkn' && <td className="border border-slate-400 bg-slate-200"></td>}
                               </tr>
                               <tr className="bg-slate-100 font-bold">
                                  <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Rata-rata Nilai</td>
@@ -473,7 +544,7 @@ export default function GuruRaportKelas() {
                                  <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.avg ? Math.round(totalStats.avg) : ''}</td>
                                  <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.avg ? avgStats.avg.toFixed(1) : ''}</td>
                                  <td className="border border-slate-400 bg-slate-200"></td>
-                                 <td className="border border-slate-400 bg-slate-200"></td>
+                                 {printMode !== 'dkn' && <td className="border border-slate-400 bg-slate-200"></td>}
                               </tr>
                            </tbody>
                        </table>
@@ -710,11 +781,9 @@ export default function GuruRaportKelas() {
                </div>
                <div className="ml-auto flex gap-2 flex-wrap items-end justify-end">
                  <Dialog>
-                   <DialogTrigger asChild>
-                     <Button variant="outline" className="border-slate-300">
+                   <DialogTrigger render={<Button variant="outline" className="border-slate-300" />}>
                        <Settings className="w-4 h-4 mr-2" />
                        Pengaturan Raport
-                     </Button>
                    </DialogTrigger>
                    <DialogContent className="sm:max-w-[425px]">
                      <DialogHeader>
@@ -764,11 +833,9 @@ export default function GuruRaportKelas() {
                  </Dialog>
 
                  <DropdownMenu>
-                   <DropdownMenuTrigger asChild>
-                     <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                   <DropdownMenuTrigger render={<Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50" />}>
                         <Printer className="w-4 h-4 mr-2" />
                         Cetak Laporan <ChevronDown className="w-4 h-4 ml-2" />
-                     </Button>
                    </DropdownMenuTrigger>
                    <DropdownMenuContent align="end" className="w-64">
                       <DropdownMenuItem onClick={() => handlePrint('dkn')}><Printer className="w-4 h-4 mr-2" /> Cetak DKN (Daftar Kumpulan Nilai)</DropdownMenuItem>
@@ -812,7 +879,8 @@ export default function GuruRaportKelas() {
                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-20">NIS/NISN</th>
                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center min-w-[200px]">NAMA</th>
                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">L/P</th>
-                                <th colSpan={usedMapel.length} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center">MATA PELAJARAN</th>
+                                <th colSpan={usedMapel.length} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">MATA PELAJARAN</th>
+                                 <th colSpan={3} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">ABSENSI</th>
                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Jumlah</div></th>
                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Rerata</div></th>
                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Ranking</div></th>

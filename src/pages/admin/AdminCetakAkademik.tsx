@@ -817,7 +817,9 @@ export default function AdminCetakAkademik() {
                   <h3 className="font-black text-slate-800 uppercase tracking-tighter">Preview {isDknView ? 'DKN (Daftar Kumpulan Nilai)' : 'Leger Akademik'} - {selectedKelas}</h3>
                   <div className="flex gap-2">
                      <Dialog>
-                        <DialogTrigger asChild><Button variant="outline" size="sm" className="font-bold border-slate-200 h-10 px-4"><Settings className="w-4 h-4 mr-2" /> TTD</Button></DialogTrigger>
+                        <DialogTrigger render={<Button variant="outline" size="sm" className="font-bold border-slate-200 h-10 px-4" />}>
+                           <Settings className="w-4 h-4 mr-2" /> TTD
+                        </DialogTrigger>
                         <DialogContent>
                            <DialogHeader><DialogTitle>Konfigurasi Tanda Tangan</DialogTitle></DialogHeader>
                            <div className="p-4 space-y-4">
