@@ -503,8 +503,8 @@ export default function GuruRaportKelas() {
                                        if (printMode === 'dkn') {
                                           const nilaiMapel = isPtsMode ? dataMapel?.nilai_pts : dataMapel?.nilai;
                                           return (
-                                             <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">
-                                                {nilaiMapel ? nilaiMapel : ''}
+                                             <td key={m.id} className="border border-slate-400 px-1 py-1 text-center font-semibold">
+                                                {nilaiMapel !== undefined && nilaiMapel !== null ? nilaiMapel : ''}
                                              </td>
                                           );
                                        } else {
@@ -862,7 +862,7 @@ export default function GuruRaportKelas() {
                  </Button>
                  
                  <Button onClick={savePembinaan} className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Simpan Catatan Wali Kelas
+                    Simpan Catatan & Absensi
                  </Button>
                </div>
             </div>
@@ -922,8 +922,8 @@ export default function GuruRaportKelas() {
                                    {usedMapel.map(m => {
                                       const nilaiMapel = isPtsMode ? raportData[siswa.id]?.[m.id]?.nilai_pts : raportData[siswa.id]?.[m.id]?.nilai;
                                       return (
-                                         <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">
-                                            {nilaiMapel ? nilaiMapel : ''}
+                                         <td key={m.id} className="border border-slate-400 px-1 py-1 text-center font-semibold text-blue-800">
+                                            {nilaiMapel !== undefined && nilaiMapel !== null ? nilaiMapel : ''}
                                          </td>
                                       );
                                    })}
