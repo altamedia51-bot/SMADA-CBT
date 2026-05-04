@@ -232,6 +232,29 @@ export default function AdminDashboard() {
            </Card>
         )}
 
+        {/* Grafik Container */}
+        <Card className="p-5">
+           <h3 className="font-semibold text-slate-800 mb-6">Grafik Jumlah Siswa per Tingkat</h3>
+           <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={[
+                    { name: 'Kelas X', Jumlah: siswaPerTingkat[10] },
+                    { name: 'Kelas XI', Jumlah: siswaPerTingkat[11] },
+                    { name: 'Kelas XII', Jumlah: siswaPerTingkat[12] },
+                 ]}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dx={-10} />
+                    <Tooltip 
+                       cursor={{fill: '#f1f5f9'}}
+                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Bar dataKey="Jumlah" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                 </BarChart>
+              </ResponsiveContainer>
+           </div>
+        </Card>
+
         {/* Monitoring & Quick Menu */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
            {/* Real-time Monitoring Widget */}
@@ -370,29 +393,6 @@ export default function AdminDashboard() {
           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         </Card>
         </div>
-
-        {/* Grafik Container */}
-        <Card className="p-5">
-           <h3 className="font-semibold text-slate-800 mb-6">Grafik Jumlah Siswa per Tingkat</h3>
-           <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={[
-                    { name: 'Kelas X', Jumlah: siswaPerTingkat[10] },
-                    { name: 'Kelas XI', Jumlah: siswaPerTingkat[11] },
-                    { name: 'Kelas XII', Jumlah: siswaPerTingkat[12] },
-                 ]}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dx={-10} />
-                    <Tooltip 
-                       cursor={{fill: '#f1f5f9'}}
-                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    />
-                    <Bar dataKey="Jumlah" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60} />
-                 </BarChart>
-              </ResponsiveContainer>
-           </div>
-        </Card>
 
       </main>
     </div>
