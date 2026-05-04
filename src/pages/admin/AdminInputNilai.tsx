@@ -94,20 +94,23 @@ export default function AdminInputNilai() {
 
        const qSiswa = query(collection(db, 'users'));
        const snapSiswa = await getDocs(qSiswa);
-       const filteredSiswa = snapSiswa.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .filter((u: any) => u.role === 'siswa' && u.kelas === selectedKelas)
-          .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
-       
-       setSiswaConfig(filteredSiswa);
+       const allUsers = snapSiswa.docs.map(d => ({ id: d.id, ...d.data() }));
 
        const nilaiRef = doc(db, 'nilai_raport', getDocId());
        onSnapshot(nilaiRef, (snap) => {
+          let currentNilai: Record<string, NilaiSiswa> = {};
           if (snap.exists() && snap.data().nilai) {
-             setNilaiData(snap.data().nilai);
+             currentNilai = snap.data().nilai;
+             setNilaiData(currentNilai);
           } else {
              setNilaiData({});
           }
+
+          const filteredSiswa = allUsers
+             .filter((u: any) => u.role === 'siswa' && (u.kelas === selectedKelas || currentNilai[u.id]))
+             .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
+          
+          setSiswaConfig(filteredSiswa);
        });
      } catch (error) {
         console.error(error);

@@ -91,7 +91,8 @@ export default function Login() {
       emailToUse = selectedStudent.email;
     } else {
       if (!username || !password) return toast.error('Harap isi username dan password');
-      emailToUse = username.includes('@') ? username.trim() : `${username.toLowerCase().trim()}@edutest.local`;
+      const cleanUser = username.toLowerCase().trim();
+      emailToUse = cleanUser.includes('@') ? cleanUser : `${cleanUser}@edutest.local`;
     }
 
     setIsLoading(true);
@@ -114,11 +115,14 @@ export default function Login() {
 
       if (!success) {
         errorMessage = errorMessage || error.code || error.message;
-        console.error(error);
-        if (errorMessage === 'auth/user-not-found' || errorMessage === 'auth/wrong-password' || errorMessage === 'auth/invalid-credential') {
-          toast.error('Kredensial salah. Pastikan password atau NIP sudah benar.');
+        console.error("Login detail error:", errorMessage);
+        
+        if (errorMessage.includes('user-not-found') || errorMessage.includes('invalid-credential') || errorMessage.includes('wrong-password')) {
+          toast.error('Kredensial tidak valid. Silakan periksa kembali Username/NIP dan Password Anda.');
+        } else if (errorMessage.includes('too-many-requests')) {
+          toast.error('Terlalu banyak percobaan gagal. Silakan tunggu sebentar sebelum mencoba lagi.');
         } else {
-          toast.error('Gagal login: ' + errorMessage);
+          toast.error('Login gagal: ' + errorMessage);
         }
       }
     } finally {

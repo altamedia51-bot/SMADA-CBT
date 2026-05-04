@@ -100,11 +100,7 @@ export default function AdminCetakAkademik() {
       const relatedDocs = docsSnap.docs.filter(d => d.id.startsWith(prefix) && d.id.endsWith(suffix));
 
       const usersSnap = await getDocs(query(collection(db, 'users')));
-      const siswas = usersSnap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter((u: any) => u.role === 'siswa' && u.kelas === selectedKelas)
-        .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
-      setSiswaList(siswas);
+      const allUsers = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       for (const d of relatedDocs) {
         const withoutPrefix = d.id.replace(prefix, '');
@@ -147,7 +143,13 @@ export default function AdminCetakAkademik() {
           };
         }
       }
+
       setRaportData(allNilai);
+
+      const siswas = allUsers
+        .filter((u: any) => u.role === 'siswa' && (u.kelas === selectedKelas || allNilai[u.id]))
+        .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
+      setSiswaList(siswas);
 
       const pembinaanRef = doc(db, 'pembinaan_wali', `${selectedKelas}_${tahunAjaran.replace(/\//g, '-')}_${semester}`);
       const pembinaanSnap = await getDoc(pembinaanRef);

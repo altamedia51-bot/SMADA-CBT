@@ -50,6 +50,15 @@ export default function GuruLayout() {
         </div>
 
         <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
+           <div className="px-4 mb-4">
+              <div className="bg-[#1a2942] rounded-xl p-3 border border-blue-500/20">
+                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Tahun Pelajaran</p>
+                 <p className="text-sm font-bold text-blue-400 flex items-center gap-2">
+                    <CalendarClock className="w-4 h-4" />
+                    {activeTahunAjaran || '---'}
+                 </p>
+              </div>
+           </div>
            {navItems.map((item) => {
              const isActive = location.pathname === item.path || (item.path !== '/guru' && location.pathname.startsWith(item.path));
              const Icon = item.icon;

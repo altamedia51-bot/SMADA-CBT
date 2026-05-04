@@ -42,12 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (userDoc.exists()) {
             setProfile(userDoc.data() as any);
           } else {
-            // Create default profile as siswa for demo
+            // Check if it should be guru or admin based on email pattern
+            const email = user.email?.toLowerCase() || '';
+            const isGuru = email.startsWith('guru_');
+            const isAdmin = email === 'admin@edutest.local' || email === 'altamedia51@gmail.com';
+            
             const newProfile = {
               uid: user.uid,
               email: user.email || '',
-              displayName: user.displayName || 'Unknown',
-              role: 'siswa' as UserRole,
+              displayName: user.displayName || (isAdmin ? 'Administrator' : (isGuru ? 'Guru Baru' : 'Siswa Baru')),
+              role: (isAdmin ? 'admin' : (isGuru ? 'guru' : 'siswa')) as UserRole,
               isActive: true,
               createdAt: serverTimestamp(),
             };

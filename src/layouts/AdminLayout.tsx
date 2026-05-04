@@ -14,8 +14,16 @@ export default function AdminLayout() {
   const { settings, loading } = useAppSettings();
 
   useEffect(() => {
-     if (!loading && settings.activeTahunAjaran && !activeTahunAjaran) {
-        setActiveTahunAjaran(settings.activeTahunAjaran);
+     if (!loading && settings.activeTahunAjaran) {
+        if (!activeTahunAjaran || activeTahunAjaran !== settings.activeTahunAjaran) {
+           // We only auto-sync if activeTahunAjaran was not set OR if settings changed 
+           // and we want to stay updated with the global default.
+           // However, to allow manual override, we might want to be careful.
+           // For now, let's just make it sync if it's currently null.
+           if (!activeTahunAjaran) {
+              setActiveTahunAjaran(settings.activeTahunAjaran);
+           }
+        }
      }
   }, [loading, settings.activeTahunAjaran, activeTahunAjaran, setActiveTahunAjaran]);
 
@@ -87,8 +95,17 @@ export default function AdminLayout() {
           <span className="font-extrabold text-xl tracking-tight ml-3 text-white truncate">{settings.appName || 'CBT System'}</span>
         </div>
 
-        <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
-           {navItems.map((item) => {
+          <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
+             <div className="px-4 mb-4">
+                <div className="bg-[#1a2942] rounded-xl p-3 border border-blue-500/20">
+                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Tahun Pelajaran</p>
+                   <p className="text-sm font-bold text-blue-400 flex items-center gap-2">
+                      <CalendarClock className="w-4 h-4" />
+                      {activeTahunAjaran || '---'}
+                   </p>
+                </div>
+             </div>
+             {navItems.map((item) => {
              const isActive = location.pathname === item.path || (item.subItems && item.subItems.some(sub => location.pathname.startsWith(sub.path.split('?')[0])));
              const Icon = item.icon;
              
