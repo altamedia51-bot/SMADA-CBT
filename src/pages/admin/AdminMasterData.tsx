@@ -172,16 +172,13 @@ export default function AdminMasterData() {
   };
 
   const downloadTemplateMapel = () => {
-    const csvContent = "NAMA_MAPEL,JENJANG\nMatematika Peminatan,SMA\nIlmu Pengetahuan Alam,SMP";
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'template_mapel.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const ws = XLSX.utils.json_to_sheet([
+      { NAMA_MAPEL: 'Matematika Peminatan', JENJANG: 'SMA' },
+      { NAMA_MAPEL: 'Ilmu Pengetahuan Alam', JENJANG: 'SMP' }
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template_Mapel");
+    XLSX.writeFile(wb, "template_mapel.xlsx");
   };
 
   const mapelFileInputRef = useRef<HTMLInputElement>(null);
@@ -191,17 +188,20 @@ export default function AdminMasterData() {
     if (!file) return;
 
     setIsImporting(true);
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        const rows = results.data as any[];
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = event.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) as any[];
+
         let successCount = 0;
         let failCount = 0;
 
         for (const row of rows) {
-          const mapelName = (row.NAMA_MAPEL || row.nama_mapel || row.Nama_Mapel || '').trim();
-          const jenjang = (row.JENJANG || row.jenjang || row.Jenjang || 'SMA').trim();
+          const mapelName = (row.NAMA_MAPEL || row.nama_mapel || row.Nama_Mapel || '').toString().trim();
+          const jenjang = (row.JENJANG || row.jenjang || row.Jenjang || 'SMA').toString().trim();
 
           if (mapelName) {
             try {
@@ -228,12 +228,16 @@ export default function AdminMasterData() {
         
         // Reset file input
         e.target.value = '';
-      },
-      error: (error) => {
+      } catch (err: any) {
         setIsImporting(false);
-        toast.error("Gagal membaca file CSV: " + error.message);
+        toast.error("Gagal membaca Excel: " + err.message);
       }
-    });
+    };
+    reader.onerror = () => {
+       setIsImporting(false);
+       toast.error("Gagal membaca file.");
+    };
+    reader.readAsBinaryString(file);
   };
 
 
@@ -340,16 +344,17 @@ export default function AdminMasterData() {
   };
 
   const handleDownloadTemplateKelas = () => {
-    const csvContent = "NAMA_KELAS,JENJANG,TINGKAT\nXII IPA 1,SMA,12\nXII IPS 1,SMA,12";
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'template_kelas.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const ws = XLSX.utils.json_to_sheet([
+      { NAMA_KELAS: 'X IPA 1', JENJANG: 'SMA', TINGKAT: 10 },
+      { NAMA_KELAS: 'XI IPS 2', JENJANG: 'SMA', TINGKAT: 11 }
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template_Kelas");
+    XLSX.writeFile(wb, "template_kelas.xlsx");
+  };
+
+  const downloadTemplateKelas = () => {
+    // legacy fn kept just in case but we override the old one
   };
 
   const fileInputRefKelas = useRef<HTMLInputElement>(null);
@@ -359,11 +364,14 @@ export default function AdminMasterData() {
     if (!file) return;
 
     setIsImporting(true);
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        const rows = results.data as any[];
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = event.target?.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) as any[];
+
         let successCount = 0;
         let failCount = 0;
 
@@ -379,9 +387,9 @@ export default function AdminMasterData() {
             return '';
           };
 
-          const namaKelas = findVal(['nama', 'kelas', 'nama_kelas', 'nama kelas']);
-          const jenjang = findVal(['jenjang']) || 'SMA';
-          const tingkat = parseInt(findVal(['tingkat'])) || 10;
+          const namaKelas = findVal(['nama', 'kelas', 'nama_kelas', 'nama kelas']).toString().trim();
+          const jenjang = findVal(['jenjang']).toString().trim() || 'SMA';
+          const tingkat = parseInt(findVal(['tingkat']).toString()) || 10;
 
           if (namaKelas) {
              try {
@@ -410,12 +418,16 @@ export default function AdminMasterData() {
         
         // Reset file input
         e.target.value = '';
-      },
-      error: (error) => {
+      } catch (err: any) {
         setIsImporting(false);
-        toast.error("Gagal membaca file CSV: " + error.message);
+        toast.error("Gagal membaca Excel: " + err.message);
       }
-    });
+    };
+    reader.onerror = () => {
+       setIsImporting(false);
+       toast.error("Gagal membaca file.");
+    };
+    reader.readAsBinaryString(file);
   };
 
   const tanganiTambahKelas = async (e: React.FormEvent) => {
@@ -735,11 +747,14 @@ export default function AdminMasterData() {
     if (!file) return;
 
     setIsImporting(true);
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        const rows = results.data as any[];
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const fileData = event.target?.result;
+        const workbook = XLSX.read(fileData, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) as any[];
+
         let successCount = 0;
         let failCount = 0;
         let lastError = "";
@@ -757,10 +772,10 @@ export default function AdminMasterData() {
             return null;
           };
 
-          const name = findVal(['Nama', 'nama', 'name', 'DisplayName']);
-          const classRoom = findVal(['Kelas', 'kelas', 'class', 'ClassRoom']);
-          const password = findVal(['Password', 'password', 'pass', 'PIN']) || 'siswa123';
-          const jurusanCSV = findVal(['Jurusan', 'jurusan']) || 'Semua';
+          const name = findVal(['Nama', 'nama', 'name', 'DisplayName'])?.toString().trim();
+          const classRoom = findVal(['Kelas', 'kelas', 'class', 'ClassRoom'])?.toString().trim();
+          const password = findVal(['Password', 'password', 'pass', 'PIN'])?.toString().trim() || 'siswa123';
+          const jurusanCSV = findVal(['Jurusan', 'jurusan'])?.toString().trim() || 'Semua';
           
           let sesiIdCSV = '';
           const sesiInput = findVal(['Sesi', 'sesi', 'Session']);
@@ -852,21 +867,26 @@ export default function AdminMasterData() {
         } else {
           toast.success(`Import Siswa selesai: ${successCount} berhasil.`);
         }
+      } catch (err: any) {
+         setIsImporting(false);
+         toast.error("Gagal membaca Excel: " + err.message);
       }
-    });
+    };
+    reader.onerror = () => {
+       setIsImporting(false);
+       toast.error("Gagal membaca file.");
+    };
+    reader.readAsBinaryString(file);
   };
 
   const downloadTemplate = () => {
-    const csvContent = "Nama,Kelas,Jurusan,NIS,Sesi,Password\nALFY NUR ASHIFAK,XE1,IPA,123456,Sesi 1,siswa123\nALIFIA NASWA HAFIDHOH,XE2,IPS,123457,Sesi 2,siswa123";
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "template_pengguna.csv");
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const ws = XLSX.utils.json_to_sheet([
+      { Nama: 'ALFY NUR ASHIFAK', Kelas: 'XE1', Jurusan: 'IPA', NIS: '123456', Sesi: 'Sesi 1', Password: 'siswa123' },
+      { Nama: 'ALIFIA NASWA HAFIDHOH', Kelas: 'XE2', Jurusan: 'IPS', NIS: '123457', Sesi: 'Sesi 2', Password: 'siswa123' }
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template_Siswa");
+    XLSX.writeFile(wb, "template_pengguna.xlsx");
   };
 
   const getTitle = () => {
@@ -980,7 +1000,7 @@ export default function AdminMasterData() {
               <div className="flex gap-2">
                 <Input 
                   type="file" 
-                  accept=".csv" 
+                  accept=".csv, .xlsx, .xls" 
                   className="hidden" 
                   ref={fileInputRef}
                   onChange={handleSiswaFileUpload}
@@ -990,7 +1010,7 @@ export default function AdminMasterData() {
                   <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" /> Template
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-8 border-blue-200 text-blue-600 bg-blue-50">
-                  <CloudUpload className="w-3.5 h-3.5 mr-1.5" /> Upload CSV
+                  <CloudUpload className="w-3.5 h-3.5 mr-1.5" /> Upload Excel
                 </Button>
                 <Button variant="outline" size="sm" onClick={generateSiswaContoh} className="h-8 border-emerald-200 text-emerald-600 bg-emerald-50">
                   <Plus className="w-3.5 h-3.5 mr-1.5" /> Generate Siswa Contoh
@@ -1381,7 +1401,7 @@ export default function AdminMasterData() {
               <div className="flex items-center gap-2">
                 <input 
                   type="file" 
-                  accept=".csv" 
+                  accept=".csv, .xlsx, .xls" 
                   className="hidden" 
                   ref={mapelFileInputRef}
                   onChange={handleMapelFileUpload}
@@ -1391,7 +1411,7 @@ export default function AdminMasterData() {
                   <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" /> Template
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => mapelFileInputRef.current?.click()} className="h-8 border-blue-200 text-blue-600 bg-blue-50">
-                  <CloudUpload className="w-3.5 h-3.5 mr-1.5" /> Upload CSV
+                  <CloudUpload className="w-3.5 h-3.5 mr-1.5" /> Upload Excel
                 </Button>
               </div>
             </div>
@@ -1472,7 +1492,7 @@ export default function AdminMasterData() {
             <div className="flex flex-wrap items-center gap-3">
               <input
                  type="file"
-                 accept=".csv"
+                 accept=".csv, .xlsx, .xls"
                  className="hidden"
                  ref={fileInputRefKelas}
                  onChange={handleKelasFileUpload}
