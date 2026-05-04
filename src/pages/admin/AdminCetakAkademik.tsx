@@ -779,31 +779,32 @@ export default function AdminCetakAkademik() {
 
             {selectedKelas && (
          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-               {[
-                  { id: 'dkn', label: 'Cetak DKN (PDF)', icon: LayoutGrid, color: 'text-blue-600 bg-blue-50 border-blue-100' },
-                  { id: 'ledger', label: 'Cetak Ledger (Besar)', icon: FileStack, color: 'text-indigo-600 bg-indigo-50 border-indigo-100' },
-                  { id: 'raport', label: 'Cetak Raport Akhir', icon: Printer, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
-                  { id: 'raport_pts', label: 'Cetak Raport PTS', icon: FileStack, color: 'text-fuchsia-600 bg-fuchsia-50 border-fuchsia-100' },
-                  { id: 'halaman_1_2', label: 'Cetak Halaman 1-2', icon: FileText, color: 'text-amber-600 bg-amber-50 border-amber-100' },
-                  { id: 'halaman_12_13', label: 'Cetak Halaman 12-13', icon: FileText, color: 'text-rose-600 bg-rose-50 border-rose-100' },
-                  { id: 'cover', label: 'Cetak Cover Raport', icon: BookOpen, color: 'text-slate-600 bg-slate-50 border-slate-100' },
-               ].map(opt => (
-                  <Button 
-                     key={opt.id} 
-                     variant="outline" 
-                     onClick={() => handlePrint(opt.id as any)}
-                     className={`h-24 flex flex-col gap-2 rounded-2xl border-2 transition-all hover:scale-[1.02] shadow-sm ${opt.color}`}
-                  >
-                     <opt.icon className="w-6 h-6" />
-                     <span className="font-bold text-xs uppercase tracking-tighter text-center leading-tight">{opt.label}</span>
-                  </Button>
-               ))}
-            </div>
+            {isRaportView && (
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {[
+                     { id: 'raport', label: 'Cetak Raport Akhir', icon: Printer, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
+                     { id: 'raport_pts', label: 'Cetak Raport PTS', icon: FileStack, color: 'text-fuchsia-600 bg-fuchsia-50 border-fuchsia-100' },
+                     { id: 'halaman_1_2', label: 'Cetak Halaman 1-2', icon: FileText, color: 'text-amber-600 bg-amber-50 border-amber-100' },
+                     { id: 'halaman_12_13', label: 'Cetak Halaman 12-13', icon: FileText, color: 'text-rose-600 bg-rose-50 border-rose-100' },
+                     { id: 'cover', label: 'Cetak Cover Raport', icon: BookOpen, color: 'text-slate-600 bg-slate-50 border-slate-100' },
+                  ].map(opt => (
+                     <Button 
+                        key={opt.id} 
+                        variant="outline" 
+                        onClick={() => handlePrint(opt.id as any)}
+                        className={`h-24 flex flex-col gap-2 rounded-2xl border-2 transition-all hover:scale-[1.02] shadow-sm ${opt.color}`}
+                     >
+                        <opt.icon className="w-6 h-6" />
+                        <span className="font-bold text-xs uppercase tracking-tighter text-center leading-tight">{opt.label}</span>
+                     </Button>
+                  ))}
+               </div>
+            )}
 
+            {(isDknView || isLegerView) && (
             <Card className="border-0 shadow-xl shadow-slate-200/40 rounded-3xl overflow-hidden bg-white">
                <div className="bg-slate-50 p-6 border-b flex justify-between items-center">
-                  <h3 className="font-black text-slate-800 uppercase tracking-tighter">Preview DKN (Daftar Kumpulan Nilai) - {selectedKelas}</h3>
+                  <h3 className="font-black text-slate-800 uppercase tracking-tighter">Preview {isDknView ? 'DKN (Daftar Kumpulan Nilai)' : 'Leger Akademik'} - {selectedKelas}</h3>
                   <div className="flex gap-2">
                      <Dialog>
                         <DialogTrigger asChild><Button variant="outline" size="sm" className="font-bold border-slate-200 h-10 px-4"><Settings className="w-4 h-4 mr-2" /> TTD</Button></DialogTrigger>
@@ -825,8 +826,8 @@ export default function AdminCetakAkademik() {
                            </div>
                         </DialogContent>
                      </Dialog>
-                     <Button onClick={() => handlePrint('dkn')} className="bg-blue-600 hover:bg-blue-700 font-bold h-10 px-6 rounded-full shadow-md shadow-blue-600/20">
-                        <Printer className="w-4 h-4 mr-2" /> CETAK DKN
+                     <Button onClick={() => handlePrint(isDknView ? 'dkn' : 'ledger')} className="bg-blue-600 hover:bg-blue-700 font-bold h-10 px-6 rounded-full shadow-md shadow-blue-600/20">
+                        <Printer className="w-4 h-4 mr-2" /> CETAK {isDknView ? 'DKN' : 'LEGER'}
                      </Button>
                   </div>
                </div>
@@ -894,6 +895,7 @@ export default function AdminCetakAkademik() {
                   </div>
                </CardContent>
             </Card>
+            )}
          </div>
       )}
 
