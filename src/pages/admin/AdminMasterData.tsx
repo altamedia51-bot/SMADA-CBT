@@ -69,6 +69,7 @@ export default function AdminMasterData() {
     };
     reader.readAsDataURL(file);
   };
+  const [showGuruModal, setShowGuruModal] = useState(false);
   const [editingGuru, setEditingGuru] = useState<any>(null);
   const [guruForm, setGuruForm] = useState({
     nama: '',
@@ -104,6 +105,7 @@ export default function AdminMasterData() {
   
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const guruFileInputRef = useRef<HTMLInputElement>(null);
 
   const [showPromoteDialog, setShowPromoteDialog] = useState(false);
   const [promoTargetName, setPromoTargetName] = useState('');
@@ -730,9 +732,16 @@ export default function AdminMasterData() {
 
       setEditingGuru(null);
       setGuruForm({ nama: '', nip: '', password: '', nomorWa: '', waliKelas: '', mengampu: [{ mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }] });
+      setShowGuruModal(false);
     } catch (err: any) {
       toast.error('Eror: ' + err.message);
     }
+  };
+
+  const resetGuruForm = () => {
+    setEditingGuru(null);
+    setGuruForm({ nama: '', nip: '', password: '', nomorWa: '', waliKelas: '', mengampu: [{ mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }] });
+    setShowGuruModal(false);
   };
 
   const hapusData = async (collectionName: string, id: string) => {
@@ -891,11 +900,132 @@ export default function AdminMasterData() {
     reader.readAsBinaryString(file);
   };
 
+  const handleGuruFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const fileData = event.target?.result;
+        const workbook = XLSX.read(fileData, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]) as any[];
+
+        let successCount = 0;
+        let failCount = 0;
+        let lastError = "";
+
+        for (const row of rows) {
+          const findVal = (keys: string[]) => {
+            const rowKeys = Object.keys(row);
+            for (const k of rowKeys) {
+              const cleanK = k.toLowerCase().trim();
+              if (keys.some(searchKey => cleanK === searchKey.toLowerCase())) {
+                return row[k];
+              }
+            }
+            return null;
+          };
+
+          const name = findVal(['Nama', 'nama', 'name', 'DisplayName'])?.toString().trim();
+          const nip = findVal(['NIP', 'nip', 'ID Pegawai', 'ID'])?.toString().trim();
+          const nomorWa = findVal(['Nomor WA', 'whatsapp', 'No WA', 'Nomor HP'])?.toString().trim() || '';
+          const password = findVal(['Password', 'password', 'pass', 'PIN'])?.toString().trim() || 'guru123';
+          
+          if (!name || !nip) {
+            console.warn("Skipping row due to missing data:", { name, nip });
+            lastError = `Ada baris dengan data tidak lengkap. Cek kolom Nama dan NIP.`;
+            failCount++;
+            continue;
+          }
+
+          const email = `guru_${nip.toString().toLowerCase().trim()}@edutest.local`;
+
+          try {
+            const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password, returnSecureToken: false })
+            });
+
+            const data = await res.json();
+            
+            if (res.ok || data.error?.message === 'EMAIL_EXISTS' || data.error?.message === 'TOO_MANY_ATTEMPTS_TRY_LATER') {
+              const { setDoc } = await import('firebase/firestore');
+              
+              if (res.ok) {
+                const newUid = data.localId;
+                await setDoc(doc(db, 'users', newUid), {
+                  uid: newUid,
+                  email,
+                  displayName: name,
+                  role: 'guru',
+                  nip: nip.toString(),
+                  nomorWa: nomorWa,
+                  isActive: true,
+                  createdAt: serverTimestamp()
+                }, { merge: true });
+                successCount++;
+              } else {
+                const fallbackDocId = `recovered_guru_${nip}`;
+                await setDoc(doc(db, 'users', fallbackDocId), {
+                  uid: null,
+                  email,
+                  displayName: name,
+                  role: 'guru',
+                  nip: nip.toString(),
+                  nomorWa: nomorWa,
+                  isActive: true,
+                  createdAt: serverTimestamp()
+                }, { merge: true });
+                successCount++;
+                if (data.error?.message === 'TOO_MANY_ATTEMPTS_TRY_LATER') {
+                   lastError = 'Limit Firebase (100 akun/jam) tercapai. Data Database tersimpan & Guru yang sudah terdaftar tadi akan tetap bisa login dengan akun yang sama.';
+                }
+              }
+            } else {
+              lastError = data.error?.message || 'Auth API failed';
+              failCount++;
+            }
+          } catch (err: any) {
+            lastError = err.message || 'Firestore API failed';
+            failCount++;
+          }
+        }
+
+        setIsImporting(false);
+        if (guruFileInputRef.current) guruFileInputRef.current.value = '';
+        if (failCount > 0) {
+          toast.error(`Import Guru selesai: ${successCount} berhasil, ${failCount} gagal. Pesan error: ${lastError}`, { duration: 10000 });
+        } else {
+          toast.success(`Import Guru selesai: ${successCount} berhasil.`);
+        }
+      } catch (err: any) {
+         setIsImporting(false);
+         toast.error("Gagal membaca Excel: " + err.message);
+      }
+    };
+    reader.onerror = () => {
+       setIsImporting(false);
+       toast.error("Gagal membaca file.");
+    };
+    reader.readAsBinaryString(file);
+  };
+
   const downloadTemplate = () => {
     downloadExcel([
       { Nama: 'ALFY NUR ASHIFAK', Kelas: 'XE1', Jurusan: 'IPA', NIS: '123456', Sesi: 'Sesi 1', Password: 'siswa123' },
       { Nama: 'ALIFIA NASWA HAFIDHOH', Kelas: 'XE2', Jurusan: 'IPS', NIS: '123457', Sesi: 'Sesi 2', Password: 'siswa123' }
     ], "template_pengguna.xlsx", "Template_Siswa");
+  };
+
+  const downloadTemplateGuru = () => {
+    downloadExcel([
+      { Nama: 'Budigantara', NIP: '198702319238', 'Nomor WA': '081234567890', Password: 'guru123' },
+      { Nama: 'Susi Susanti', NIP: '198203112345', 'Nomor WA': '087712345678', Password: 'guru123' }
+    ], "template_guru.xlsx", "Template_Guru");
   };
 
   const getTitle = () => {
@@ -1268,54 +1398,79 @@ export default function AdminMasterData() {
 
         {/* --- TABS: DATA GURU --- */}
         {currentTab === 'guru' && (
-        <div className="space-y-6">
-          <Card className="p-6 border border-blue-100 shadow-sm">
-             <div className="flex items-center gap-2 text-blue-700 font-bold mb-6">
-                <UserPlus className="w-5 h-5" />
-                <span>{editingGuru ? 'Edit Guru' : 'Tambah Guru Baru'}</span>
-              </div>
-              <form onSubmit={saveGuru} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input 
-                  placeholder="NAMA LENGKAP GURU" 
-                  className="uppercase font-medium"
-                  value={guruForm.nama}
-                  onChange={e => setGuruForm({...guruForm, nama: e.target.value})}
-                />
-                <Input 
-                  placeholder="NIP / ID PEGAWAI" 
-                  value={guruForm.nip}
-                  onChange={e => setGuruForm({...guruForm, nip: e.target.value})}
-                />
-                <Input 
-                  placeholder="NOMOR WHATSAPP (CONTOH: 081234567890)" 
-                  value={guruForm.nomorWa}
-                  onChange={e => setGuruForm({...guruForm, nomorWa: e.target.value})}
-                />
-                {!editingGuru ? (
-                  <Input 
-                     type="password"
-                     placeholder="PASSWORD LOGIN (OPSIONAL, DEFAULT: guru123)" 
-                     value={guruForm.password}
-                     onChange={e => setGuruForm({...guruForm, password: e.target.value})}
-                  />
-                ) : (
-                   <div className="space-y-1">
-                    <Input 
-                      type="password"
-                      placeholder="PASSWORD TIDAK DAPAT DIUBAH VIA APLIKASI" 
-                      className="bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
-                      disabled
-                    />
-                    <p className="text-[11px] text-amber-600 font-medium px-1 flex gap-1 items-start">
-                      <span className="text-amber-500 font-bold">*</span> 
-                      Reset password harus dengan hapus data & buat ulang.
-                    </p>
+        <div className="space-y-4">
+          <Dialog open={showGuruModal} onOpenChange={(open) => {
+             setShowGuruModal(open);
+             if (!open) resetGuruForm();
+          }}>
+            <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-4 md:p-6 rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-xl md:text-2xl font-black text-slate-800">{editingGuru ? 'Edit Guru' : 'Tambah Guru Baru'}</DialogTitle>
+                <DialogDescription className="text-sm md:text-base text-slate-500">
+                  {editingGuru ? 'Ubah detail data guru di bawah ini.' : 'Masukkan detail informasi guru baru.'}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={saveGuru} className="space-y-6 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                     <label className="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
+                     <Input 
+                       placeholder="Masukkan Nama Lengkap" 
+                       className="uppercase font-medium h-11 bg-slate-50 focus:bg-white transition-colors"
+                       value={guruForm.nama}
+                       onChange={e => setGuruForm({...guruForm, nama: e.target.value})}
+                     />
                   </div>
-                )}
-                <div className="md:col-span-2 space-y-2">
+                  <div>
+                     <label className="block text-xs font-bold text-slate-500 mb-1">NIP / ID PEGAWAI</label>
+                     <Input 
+                       placeholder="Masukkan NIP" 
+                       className="h-11 bg-slate-50 focus:bg-white transition-colors"
+                       value={guruForm.nip}
+                       onChange={e => setGuruForm({...guruForm, nip: e.target.value})}
+                     />
+                  </div>
+                  <div>
+                     <label className="block text-xs font-bold text-slate-500 mb-1">NOMOR WHATSAPP</label>
+                     <Input 
+                       placeholder="CONTOH: 081234567890" 
+                       className="h-11 bg-slate-50 focus:bg-white transition-colors"
+                       value={guruForm.nomorWa}
+                       onChange={e => setGuruForm({...guruForm, nomorWa: e.target.value})}
+                     />
+                  </div>
+                  {!editingGuru ? (
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">PASSWORD (OPSIONAL)</label>
+                      <Input 
+                         type="password"
+                         placeholder="DEFAULT: guru123" 
+                         className="h-11 bg-slate-50 focus:bg-white transition-colors"
+                         value={guruForm.password}
+                         onChange={e => setGuruForm({...guruForm, password: e.target.value})}
+                      />
+                    </div>
+                  ) : (
+                     <div className="space-y-1 bg-amber-50 p-3 rounded-xl border border-amber-100">
+                      <label className="block text-xs font-bold text-amber-800 mb-1">PASSWORD AKUN</label>
+                      <Input 
+                        type="password"
+                        placeholder="TIDAK DAPAT DIUBAH VIA APLIKASI" 
+                        className="h-11 bg-white text-slate-400 border-amber-200/50 cursor-not-allowed"
+                        disabled
+                      />
+                      <p className="text-[11px] text-amber-700 font-medium pt-1 flex gap-1.5 items-start">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> 
+                        <span>Reset password harus dengan hapus data & buat ulang dengan NIP berbeda.</span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
                    <label className="text-sm font-bold text-slate-700">Wali Kelas</label>
                    <select
-                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                     className="flex h-11 w-full rounded-md border border-input bg-slate-50 focus:bg-white px-3 py-2 text-sm transition-colors"
                      value={guruForm.waliKelas}
                      onChange={e => setGuruForm({...guruForm, waliKelas: e.target.value})}
                    >
@@ -1325,15 +1480,16 @@ export default function AdminMasterData() {
                      ))}
                    </select>
                 </div>
-                <div className="md:col-span-2 space-y-2">
+
+                <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700">Mengampu Mapel & Kelas (Maks 3)</label>
                     <div className="flex flex-col gap-3">
                        {[0, 1, 2].map(index => (
-                          <div key={`mengampu-${index}`} className="border rounded p-3 bg-slate-50 space-y-3">
+                          <div key={`mengampu-${index}`} className="border rounded-xl p-4 bg-slate-50 space-y-3">
                              <div>
                                 <label className="text-xs font-bold text-slate-700">Mapel {index + 1}</label>
                                 <select 
-                                   className="mt-1 flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                   className="mt-1 flex h-10 w-full rounded-md border border-input bg-white px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                    value={guruForm.mengampu[index].mapelId || ''}
                                    onChange={(e) => {
                                       const newMengampu = [...guruForm.mengampu];
@@ -1353,7 +1509,7 @@ export default function AdminMasterData() {
                                    <label className="text-xs font-bold text-slate-700">Kelas Diampu</label>
                                    <div className="flex flex-wrap gap-2 mt-1.5">
                                       {kelas.sort((a,b)=>a.name.localeCompare(b.name)).map(k => (
-                                         <label key={k.id} className="flex items-center gap-1.5 bg-white border border-slate-200 px-2 py-1 rounded cursor-pointer hover:bg-blue-50 transition-colors">
+                                         <label key={k.id} className="flex items-center gap-1.5 bg-white border border-slate-200 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors shadow-sm">
                                             <input 
                                                type="checkbox" 
                                                checked={guruForm.mengampu[index].kelas.includes(k.name)}
@@ -1366,9 +1522,9 @@ export default function AdminMasterData() {
                                                   }
                                                   setGuruForm(prev => ({ ...prev, mengampu: newMengampu }));
                                                }}
-                                               className="accent-blue-600 rounded w-3.5 h-3.5"
+                                               className="accent-blue-600 rounded w-4 h-4"
                                             />
-                                            <span className="text-[11px] font-medium">{k.name}</span>
+                                            <span className="text-xs font-bold text-slate-700">{k.name}</span>
                                          </label>
                                       ))}
                                    </div>
@@ -1378,18 +1534,47 @@ export default function AdminMasterData() {
                        ))}
                     </div>
                  </div>
-                 <div className="flex gap-2 w-full md:col-span-2">
-                  <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold h-10">
-                    Simpan Data Guru
-                  </Button>
-                  {editingGuru && (
-                    <Button type="button" variant="outline" onClick={() => { setEditingGuru(null); setGuruForm({nama:'', nip:'', password:'', nomorWa: '', waliKelas: '', mengampu: [{mapelId:'',kelas:[]},{mapelId:'',kelas:[]},{mapelId:'',kelas:[]}]}); }} className="h-10">
-                      Batal
+
+                 <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-slate-100">
+                    <Button type="button" variant="outline" onClick={resetGuruForm} className="w-full sm:w-auto h-11 px-6 border-slate-200 text-slate-600 hover:bg-slate-100">
+                      Batalkan
                     </Button>
-                  )}
+                    <Button type="submit" className="w-full sm:w-auto h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20">
+                      Simpan Data Guru
+                    </Button>
                 </div>
               </form>
-          </Card>
+            </DialogContent>
+          </Dialog>
+
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center rounded gap-4 pt-4 border-t">
+              <div className="flex items-center gap-4 w-full md:w-auto">
+                 <h3 className="text-xl font-extrabold text-slate-800 tracking-tight whitespace-nowrap">
+                   Data Guru
+                 </h3>
+              </div>
+
+              <div className="flex gap-2 w-full md:w-auto justify-end overflow-x-auto pb-2 md:pb-0">
+                <Input 
+                  type="file" 
+                  accept=".csv, .xlsx, .xls" 
+                  className="hidden" 
+                  ref={guruFileInputRef}
+                  onChange={handleGuruFileUpload}
+                  disabled={isImporting}
+                />
+                <Button variant="outline" size="sm" onClick={downloadTemplateGuru} className="h-9 border-slate-200 text-slate-600 bg-slate-50 shrink-0">
+                  <FileSpreadsheet className="w-4 h-4 mr-1.5" /> Template
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => guruFileInputRef.current?.click()} className="h-9 border-blue-200 text-blue-600 bg-blue-50 shrink-0">
+                  <CloudUpload className="w-4 h-4 mr-1.5" /> Upload Excel
+                </Button>
+                <Button size="sm" onClick={() => { resetGuruForm(); setShowGuruModal(true); }} className="h-9 bg-blue-600 hover:bg-blue-700 text-white shadow-sm shrink-0">
+                  <UserPlus className="w-4 h-4 mr-1.5" /> Tambah Guru
+                </Button>
+              </div>
+            </div>
 
           <Card className="overflow-hidden border border-slate-200">
             <Table>
@@ -1432,6 +1617,7 @@ export default function AdminMasterData() {
                             while(parsedMengampu.length < 3) parsedMengampu.push({ mapelId:'', kelas:[] });
                             setEditingGuru(g); 
                             setGuruForm({nama:g.displayName, nip:g.nip||'', password:'', nomorWa: g.nomorWa || '', waliKelas: g.waliKelas || '', mengampu: parsedMengampu }); 
+                            setShowGuruModal(true);
                          }} className="text-blue-500">
                            <Pencil className="w-4 h-4" />
                          </Button>
@@ -1445,6 +1631,7 @@ export default function AdminMasterData() {
               </TableBody>
             </Table>
           </Card>
+        </div>
         </div>
         )}
 
