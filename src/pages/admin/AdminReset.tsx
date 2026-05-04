@@ -7,7 +7,7 @@ import { Trash2, AlertTriangle, ShieldAlert } from 'lucide-react';
 export default function AdminReset() {
   const [isDeleting, setIsDeleting] = useState<{ [key: string]: boolean }>({});
 
-  const handleDeleteAll = async (collectionName: string, label: string) => {
+  const handleDeleteAll = async (collectionName: string, label: string, targetRole?: string) => {
     const confirmation = window.prompt(
       `PERINGATAN BAHAYA!\n\nAnda akan MENGHAPUS SEMUA DATA ${label}.\nAksi ini tidak dapat dibatalkan.\n\nKetik "HAPUS ${label}" untuk melanjutkan:`
     );
@@ -19,12 +19,12 @@ export default function AdminReset() {
       return;
     }
 
-    setIsDeleting(prev => ({ ...prev, [collectionName]: true }));
+    setIsDeleting(prev => ({ ...prev, [label]: true }));
     try {
       const snap = await getDocs(collection(db, collectionName));
       if (snap.empty) {
         toast.info(`Tidak ada data ${label} untuk dihapus.`);
-        setIsDeleting(prev => ({ ...prev, [collectionName]: false }));
+        setIsDeleting(prev => ({ ...prev, [label]: false }));
         return;
       }
 
@@ -37,8 +37,11 @@ export default function AdminReset() {
         // Special case for users collection, do not delete admins
         if (collectionName === 'users') {
           const data = d.data();
-          if (data.role === 'admin' || data.role === 'guru') {
-            continue; // Skip admin & guru
+          if (targetRole && data.role !== targetRole) {
+            continue; // Skip if role doesn't match
+          }
+          if (!targetRole && (data.role === 'admin' || data.role === 'guru')) {
+            continue; // Default behavior if targetRole not specified (legacy)
           }
         }
 
@@ -89,7 +92,7 @@ export default function AdminReset() {
       console.error(error);
       toast.error(`Gagal menghapus data: ${error.message}`);
     } finally {
-      setIsDeleting(prev => ({ ...prev, [collectionName]: false }));
+      setIsDeleting(prev => ({ ...prev, [label]: false }));
     }
   };
 
@@ -116,7 +119,15 @@ export default function AdminReset() {
       id: 'users',
       label: 'Data Siswa',
       desc: 'Menghapus SEMUA data siswa dari database. Akun guru dan admin TIDAK akan dihapus.',
-      coll: 'users'
+      coll: 'users',
+      targetRole: 'siswa'
+    },
+    {
+      id: 'guru',
+      label: 'Data Guru',
+      desc: 'Menghapus SEMUA data guru dari database. Akun siswa dan admin TIDAK akan dihapus.',
+      coll: 'users',
+      targetRole: 'guru'
     }
   ];
 
@@ -151,16 +162,16 @@ export default function AdminReset() {
             </div>
             
             <button 
-              onClick={() => handleDeleteAll(item.coll, item.label)}
-              disabled={isDeleting[item.coll]}
+              onClick={() => handleDeleteAll(item.coll, item.label, item.targetRole)}
+              disabled={isDeleting[item.label]}
               className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-bold transition-all text-sm ${
-                isDeleting[item.coll] 
+                isDeleting[item.label] 
                   ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
                   : 'bg-rose-100 text-rose-700 hover:bg-rose-200 hover:text-rose-800'
               }`}
             >
               <Trash2 className="w-4 h-4" />
-              {isDeleting[item.coll] ? 'Sedang Menghapus...' : `Hapus Seluruh ${item.label}`}
+              {isDeleting[item.label] ? 'Sedang Menghapus...' : `Hapus Seluruh ${item.label}`}
             </button>
           </div>
         ))}
