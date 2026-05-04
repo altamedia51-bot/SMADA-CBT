@@ -155,7 +155,7 @@ export default function Panduan() {
                  
                  <div className="bg-amber-50/30 p-4 rounded-xl border border-amber-100">
                     <h3 className="font-bold text-slate-800 mb-2">2. Percetakan Raport & Ledger</h3>
-                    <p>Wali Kelas berhak mengakses menu <b>Raport Kelas</b> untuk melihat, mengevaluasi dan mencetak hasil akademik seluruh siswa didiknya.</p>
+                    <p>Wali Kelas berhak mengakses menu <b>Administrasi Raport</b> untuk melihat, mengevaluasi dan mencetak hasil akademik seluruh siswa didiknya.</p>
                     <ul className="list-disc pl-5 mt-2 space-y-1">
                       <li><b>Ledger PTS & Ledger Akhir:</b> merupakan rekapan hasil nilai kompetensi siswa berbentuk tabel lanskap horizontal, sudah dilengkapi Rerata, Peringkat Kelas (Ranking), Total capaian setiap mapel.</li>
                       <li><b>Raport PTS & Raport Akhir:</b> merupakan dokumen cetak Rapor individual per Siswa berisi Capaian Kompetensi (Deskripsi per mapel) sesuai standar.</li>
