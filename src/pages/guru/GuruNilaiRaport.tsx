@@ -671,7 +671,7 @@ export default function GuruNilaiRaport() {
                            })()}
                            <TableHead className="text-center border-x bg-yellow-50/50 text-yellow-800" colSpan={2}>PTS</TableHead>
                            <TableHead className="text-center border-x bg-emerald-50/50 text-emerald-800" colSpan={2}>PSAS</TableHead>
-                           <TableHead className="w-16 text-center sticky right-[250px] z-20 bg-slate-100 shadow-[-1px_0_0_0_#e2e8f0]" rowSpan={2}>Akhir</TableHead>
+                           <TableHead className="w-20 text-center sticky right-[250px] z-20 bg-slate-100 shadow-[-1px_0_0_0_#e2e8f0]" rowSpan={2}>Nilai Raport</TableHead>
                            <TableHead className="w-[250px] sticky right-0 z-20 bg-slate-100 shadow-[-1px_0_0_0_#e2e8f0]" rowSpan={2}>Atur Deskripsi <span className="font-normal text-xs text-slate-400 block mt-0.5">(Bisa diedit)</span></TableHead>
                         </TableRow>
                         <TableRow>
@@ -685,12 +685,12 @@ export default function GuruNilaiRaport() {
                            ) : null)}
                            
                            {/* PTS */}
-                           <TableHead className="text-center w-[65px] p-1 border-l bg-yellow-50/20 text-[11px] font-bold">Awal</TableHead>
-                           <TableHead className="text-center w-[65px] p-1 border-r text-blue-600 bg-yellow-50/20 text-[11px] font-bold">Reskalakan</TableHead>
+                           <TableHead className="text-center w-[65px] p-1 border-l bg-yellow-50/20 text-[11px] font-bold">Nilai Asli</TableHead>
+                           <TableHead className="text-center w-[65px] p-1 border-r text-blue-600 bg-yellow-50/20 text-[11px] font-bold">Nilai Akhir</TableHead>
                            
                            {/* PSAS */}
-                           <TableHead className="text-center w-[65px] p-1 border-l bg-emerald-50/20 text-[11px] font-bold">Awal</TableHead>
-                           <TableHead className="text-center w-[65px] p-1 border-r text-blue-600 bg-emerald-50/20 text-[11px] font-bold">Reskalakan</TableHead>
+                           <TableHead className="text-center w-[65px] p-1 border-l bg-emerald-50/20 text-[11px] font-bold">Nilai Asli</TableHead>
+                           <TableHead className="text-center w-[65px] p-1 border-r text-blue-600 bg-emerald-50/20 text-[11px] font-bold">Nilai Akhir</TableHead>
                         </TableRow>
                      </TableHeader>
                      <TableBody>

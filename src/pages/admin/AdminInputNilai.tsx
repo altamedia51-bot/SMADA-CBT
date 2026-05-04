@@ -505,16 +505,16 @@ export default function AdminInputNilai() {
                              })()}
                              <TableHead className="text-center border-x bg-yellow-50 text-yellow-800 text-[10px]" colSpan={2}>PTS</TableHead>
                              <TableHead className="text-center border-x bg-emerald-50 text-emerald-800 text-[10px]" colSpan={2}>PSAS</TableHead>
-                             <TableHead className="w-20 text-center" rowSpan={2}>AKHIR</TableHead>
+                             <TableHead className="w-20 text-center" rowSpan={2}>NILAI RAPORT</TableHead>
                              <TableHead className="w-72" rowSpan={2}>DESKRIPSI CAPAIAN</TableHead>
                           </TableRow>
                           <TableRow>
                              {deskripsiFormatif.map((d,i) => d.trim() !== '' ? <TableHead key={`hf${i}`} className="p-1 text-center w-12 text-[10px] bg-blue-50/50">F{i+1}</TableHead> : null)}
                              {deskripsiSumatif.map((d,i) => d.trim() !== '' ? <TableHead key={`hs${i}`} className="p-1 text-center w-12 text-[10px] bg-fuchsia-50/50">S{i+1}</TableHead> : null)}
-                             <TableHead className="p-1 text-center text-[9px] bg-yellow-50/50">AWAL</TableHead>
-                             <TableHead className="p-1 text-center text-[9px] bg-yellow-50 text-blue-600">KONVERSI</TableHead>
-                             <TableHead className="p-1 text-center text-[9px] bg-emerald-50/50">AWAL</TableHead>
-                             <TableHead className="p-1 text-center text-[9px] bg-emerald-50 text-blue-600">KONVERSI</TableHead>
+                             <TableHead className="p-1 text-center text-[9px] bg-yellow-50/50">NILAI ASLI</TableHead>
+                             <TableHead className="p-1 text-center text-[9px] bg-yellow-50 text-blue-600">NILAI AKHIR</TableHead>
+                             <TableHead className="p-1 text-center text-[9px] bg-emerald-50/50">NILAI ASLI</TableHead>
+                             <TableHead className="p-1 text-center text-[9px] bg-emerald-50 text-blue-600">NILAI AKHIR</TableHead>
                           </TableRow>
                        </TableHeader>
                        <TableBody>
