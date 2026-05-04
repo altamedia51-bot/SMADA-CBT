@@ -30,62 +30,52 @@ export default function Panduan() {
           <div className="space-y-6 text-slate-600 leading-relaxed text-sm">
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                <h3 className="font-bold text-slate-800 mb-2">1. Master Data</h3>
-               <p>Sebelum memulai konfigurasi lain, pastikan modul Master Data sudah terisi dengan benar:</p>
+               <p>Kelola data utama sekolah melalui menu <b>Master Data</b> yang menaungi:</p>
                <ul className="list-disc pl-5 mt-2 space-y-1">
-                 <li><b>Mata Pelajaran & Kelas:</b> Digunakan sebagai atribut data dan pemetaan.</li>
-                 <li><b>Ruang & Sesi:</b> Digunakan untuk pembagian jadwal ujian dan percetakan kartu/daftar hadir.</li>
-                 <li><b>Jenis Ujian:</b> Digunakan untuk mengelompokkan ujian (misal: PTS, PAS, TO).</li>
+                 <li><b>Data Siswa & Guru:</b> Dapat diinput massal dengan <b>Import Excel</b>. Akun login siswa menggunakan NISN, sedangkan guru menggunakan NIP (atau default jika kosong).</li>
+                 <li><b>Data Kelas & Mapel:</b> Digunakan untuk pemetaan rombel dan atribut mata pelajaran. Terdapat fitur kenaikan/kelulusan kelas massal di menu Data Kelas.</li>
+                 <li><b>Data Ekstra:</b> Digunakan untuk pendataan kegiatan ekstrakurikuler.</li>
                </ul>
             </div>
             
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-               <h3 className="font-bold text-slate-800 mb-2">2. Administrasi User (Siswa & Guru)</h3>
-               <p>Kelola akses untuk Siswa dan Guru melalui menu ini.</p>
+               <h3 className="font-bold text-slate-800 mb-2">2. Manajemen Ujian (CBT)</h3>
+               <p>Inti pelaksanaan Computer Based Test (CBT) dikoordinasi di menu <b>Manajemen Ujian</b>:</p>
                <ul className="list-disc pl-5 mt-2 space-y-1">
-                 <li>Data Siswa dapat diinput massal menggunakan fitur <b>Import Excel</b>.</li>
-                 <li>Email siswa ter-generate secara otomatis berdasarkan NIS/NISN.</li>
-                 <li>Guru akan memiliki email default (misal: guru_nip@edutest.local) kecuali diubah.</li>
-                 <li>Siswa yang lupa password dapat di-reset melalui tombol "Reset Sandi" atau ubah Profilnya.</li>
-               </ul>
-            </div>
-            
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-               <h3 className="font-bold text-slate-800 mb-2">3. Jadwal Ujian & Token</h3>
-               <p>Jadwal Ujian adalah inti dari sistem CBT ini.</p>
-               <ul className="list-disc pl-5 mt-2 space-y-1">
-                 <li>Suaikan bank soal yang sudah dibuat dengan Jadwal Ujian.</li>
-                 <li>Admin dapat mengatur waktu tampil, durasi, sesi, acak soal, opsi hingga batas waktu keterlambatan.</li>
-                 <li>Token dapat digenerate secara dinamis dan ditampilkan kepada peserta di ruangan.</li>
-               </ul>
-            </div>
-            
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-               <h3 className="font-bold text-slate-800 mb-2">4. Hasil & Koreksi Manual</h3>
-               <p>Laporan langsung dari siswa yang mengerjakan soal tersedia di Dashboard maupun Hasil Ujian.</p>
-               <ul className="list-disc pl-5 mt-2 space-y-1">
-                 <li>Bisa mengekspor data ke Excel per jadwal.</li>
+                 <li><b>Bank Soal:</b> Admin memiliki akses penuh atas seluruh Paket Soal guru. Bisa melakukan penambahan, edit, maupun delete.</li>
+                 <li><b>Jadwal Ujian:</b> Admin membuat jadwal dari Bank Soal yang sedia. Atur waktu, durasi, sesi, fitur acak, sampai token dinamis.</li>
+                 <li><b>Hasil Ujian:</b> Memantau hasil pengerjaan real-time. Export excel. Untuk soal Isian, dapat dikoreksi manual pada hasil kerja individu.</li>
                  <li>Sistem otomatis mengoreksi soal PG, Benar-Salah, dan Menjodohkan.</li>
-                 <li>Jika Paket Soal memuat soal Isian / Essay, pastikan Admin atau Guru Pengampu melakukan koreksi manual pada halaman Hasil Kerja siswa.</li>
                </ul>
             </div>
-
+            
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-               <h3 className="font-bold text-slate-800 mb-2">5. Fitur Cetak (Print Out)</h3>
-               <p>Admin dapat mencetak berbagai kelengkapan administrasi ujian dari menu <b>Cetak</b>.</p>
+               <h3 className="font-bold text-slate-800 mb-2">3. Administrasi Kurikulum (Akademik)</h3>
+               <p>Admin Kurikulum dapat melakukan rekap nilai dan raport terpusat:</p>
                <ul className="list-disc pl-5 mt-2 space-y-1">
-                 <li><b>Kartu Peserta:</b> Mencetak kartu berisi Nama, NIS, Kelas, Ruang, dan Password login ujian.</li>
-                 <li><b>Daftar Hadir:</b> Rekapitulasi absensi siswa per Ruang Ujian.</li>
-                 <li><b>Berita Acara:</b> Formulir Berita Acara pelaksanaan Ujian.</li>
-                 <li>Semua berkas cetak akan menyesuaikan KOP pengaturan Admin (Kop Baris 1, Kop Baris 2, Nama Sekolah).</li>
+                 <li><b>Input Nilai:</b> Memantau pengisian form formatif/sumatif dari seluruh kelas secara administratif.</li>
+                 <li><b>DKN & Ledger:</b> Melakukan pencetakan massal Daftar Kumpulan Nilai dan Ledger dari tiap kelas di akhir semester.</li>
+                 <li><b>Raport:</b> Administrator dapat mencetak rapot seluruh siswa dan mengaksesnya untuk dokumentasi.</li>
+               </ul>
+            </div>
+            
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+               <h3 className="font-bold text-slate-800 mb-2">4. Fitur Cetak Berkas</h3>
+               <p>Admin dapat mencetak atribut kelengkapan administrasi ujian dari menu <b>Cetak</b>.</p>
+               <ul className="list-disc pl-5 mt-2 space-y-1">
+                 <li><b>Kartu Peserta:</b> Mencetak kartu berisi Nama, NIS, Kelas, Ruang, dan Sandi (Password) peserta didik.</li>
+                 <li><b>Daftar Hadir:</b> Lembaran absensi ujian per Ruang/Sesi.</li>
+                 <li><b>Berita Acara:</b> Formulir penunjang serah terima dan integritas ujian.</li>
                </ul>
             </div>
 
              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-               <h3 className="font-bold text-slate-800 mb-2">6. Database & Keamanan</h3>
-               <p>Untuk mengamankan database, beberapa hal penting wajib diperhatikan:</p>
+               <h3 className="font-bold text-slate-800 mb-2">5. Pengaturan & Reset Data</h3>
+               <p>Sistem ini dirancang untuk sustain tiap pergantian semester:</p>
                <ul className="list-disc pl-5 mt-2 space-y-1">
-                 <li>Jangan membagikan kredensial Admin ke pihak yang tidak bertanggung jawab.</li>
-                 <li>Fitur "Hapus Semua Data" di menu Pengaturan sangat berisiko, hanya gunakan saat pergantian tahun ajaran secara total.</li>
+                 <li>Menu <b>Pengaturan:</b> Untuk mengatur nama sekolah, logo, KOP Surat, Tanda Tangan, dan tahun ajaran aktif.</li>
+                 <li>Gunakan menu kenaikan kelas untuk rolling otomatis identitas siswa tiap semester/tahun.</li>
+                 <li>Hapus Semua Data/Tabel tertentu jika ingin memulai fresh tanpa membebani storage secara radikal (Hati-Hati!).</li>
                </ul>
             </div>
           </div>
@@ -120,7 +110,7 @@ export default function Panduan() {
               </div>
 
               <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                 <h3 className="font-bold text-blue-800 mb-2 flex items-center gap-1.5"><GraduationCap className="w-4 h-4"/> 3. Input Nilai Raport (Kurikulum Merdeka)</h3>
+                 <h3 className="font-bold text-blue-800 mb-2 flex items-center gap-1.5"><GraduationCap className="w-4 h-4"/> 3. Input Nilai Mapel (Kurikulum Merdeka)</h3>
                  <p>Guru Mapel menginputkan capaian Nilai Formatif, Sumatif, PTS, hingga PSAS di menu <b>Input Nilai Mapel</b>.</p>
                  <ul className="list-disc pl-5 mt-2 space-y-1 text-slate-700">
                    <li>Pilih Kelas dan Mapel yang Bapak/Ibu ampu untuk membuka tabel nilai. Hanya guru pengampu mapel bersangkutan yang dapat mengeditnya.</li>
@@ -145,23 +135,22 @@ export default function Panduan() {
                <div className="space-y-6 text-slate-600 leading-relaxed text-sm">
                  <div className="bg-amber-50/30 p-4 rounded-xl border border-amber-100">
                    <h3 className="font-bold text-slate-800 mb-2">1. Memonitor Integrasi Data Siswa</h3>
-                   <p>Pada menu <b>Data Siswa</b>, Bapak/Ibu dapat mengawasi identitas anak didiknya.</p>
+                   <p>Pada menu <b>Data Siswa</b>, Bapak/Ibu dapat mengawasi identitas anak didiknya khusus kelas yang diampu.</p>
                    <ul className="list-disc pl-5 mt-2 space-y-1">
                      <li>Wali Kelas dapat <b>mereset password</b> jika ada siswa yang kesulitan untuk login ujian.</li>
                      <li>Wali Kelas dapat <b>mengubah profil NIS dan nama</b> apabila tidak sesuai.</li>
-                     <li>Akses pengelolaan ini dibatasi hanya untuk anggota dari kelas {profile?.waliKelas}.</li>
+                     <li>Wali Kelas dapat mencetak <b>Kartu Login Individu</b> per peserta didik.</li>
                    </ul>
                  </div>
                  
                  <div className="bg-amber-50/30 p-4 rounded-xl border border-amber-100">
-                    <h3 className="font-bold text-slate-800 mb-2">2. Percetakan Raport & Ledger</h3>
-                    <p>Wali Kelas berhak mengakses menu <b>Administrasi Raport</b> untuk melihat, mengevaluasi dan mencetak hasil akademik seluruh siswa didiknya.</p>
+                    <h3 className="font-bold text-slate-800 mb-2">2. Administrasi Raport Kelas</h3>
+                    <p>Wali Kelas berhak mengakses menu <b>Administrasi Raport</b> untuk melihat, mengevaluasi dan mencetak hasil akademik seluruh anak didiknya.</p>
                     <ul className="list-disc pl-5 mt-2 space-y-1">
-                      <li><b>Ledger PTS & Ledger Akhir:</b> merupakan rekapan hasil nilai kompetensi siswa berbentuk tabel lanskap horizontal, sudah dilengkapi Rerata, Peringkat Kelas (Ranking), Total capaian setiap mapel.</li>
-                      <li><b>Raport PTS & Raport Akhir:</b> merupakan dokumen cetak Rapor individual per Siswa berisi Capaian Kompetensi (Deskripsi per mapel) sesuai standar.</li>
-                      <li>Jika ada "Nilai Kosong", komunikasikan dengan Guru Mapel tersebut agar menginput di menu Input Nilainya.</li>
-                      <li><b>Catatan Pembinaan:</b> Bapak/Ibu dapat mengisi evaluasi Catatan Wali Kelas yang akan terbaca di rapor PTS/Semester. Jangan lupa klik <b>Simpan Catatan Wali Kelas</b> agar masuk database.</li>
-                      <li>Semua laporan ini bisa secara langsung direview lalu <b>Cetak (Lewat Browser)</b> atau <b>Eksport PDF</b>.</li>
+                      <li>Terdapat panel dropdown cetak lengkap: <b>DKN, Ledger Akhir, Ledger PTS, Raport PTS, Raport Semester, Halaman 1 2 (Identitas), dan Halaman 12 13 (Prestasi)</b>.</li>
+                      <li><b>Catatan Pembinaan / Wali Kelas:</b> Wali kelas dapat memanfaatkan tombol <b>Isi Otomatis Catatan</b> berbasis AI agar lebih praktis mengenerate motivasi, lalu jangan lupa klik <b>Simpan Catatan Wali Kelas</b>.</li>
+                      <li>Pengaturan kop surat sekolah dan tanggal tanda-tangan bisa diakses lewat menu <b>Pengaturan Raport</b>.</li>
+                      <li>Jika ada peringatan "Ada Mapel Masih Kosong", mohon hubungi Guru Pengampu mapel terkait untuk segera mengisi nilainya.</li>
                     </ul>
                  </div>
                </div>
