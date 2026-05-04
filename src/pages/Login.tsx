@@ -91,8 +91,14 @@ export default function Login() {
       emailToUse = selectedStudent.email;
     } else {
       if (!username || !password) return toast.error('Harap isi username dan password');
-      const cleanUser = username.toLowerCase().trim();
-      emailToUse = cleanUser.includes('@') ? cleanUser : `${cleanUser}@edutest.local`;
+      const cleanUser = username.trim(); // Do not lowerCase yet, original format might be used
+      if (cleanUser.includes('@')) {
+         emailToUse = cleanUser;
+      } else if (cleanUser.toLowerCase() === 'admin') {
+         emailToUse = 'admin@edutest.local';
+      } else {
+         emailToUse = `${cleanUser.toLowerCase()}@edutest.local`;
+      }
     }
 
     setIsLoading(true);
@@ -103,22 +109,35 @@ export default function Login() {
       await signInWithEmailAndPassword(auth, emailToUse, password);
       success = true;
     } catch (error: any) {
-      if (loginMode === 'manual' && !username.includes('@') && !username.toLowerCase().startsWith('guru_') && username.toLowerCase() !== 'admin') {
-         try {
-            const alternativeEmail = `guru_${username.toLowerCase().trim()}@edutest.local`;
-            await signInWithEmailAndPassword(auth, alternativeEmail, password);
-            success = true;
-         } catch (altError: any) {
-            errorMessage = altError.code || altError.message;
+      if (loginMode === 'manual' && !username.includes('@') && username.toLowerCase() !== 'admin') {
+         // Attempt 1: If user didn't start with guru_, try with exactly their format
+         if (!username.startsWith('guru_') && !username.startsWith('GURU_')) {
+             try {
+                const altEmail1 = `guru_${username.trim()}@edutest.local`;
+                await signInWithEmailAndPassword(auth, altEmail1, password);
+                success = true;
+             } catch (e1: any) {
+                // Attempt 2: lowercase everything
+                try {
+                   const altEmail2 = `guru_${username.toLowerCase().trim()}@edutest.local`;
+                   await signInWithEmailAndPassword(auth, altEmail2, password);
+                   success = true;
+                } catch (e2: any) {
+                   errorMessage = e2.code || e2.message;
+                }
+             }
+         } else {
+             errorMessage = error.code || error.message;
          }
+      } else {
+         errorMessage = error.code || error.message;
       }
 
       if (!success) {
-        errorMessage = errorMessage || error.code || error.message;
         console.error("Login detail error:", errorMessage);
         
         if (errorMessage.includes('user-not-found') || errorMessage.includes('invalid-credential') || errorMessage.includes('wrong-password')) {
-          toast.error('Kredensial tidak valid. Silakan periksa kembali Username/NIP dan Password Anda.');
+          toast.error('Kredensial tidak valid. Cek Username/NIP (Perhatikan Huruf Besar/Kecil) dan Password Anda.');
         } else if (errorMessage.includes('too-many-requests')) {
           toast.error('Terlalu banyak percobaan gagal. Silakan tunggu sebentar sebelum mencoba lagi.');
         } else {

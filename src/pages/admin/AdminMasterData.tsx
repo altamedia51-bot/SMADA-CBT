@@ -695,7 +695,8 @@ export default function AdminMasterData() {
         });
         toast.success(`Data guru ${guruForm.nama} diperbarui.`);
       } else {
-        const email = `guru_${guruForm.nip}@edutest.local`;
+        const cleanNip = guruForm.nip.toString().toLowerCase().trim();
+        const email = `guru_${cleanNip}@edutest.local`;
         const pass = guruForm.password || 'guru123';
         const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`, {
           method: 'POST',
@@ -703,12 +704,26 @@ export default function AdminMasterData() {
           body: JSON.stringify({ email, password: pass, returnSecureToken: false })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error?.message || 'Gagal registrasi Guru');
-        currentUid = data.localId;
-        const { setDoc } = await import('firebase/firestore');
-        await setDoc(doc(db, 'users', currentUid), {
-          uid: currentUid, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
-        }, { merge: true });
+        
+        if (!res.ok && data.error?.message !== 'EMAIL_EXISTS') {
+           throw new Error(data.error?.message || 'Gagal registrasi Guru');
+        }
+        
+        if (res.ok) {
+           currentUid = data.localId;
+           const { setDoc } = await import('firebase/firestore');
+           await setDoc(doc(db, 'users', currentUid), {
+             uid: currentUid, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
+           }, { merge: true });
+        } else if (data.error?.message === 'EMAIL_EXISTS') {
+           // If auth exists, just create a fallback profile so the user can still login (since their Firebase Auth account is still alive).
+           currentUid = `recovered_guru_${cleanNip}`;
+           const { setDoc } = await import('firebase/firestore');
+           await setDoc(doc(db, 'users', currentUid), {
+             uid: null, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
+           }, { merge: true });
+           toast.success('Guru terhubung dengan akun yang sudah ada sebelumnya.');
+        }
         toast.success(`Guru ${guruForm.nama} ditambahkan.`);
       }
 
