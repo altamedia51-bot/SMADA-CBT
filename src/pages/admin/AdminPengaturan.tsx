@@ -125,11 +125,15 @@ export default function AdminPengaturan() {
          snapSiswa.docs.forEach(d => {
             const s = d.data();
             if (!s.kelas || s.kelas === 'ALUMNI') return;
+            
+            const historyObj = s.historyKelas || {};
+            historyObj[activeTahunAjaran] = s.kelas;
+            
             const nextClass = getNextClassString(s.kelas, allKelas);
             if (nextClass === 'ALUMNI') {
-               batch.update(d.ref, { kelas: 'ALUMNI', isActive: false });
+               batch.update(d.ref, { kelas: 'ALUMNI', isActive: false, historyKelas: historyObj });
             } else {
-               batch.update(d.ref, { kelas: nextClass });
+               batch.update(d.ref, { kelas: nextClass, historyKelas: historyObj });
             }
             promoteCount++;
          });

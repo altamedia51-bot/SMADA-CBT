@@ -92,19 +92,33 @@ export default function AdminCetakAkademik() {
     if (!selectedKelas) return;
     setLoading(true);
     try {
-      const usersSnap = await getDocs(query(collection(db, 'users')));
-      const siswas = usersSnap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter((u: any) => u.role === 'siswa' && u.kelas === selectedKelas)
-        .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
-      setSiswaList(siswas);
-
       const allNilai: Record<string, Record<string, any>> = {}; 
       const docsSnap = await getDocs(collection(db, 'nilai_raport'));
       const suffix = `_${tahunAjaran.replace(/\//g, '-')}_${semester}`;
       const prefix = `${selectedKelas}_`;
       
       const relatedDocs = docsSnap.docs.filter(d => d.id.startsWith(prefix) && d.id.endsWith(suffix));
+
+      let pastSiswaIds = new Set<string>();
+      if (settings.activeTahunAjaran && tahunAjaran !== settings.activeTahunAjaran) {
+          for (const d of relatedDocs) {
+             const data = d.data().nilai || {};
+             Object.keys(data).forEach(id => pastSiswaIds.add(id));
+          }
+      }
+
+      const usersSnap = await getDocs(query(collection(db, 'users')));
+      const siswas = usersSnap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter((u: any) => {
+           if (u.role !== 'siswa') return false;
+           if (settings.activeTahunAjaran && tahunAjaran !== settings.activeTahunAjaran) {
+               return (u.historyKelas && u.historyKelas[tahunAjaran] === selectedKelas) || pastSiswaIds.has(u.id);
+           }
+           return u.kelas === selectedKelas;
+        })
+        .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
+      setSiswaList(siswas);
 
       for (const d of relatedDocs) {
         const withoutPrefix = d.id.replace(prefix, '');

@@ -137,16 +137,6 @@ export default function GuruRaportKelas() {
     setLoading(true);
 
     try {
-      // Load Siswa for this class
-      const usersSnap = await getDocs(query(collection(db, 'users')));
-      const siswas = usersSnap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter((u: any) => u.role === 'siswa' && u.kelas === profile.waliKelas)
-        .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
-      
-      setSiswaList(siswas);
-
-      // Load Nilai for each mapped subject
       const allNilai: Record<string, Record<string, any>> = {}; // [siswaId][mapelId]
       const docsSnap = await getDocs(collection(db, 'nilai_raport'));
       
@@ -157,6 +147,29 @@ export default function GuruRaportKelas() {
       const relatedDocs = docsSnap.docs.filter(d => 
         d.id.startsWith(prefix) && d.id.endsWith(suffix)
       );
+
+      let pastSiswaIds = new Set<string>();
+      if (settings.activeTahunAjaran && tahunAjaran !== settings.activeTahunAjaran) {
+          for (const d of relatedDocs) {
+             const data = d.data().nilai || {};
+             Object.keys(data).forEach(id => pastSiswaIds.add(id));
+          }
+      }
+
+      // Load Siswa for this class
+      const usersSnap = await getDocs(query(collection(db, 'users')));
+      const siswas = usersSnap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter((u: any) => {
+           if (u.role !== 'siswa') return false;
+           if (settings.activeTahunAjaran && tahunAjaran !== settings.activeTahunAjaran) {
+               return (u.historyKelas && u.historyKelas[tahunAjaran] === profile.waliKelas) || pastSiswaIds.has(u.id);
+           }
+           return u.kelas === profile.waliKelas;
+        })
+        .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
+      
+      setSiswaList(siswas);
 
       // doc id format: Kelas_MapelName_TA_Semester
       for (const d of relatedDocs) {
