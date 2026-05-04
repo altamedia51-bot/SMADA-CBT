@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Trash2, AlertCircle, Upload, Loader2, Download, UserPlus, UserCircle, Pencil, Plus, FileSpreadsheet, CloudUpload, Hash, ArrowUpCircle, GraduationCap } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import firebaseConfig from '../../../firebase-applet-config.json';
 
@@ -171,14 +172,26 @@ export default function AdminMasterData() {
     }
   };
 
+  const downloadExcel = (data: any[], fileName: string, sheetName: string) => {
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const downloadTemplateMapel = () => {
-    const ws = XLSX.utils.json_to_sheet([
+    downloadExcel([
       { NAMA_MAPEL: 'Matematika Peminatan', JENJANG: 'SMA' },
       { NAMA_MAPEL: 'Ilmu Pengetahuan Alam', JENJANG: 'SMP' }
-    ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Template_Mapel");
-    XLSX.writeFile(wb, "template_mapel.xlsx");
+    ], "template_mapel.xlsx", "Template_Mapel");
   };
 
   const mapelFileInputRef = useRef<HTMLInputElement>(null);
@@ -344,13 +357,10 @@ export default function AdminMasterData() {
   };
 
   const handleDownloadTemplateKelas = () => {
-    const ws = XLSX.utils.json_to_sheet([
+    downloadExcel([
       { NAMA_KELAS: 'X IPA 1', JENJANG: 'SMA', TINGKAT: 10 },
       { NAMA_KELAS: 'XI IPS 2', JENJANG: 'SMA', TINGKAT: 11 }
-    ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Template_Kelas");
-    XLSX.writeFile(wb, "template_kelas.xlsx");
+    ], "template_kelas.xlsx", "Template_Kelas");
   };
 
   const downloadTemplateKelas = () => {
@@ -880,13 +890,10 @@ export default function AdminMasterData() {
   };
 
   const downloadTemplate = () => {
-    const ws = XLSX.utils.json_to_sheet([
+    downloadExcel([
       { Nama: 'ALFY NUR ASHIFAK', Kelas: 'XE1', Jurusan: 'IPA', NIS: '123456', Sesi: 'Sesi 1', Password: 'siswa123' },
       { Nama: 'ALIFIA NASWA HAFIDHOH', Kelas: 'XE2', Jurusan: 'IPS', NIS: '123457', Sesi: 'Sesi 2', Password: 'siswa123' }
-    ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Template_Siswa");
-    XLSX.writeFile(wb, "template_pengguna.xlsx");
+    ], "template_pengguna.xlsx", "Template_Siswa");
   };
 
   const getTitle = () => {
