@@ -440,6 +440,19 @@ export default function AdminMasterData() {
         });
         toast('Berhasil!', { description: `Kelas ${newKelasName} berhasil ditambah.` });
       }
+
+      // Sync data kelas ke guru
+      const qGuruLama = query(collection(db, 'users'), where('role', '==', 'guru'), where('waliKelas', '==', newKelasName));
+      const snapGuruLama = await getDocs(qGuruLama);
+      for (const dg of snapGuruLama.docs) {
+          if (dg.id !== waliKelas) {
+             await updateDoc(dg.ref, { waliKelas: '' });
+          }
+      }
+      if (waliKelas) {
+          await updateDoc(doc(db, 'users', waliKelas), { waliKelas: newKelasName });
+      }
+
       setNewKelasName('');
       setWaliKelas('');
       setShowFormKelas(false);
@@ -643,8 +656,10 @@ export default function AdminMasterData() {
       return;
     }
     try {
+      let currentUid = '';
       if (editingGuru) {
-        await updateDoc(doc(db, 'users', editingGuru.id), {
+        currentUid = editingGuru.id;
+        await updateDoc(doc(db, 'users', currentUid), {
           displayName: guruForm.nama,
           nip: guruForm.nip,
           nomorWa: guruForm.nomorWa,
@@ -663,13 +678,32 @@ export default function AdminMasterData() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error?.message || 'Gagal registrasi Guru');
-        const uid = data.localId;
+        currentUid = data.localId;
         const { setDoc } = await import('firebase/firestore');
-        await setDoc(doc(db, 'users', uid), {
-          uid, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
+        await setDoc(doc(db, 'users', currentUid), {
+          uid: currentUid, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
         }, { merge: true });
         toast.success(`Guru ${guruForm.nama} ditambahkan.`);
       }
+
+      if (currentUid) {
+         // Hapus currentUid dari waliKelas kelas yang bukan target 
+         const qOldClass = query(collection(db, 'kelas'), where('waliKelas', '==', currentUid));
+         const oldClassSnap = await getDocs(qOldClass);
+         for (const d of oldClassSnap.docs) {
+            if (d.data().name !== guruForm.waliKelas) {
+                await updateDoc(d.ref, { waliKelas: '' });
+            }
+         }
+         // Jika ada waliKelas, update kelas terkait
+         if (guruForm.waliKelas) {
+             const targetClassDoc = kelas.find(k => k.name === guruForm.waliKelas);
+             if (targetClassDoc) {
+                await updateDoc(doc(db, 'kelas', targetClassDoc.id), { waliKelas: currentUid });
+             }
+         }
+      }
+
       setEditingGuru(null);
       setGuruForm({ nama: '', nip: '', password: '', nomorWa: '', waliKelas: '', mengampu: [{ mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }] });
     } catch (err: any) {
