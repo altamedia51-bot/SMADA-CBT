@@ -10,8 +10,12 @@ import { Printer, Settings, CreditCard, ListChecks, FileText, CheckCircle, Schoo
 import { toast } from 'sonner';
 import domtoimage from 'dom-to-image';
 import { jsPDF } from 'jspdf';
+import { useAuthStore } from '../../store/auth.store';
+import { useAppSettings } from '../../hooks/useAppSettings';
 
 export default function AdminCetak() {
+  const { activeTahunAjaran } = useAuthStore();
+  const { settings } = useAppSettings();
   const [kelasList, setKelasList] = useState<any[]>([]);
   const [ujianList, setUjianList] = useState<any[]>([]);
   const [paketList, setPaketList] = useState<any[]>([]);
@@ -276,7 +280,12 @@ export default function AdminCetak() {
     try {
        const q = query(collection(db, 'users'), where('role', '==', 'siswa'));
        const snap = await getDocs(q);
-       const siswa = snap.docs.map(d => d.data()).filter((s:any) => s.kelas === kls.name || s.kelasId === kls.id);
+       const siswa = snap.docs.map(d => d.data()).filter((s:any) => {
+          if (activeTahunAjaran && settings.activeTahunAjaran && activeTahunAjaran !== settings.activeTahunAjaran) {
+             return s.historyKelas && (s.historyKelas[activeTahunAjaran] === kls.name || s.historyKelas[activeTahunAjaran] === kls.id);
+          }
+          return s.kelas === kls.name || s.kelasId === kls.id;
+       });
        if (siswa.length === 0) { toast.error("Tidak ada siswa di kelas ini"); return; }
        
        setPrintData({ kelasName: kls.name, siswa: siswa.sort((a,b) => (a.name||'').localeCompare(b.name||'')) });

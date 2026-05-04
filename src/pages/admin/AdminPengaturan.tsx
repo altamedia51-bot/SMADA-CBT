@@ -8,12 +8,14 @@ import { toast } from 'sonner';
 import { Settings, Upload, Image as ImageIcon, CalendarClock, ArrowUpCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuthStore } from '../../store/auth.store';
 
 export default function AdminPengaturan() {
   const [logoBase64, setLogoBase64] = useState<string>('');
   const [appName, setAppName] = useState<string>('CBT System');
-  const [activeTahunAjaran, setActiveTahunAjaran] = useState<string>('2025/2026');
-  const [historyTahunAjaran, setHistoryTahunAjaran] = useState<string[]>(['2025/2026']);
+  const [activeTahunAjaran, setLocalActiveTahunAjaran] = useState<string>('2025/2026');
+  const { setActiveTahunAjaran: setGlobalActiveTahunAjaran } = useAuthStore();
+  const [historyTahunAjaran, setHistoryTahunAjaran] = useState<string[]>(['2023/2024', '2024/2025', '2025/2026']);
   const [isLoading, setIsLoading] = useState(false);
   const [showTahunModal, setShowTahunModal] = useState(false);
   const [newTahunInput, setNewTahunInput] = useState('');
@@ -28,7 +30,7 @@ export default function AdminPengaturan() {
           const data = docSnap.data();
           if (data.logo) setLogoBase64(data.logo);
           if (data.appName) setAppName(data.appName);
-          if (data.activeTahunAjaran) setActiveTahunAjaran(data.activeTahunAjaran);
+          if (data.activeTahunAjaran) setLocalActiveTahunAjaran(data.activeTahunAjaran);
           if (data.historyTahunAjaran) setHistoryTahunAjaran(data.historyTahunAjaran);
         }
       } catch (error) {
@@ -135,7 +137,8 @@ export default function AdminPengaturan() {
       setIsLoading(true);
       try {
          await setDoc(doc(db, 'settings', 'general'), { activeTahunAjaran: ta }, { merge: true });
-         setActiveTahunAjaran(ta);
+         setLocalActiveTahunAjaran(ta);
+         setGlobalActiveTahunAjaran(ta);
          toast.success(`Tahun Ajaran aktif diubah ke ${ta}`);
       } catch (err: any) {
          toast.error("Gagal mengubah Tahun Ajaran: " + err.message);
@@ -196,7 +199,11 @@ export default function AdminPengaturan() {
          batchArray.push(currentBatch.commit());
          await Promise.all(batchArray);
          toast.success(`Tahun Ajaran baru berhasil dibuat. ${promoteCount} siswa berhasil dinaikkan kelas/lulus.`);
-         setActiveTahunAjaran(newTahunInput);
+         setLocalActiveTahunAjaran(newTahunInput);
+         setGlobalActiveTahunAjaran(newTahunInput);
+         if (!historyTahunAjaran.includes(newTahunInput)) {
+            setHistoryTahunAjaran([...historyTahunAjaran, newTahunInput]);
+         }
          setShowTahunModal(false);
       } catch(err:any) {
          toast.error("Terjadi kesalahan: " + err.message);
