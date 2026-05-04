@@ -476,10 +476,19 @@ export default function GuruRaportKelas() {
                               </tr>
                               <tr>
                                  {usedMapel.map(m => (
-                                    <th key={m.id} className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
+                                    <th key={m.id} colSpan={printMode === 'dkn' ? 1 : 5} className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
                                        <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">{m.name}</div>
                                     </th>
                                  ))}
+                                 <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
+                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Sakit</div>
+                                 </th>
+                                 <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
+                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Izin</div>
+                                 </th>
+                                 <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
+                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Alpa</div>
+                                 </th>
                               </tr>
                            </thead>
                            <tbody>
@@ -892,6 +901,15 @@ export default function GuruRaportKelas() {
                                       <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap">{m.name}</div>
                                    </th>
                                 ))}
+                                <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
+                                   <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Sakit</div>
+                                </th>
+                                <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
+                                   <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Izin</div>
+                                </th>
+                                <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
+                                   <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Alpa</div>
+                                </th>
                              </tr>
                           </thead>
                           <tbody>
@@ -902,13 +920,40 @@ export default function GuruRaportKelas() {
                                    <td className="border border-slate-400 px-2 py-1 font-semibold">{siswa.displayName}</td>
                                    <td className="border border-slate-400 px-2 py-1 text-center">{siswa.jenisKelamin === 'Perempuan' ? 'P' : (siswa.jenisKelamin === 'Laki-laki' ? 'L' : '-')}</td>
                                    {usedMapel.map(m => {
-                                      const nilaiMapel = raportData[siswa.id]?.[m.id]?.nilai;
+                                      const nilaiMapel = isPtsMode ? raportData[siswa.id]?.[m.id]?.nilai_pts : raportData[siswa.id]?.[m.id]?.nilai;
                                       return (
                                          <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">
                                             {nilaiMapel ? nilaiMapel : ''}
                                          </td>
                                       );
                                    })}
+                                   <td className="border border-slate-400 p-0 overflow-hidden w-8">
+                                      <input 
+                                         type="text" 
+                                         className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
+                                         value={absensiData[siswa.id]?.sakit || ''}
+                                         placeholder="0"
+                                         onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), sakit: e.target.value } })}
+                                      />
+                                   </td>
+                                   <td className="border border-slate-400 p-0 overflow-hidden w-8">
+                                      <input 
+                                         type="text" 
+                                         className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
+                                         value={absensiData[siswa.id]?.izin || ''}
+                                         placeholder="0"
+                                         onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), izin: e.target.value } })}
+                                      />
+                                   </td>
+                                   <td className="border border-slate-400 p-0 overflow-hidden w-8">
+                                      <input 
+                                         type="text" 
+                                         className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
+                                         value={absensiData[siswa.id]?.alpa || ''}
+                                         placeholder="0"
+                                         onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), alpa: e.target.value } })}
+                                      />
+                                   </td>
                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-slate-700">{jumlahNilaiSiswa[siswa.id] || ''}</td>
                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-blue-700">{rataRataSiswa[siswa.id]?.toFixed(1) || ''}</td>
                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-amber-700">{rankSiswa[siswa.id] || ''}</td>
@@ -928,6 +973,9 @@ export default function GuruRaportKelas() {
                              <tr className="bg-slate-100 font-bold">
                                 <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Nilai Terendah</td>
                                 {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].min || ''}</td>)}
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
                                 <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.min || ''}</td>
                                 <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.min ? avgStats.min.toFixed(1) : ''}</td>
                                 <td className="border border-slate-400 bg-slate-200"></td>
@@ -936,6 +984,9 @@ export default function GuruRaportKelas() {
                              <tr className="bg-slate-100 font-bold">
                                 <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Nilai Tertinggi</td>
                                 {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].max || ''}</td>)}
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
                                 <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.max || ''}</td>
                                 <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.max ? avgStats.max.toFixed(1) : ''}</td>
                                 <td className="border border-slate-400 bg-slate-200"></td>
@@ -944,6 +995,9 @@ export default function GuruRaportKelas() {
                              <tr className="bg-slate-100 font-bold">
                                 <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Rata-rata Nilai</td>
                                 {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].avg ? Math.round(mapelStats[m.id].avg) : ''}</td>)}
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
                                 <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.avg ? Math.round(totalStats.avg) : ''}</td>
                                 <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.avg ? avgStats.avg.toFixed(1) : ''}</td>
                                 <td className="border border-slate-400 bg-slate-200"></td>
@@ -952,6 +1006,9 @@ export default function GuruRaportKelas() {
                              <tr className="bg-slate-100 font-bold text-xs text-slate-600">
                                 <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Standar Deviasi</td>
                                 {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].stdDev ? mapelStats[m.id].stdDev.toFixed(1) : ''}</td>)}
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
+                                <td className="border border-slate-400 bg-slate-200"></td>
                                 <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.stdDev ? totalStats.stdDev.toFixed(1) : ''}</td>
                                 <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.stdDev ? avgStats.stdDev.toFixed(1) : ''}</td>
                                 <td className="border border-slate-400 bg-slate-200"></td>
