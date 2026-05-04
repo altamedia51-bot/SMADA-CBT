@@ -1593,7 +1593,7 @@ export default function AdminMasterData() {
                 {users.filter(u => u.role === 'guru').length === 0 ? (
                   <TableRow><TableCell colSpan={7} className="text-center py-10 text-slate-400">Belum ada data guru.</TableCell></TableRow>
                 ) : (
-                  users.filter(u => u.role === 'guru').map(g => (
+                  users.filter(u => u.role === 'guru').sort((a,b) => (a.displayName || '').localeCompare(b.displayName || '')).map(g => (
                     <TableRow key={g.id}>
                       <TableCell className="font-bold text-slate-700">{g.displayName}</TableCell>
                       <TableCell className="font-mono text-xs">{g.nip || g.email.split('@')[0]}</TableCell>
@@ -1799,7 +1799,7 @@ export default function AdminMasterData() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">--TIDAK ADA--</SelectItem>
-                    {users.filter(u => u.role === 'guru').map(g => (
+                    {users.filter(u => u.role === 'guru').sort((a,b) => (a.displayName||'').localeCompare(b.displayName||'')).map(g => (
                       <SelectItem key={g.id} value={g.id}>{g.displayName}</SelectItem>
                     ))}
                   </SelectContent>
