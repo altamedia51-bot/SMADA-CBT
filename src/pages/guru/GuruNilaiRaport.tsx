@@ -659,8 +659,16 @@ export default function GuruNilaiRaport() {
                         <TableRow>
                            <TableHead className="w-10 text-center sticky left-0 z-20 bg-slate-100 shadow-[1px_0_0_0_#e2e8f0]" rowSpan={2}>No</TableHead>
                            <TableHead className="w-48 sticky left-[40px] z-20 bg-slate-100 shadow-[1px_0_0_0_#e2e8f0]" rowSpan={2}>Nama Siswa</TableHead>
-                           <TableHead className="text-center border-x bg-blue-50/50 text-blue-800" colSpan={8}>Nilai Formatif</TableHead>
-                           <TableHead className="text-center border-x bg-fuchsia-50/50 text-fuchsia-800" colSpan={8}>Nilai Sumatif</TableHead>
+                           {(() => {
+                              const fCount = deskripsiFormatif.filter(d => d.trim() !== '').length;
+                              const sCount = deskripsiSumatif.filter(d => d.trim() !== '').length;
+                              return (
+                                 <>
+                                    {fCount > 0 && <TableHead className="text-center border-x bg-blue-50/50 text-blue-800" colSpan={fCount}>Nilai Formatif</TableHead>}
+                                    {sCount > 0 && <TableHead className="text-center border-x bg-fuchsia-50/50 text-fuchsia-800" colSpan={sCount}>Nilai Sumatif</TableHead>}
+                                 </>
+                              );
+                           })()}
                            <TableHead className="text-center border-x bg-yellow-50/50 text-yellow-800" colSpan={2}>PTS</TableHead>
                            <TableHead className="text-center border-x bg-emerald-50/50 text-emerald-800" colSpan={2}>PSAS</TableHead>
                            <TableHead className="w-16 text-center sticky right-[250px] z-20 bg-slate-100 shadow-[-1px_0_0_0_#e2e8f0]" rowSpan={2}>Akhir</TableHead>
@@ -668,13 +676,13 @@ export default function GuruNilaiRaport() {
                         </TableRow>
                         <TableRow>
                            {/* Formatif columns */}
-                           {Array.from({length: 8}).map((_,i) => (
+                           {deskripsiFormatif.map((d, i) => d.trim() !== '' ? (
                               <TableHead key={`hf${i}`} className="text-center w-[60px] p-1 border-x bg-blue-50/20 text-blue-700 font-mono text-xs">F{i+1}</TableHead>
-                           ))}
+                           ) : null)}
                            {/* Sumatif columns */}
-                           {Array.from({length: 8}).map((_,i) => (
+                           {deskripsiSumatif.map((d, i) => d.trim() !== '' ? (
                               <TableHead key={`hs${i}`} className="text-center w-[60px] p-1 border-x bg-fuchsia-50/20 text-fuchsia-700 font-mono text-xs">S{i+1}</TableHead>
-                           ))}
+                           ) : null)}
                            
                            {/* PTS */}
                            <TableHead className="text-center w-[65px] p-1 border-l bg-yellow-50/20 text-[11px] font-bold">Awal</TableHead>
@@ -699,7 +707,7 @@ export default function GuruNilaiRaport() {
                                  </TableCell>
                                  
                                  {/* Formatif Inputs */}
-                                 {Array.from({length: 8}).map((_, i) => (
+                                 {deskripsiFormatif.map((d, i) => d.trim() !== '' ? (
                                     <TableCell key={`f${i}`} className="p-1 border-x relative">
                                        <Input 
                                           type="number" 
@@ -710,10 +718,10 @@ export default function GuruNilaiRaport() {
                                           disabled={!isAuthorized} 
                                        />
                                     </TableCell>
-                                 ))}
+                                 ) : null)}
 
                                  {/* Sumatif Inputs */}
-                                 {Array.from({length: 8}).map((_, i) => (
+                                 {deskripsiSumatif.map((d, i) => d.trim() !== '' ? (
                                     <TableCell key={`s${i}`} className="p-1 border-x relative">
                                        <Input 
                                           type="number" 
@@ -724,7 +732,7 @@ export default function GuruNilaiRaport() {
                                           disabled={!isAuthorized} 
                                        />
                                     </TableCell>
-                                 ))}
+                                 ) : null)}
 
                                   {/* PTS */}
                                  <TableCell className="p-1 border-l bg-yellow-50/10">

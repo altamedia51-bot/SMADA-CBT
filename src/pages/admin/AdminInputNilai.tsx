@@ -394,6 +394,55 @@ export default function AdminInputNilai() {
 
             {selectedKelas && selectedMapel && (
                <div className="space-y-6">
+                 <Card className="border-slate-200">
+                  <CardHeader className="py-3 px-4 bg-slate-50 border-b">
+                     <CardTitle className="text-sm font-bold text-slate-800">Capaian Pembelajaran (Mempengaruhi Kolom Nilai yang Muncul)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div>
+                             <h4 className="text-sm font-bold text-blue-800 mb-3">Materi / TP Formatif</h4>
+                             <div className="space-y-2">
+                                 {Array.from({length: 8}).map((_, i) => (
+                                     <div key={`df${i}`} className="flex items-center gap-2">
+                                         <span className="w-8 text-xs font-bold text-slate-500">F{i+1}</span>
+                                         <Input 
+                                             className="h-8 text-xs bg-white border-blue-200 focus-visible:ring-blue-400" 
+                                             placeholder={`Deskripsi Materi Formatif ${i+1}`} 
+                                             value={deskripsiFormatif[i]} 
+                                             onChange={e => {
+                                                 const newArr = [...deskripsiFormatif];
+                                                 newArr[i] = e.target.value;
+                                                 setDeskripsiFormatif(newArr);
+                                             }} 
+                                         />
+                                     </div>
+                                 ))}
+                             </div>
+                         </div>
+                         <div>
+                             <h4 className="text-sm font-bold text-fuchsia-800 mb-3">Materi / TP Sumatif</h4>
+                             <div className="space-y-2">
+                                 {Array.from({length: 8}).map((_, i) => (
+                                     <div key={`ds${i}`} className="flex items-center gap-2">
+                                         <span className="w-8 text-xs font-bold text-slate-500">S{i+1}</span>
+                                         <Input 
+                                             className="h-8 text-xs bg-white border-fuchsia-200 focus-visible:ring-fuchsia-400" 
+                                             placeholder={`Deskripsi Materi Sumatif ${i+1}`} 
+                                             value={deskripsiSumatif[i]} 
+                                             onChange={e => {
+                                                 const newArr = [...deskripsiSumatif];
+                                                 newArr[i] = e.target.value;
+                                                 setDeskripsiSumatif(newArr);
+                                             }} 
+                                         />
+                                     </div>
+                                 ))}
+                             </div>
+                         </div>
+                     </div>
+                  </CardContent>
+               </Card>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card className="bg-amber-50 border-amber-200">
                         <CardContent className="p-4 pt-4 space-y-3">
@@ -444,16 +493,24 @@ export default function AdminInputNilai() {
                           <TableRow>
                              <TableHead className="w-12 text-center" rowSpan={2}>NO</TableHead>
                              <TableHead className="w-64" rowSpan={2}>NAMA SISWA</TableHead>
-                             <TableHead className="text-center border-x bg-blue-50 text-blue-800" colSpan={8}>FORMATIF (F1-F8)</TableHead>
-                             <TableHead className="text-center border-x bg-fuchsia-50 text-fuchsia-800" colSpan={8}>SUMATIF (S1-S8)</TableHead>
+                             {(() => {
+                                const fCount = deskripsiFormatif.filter(d => d.trim() !== '').length;
+                                const sCount = deskripsiSumatif.filter(d => d.trim() !== '').length;
+                                return (
+                                   <>
+                                      {fCount > 0 && <TableHead className="text-center border-x bg-blue-50 text-blue-800" colSpan={fCount}>FORMATIF</TableHead>}
+                                      {sCount > 0 && <TableHead className="text-center border-x bg-fuchsia-50 text-fuchsia-800" colSpan={sCount}>SUMATIF</TableHead>}
+                                   </>
+                                );
+                             })()}
                              <TableHead className="text-center border-x bg-yellow-50 text-yellow-800 text-[10px]" colSpan={2}>PTS</TableHead>
                              <TableHead className="text-center border-x bg-emerald-50 text-emerald-800 text-[10px]" colSpan={2}>PSAS</TableHead>
                              <TableHead className="w-20 text-center" rowSpan={2}>AKHIR</TableHead>
                              <TableHead className="w-72" rowSpan={2}>DESKRIPSI CAPAIAN</TableHead>
                           </TableRow>
                           <TableRow>
-                             {Array.from({length: 8}).map((_,i) => <TableHead key={`hf${i}`} className="p-1 text-center w-12 text-[10px] bg-blue-50/50">F{i+1}</TableHead>)}
-                             {Array.from({length: 8}).map((_,i) => <TableHead key={`hs${i}`} className="p-1 text-center w-12 text-[10px] bg-fuchsia-50/50">S{i+1}</TableHead>)}
+                             {deskripsiFormatif.map((d,i) => d.trim() !== '' ? <TableHead key={`hf${i}`} className="p-1 text-center w-12 text-[10px] bg-blue-50/50">F{i+1}</TableHead> : null)}
+                             {deskripsiSumatif.map((d,i) => d.trim() !== '' ? <TableHead key={`hs${i}`} className="p-1 text-center w-12 text-[10px] bg-fuchsia-50/50">S{i+1}</TableHead> : null)}
                              <TableHead className="p-1 text-center text-[9px] bg-yellow-50/50">AWAL</TableHead>
                              <TableHead className="p-1 text-center text-[9px] bg-yellow-50 text-blue-600">KATROL</TableHead>
                              <TableHead className="p-1 text-center text-[9px] bg-emerald-50/50">AWAL</TableHead>
@@ -473,16 +530,16 @@ export default function AdminInputNilai() {
                                         <span className="text-[10px] font-mono text-slate-400">{siswa.nis || '-'}</span>
                                      </div>
                                   </TableCell>
-                                  {Array.from({length: 8}).map((_, i) => (
+                                  {deskripsiFormatif.map((d, i) => d.trim() !== '' ? (
                                      <TableCell key={`f${i}`} className="p-1 border-x">
                                         <Input type="number" className="w-12 h-8 text-center text-xs p-0 border-blue-100 focus:ring-blue-500" value={sData.formatif[i] ?? ''} onChange={e => handleArrayNilaiChange(siswa.id, 'formatif', i, e.target.value)} />
                                      </TableCell>
-                                  ))}
-                                  {Array.from({length: 8}).map((_, i) => (
+                                  ) : null)}
+                                  {deskripsiSumatif.map((d, i) => d.trim() !== '' ? (
                                      <TableCell key={`s${i}`} className="p-1 border-x">
                                         <Input type="number" className="w-12 h-8 text-center text-xs p-0 border-fuchsia-100 focus:ring-fuchsia-500" value={sData.sumatif[i] ?? ''} onChange={e => handleArrayNilaiChange(siswa.id, 'sumatif', i, e.target.value)} />
                                      </TableCell>
-                                  ))}
+                                  ) : null)}
                                   <TableCell className="p-1 border-x bg-yellow-50/20">
                                      <Input type="number" className="w-12 h-8 text-center text-xs p-0 border-amber-200" value={sData.pts ?? ''} onChange={e => handleSingleNilaiChange(siswa.id, 'pts', e.target.value)} />
                                   </TableCell>
