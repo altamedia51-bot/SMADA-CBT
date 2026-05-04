@@ -40,6 +40,7 @@ export default function AdminMasterData() {
   const [showFormEkstra, setShowFormEkstra] = useState(false);
   
   // Student Form State
+  const [filterKelasSiswa, setFilterKelasSiswa] = useState('Semua');
   const [editingSiswa, setEditingSiswa] = useState<any>(null);
   const [siswaForm, setSiswaForm] = useState({
     nama: '',
@@ -1146,74 +1147,98 @@ export default function AdminMasterData() {
 
           {/* Section: Database Siswa */}
           <div className="space-y-4">
-            <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">
-              Database Siswa <span className="text-sm font-normal text-slate-400 ml-2">(Klik nama untuk lihat profil)</span>
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Group students by class */}
-              {Array.from(new Set(users.filter(u => u.role === 'siswa' && u.kelas).map(u => u.kelas))).sort().map(className => {
-                const studentsInClass = users.filter(u => u.role === 'siswa' && u.kelas === className).sort((a,b) => a.displayName.localeCompare(b.displayName));
-                return (
-                  <Card key={className as string} className="p-0 border border-slate-200 shadow-sm flex flex-col max-h-[350px]">
-                    <div className="p-4 bg-slate-50/50 border-b flex justify-between items-center sticky top-0 z-10">
-                      <span className="font-black text-lg text-slate-800">{className as string}</span>
-                      <span className="bg-white border text-[11px] font-bold px-2 py-0.5 rounded shadow-sm text-slate-500">
-                        {studentsInClass.length}
-                      </span>
-                    </div>
-                    <div className="overflow-y-auto flex-1 p-0 custom-scrollbar">
-                      <div className="divide-y">
-                        {studentsInClass.map((student, idx) => (
-                          <div key={student.id} className="flex items-center justify-between p-3 hover:bg-emerald-50/30 group transition-colors">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                              <span className="text-xs font-medium text-slate-400 w-4">{idx + 1}.</span>
-                              <div>
-                                <span className="text-sm font-bold text-slate-700 truncate cursor-pointer hover:text-emerald-600 transition-colors block">
-                                  {student.displayName}
-                                </span>
-                                {(student.jurusan || student.sesiId) && (
-                                  <span className="text-[10px] text-slate-500 font-medium font-mono">
-                                    {student.jurusan && student.jurusan !== 'Semua' ? `[${student.jurusan}] ` : ''}
-                                    {student.sesiId && student.sesiId !== 'none' ? `SESI: ${sesi.find(s => s.id === student.sesiId)?.name || '?'}` : ''}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
-                                onClick={() => editSiswaAction(student)}
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50"
-                                onClick={() => hapusData('users', student.id)}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-              
-              {/* Empty state if no students by class findable */}
-              {users.filter(u => u.role === 'siswa').length === 0 && (
-                <div className="md:col-span-2 py-12 text-center bg-slate-50 rounded-xl border border-dashed text-slate-400">
-                  <UserCircle className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                  <p>Belum ada data siswa. Gunakan form di atas atau upload CSV.</p>
-                </div>
-              )}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center rounded gap-4 pt-4 border-t">
+              <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">
+                Database Siswa <span className="text-sm font-normal text-slate-400 ml-2">(Klik nama untuk lihat profil)</span>
+              </h3>
+              <Select value={filterKelasSiswa} onValueChange={setFilterKelasSiswa}>
+                <SelectTrigger className="w-full md:w-[220px] bg-white h-10 border-slate-200">
+                  <SelectValue placeholder="Pilih Kelas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Semua">Semua Kelas</SelectItem>
+                  {Array.from(new Set(users.filter(u => u.role === 'siswa' && u.kelas).map(u => u.kelas))).sort().map(className => (
+                    <SelectItem key={className as string} value={className as string}>{className as string}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            
+            <Card className="p-0 border border-slate-200 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto w-full">
+                <Table className="min-w-[800px]">
+                  <TableHeader>
+                    <TableRow className="bg-slate-50 border-b border-slate-200">
+                      <TableHead className="w-12 text-center font-bold text-slate-600">No</TableHead>
+                      <TableHead className="font-bold text-slate-600">Nama Lengkap</TableHead>
+                      <TableHead className="font-bold text-slate-600">Kelas</TableHead>
+                      <TableHead className="font-bold text-slate-600">Jurusan</TableHead>
+                      <TableHead className="font-bold text-slate-600">Sesi</TableHead>
+                      <TableHead className="w-24 text-center font-bold text-slate-600">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users
+                      .filter(u => u.role === 'siswa' && (filterKelasSiswa === 'Semua' || u.kelas === filterKelasSiswa))
+                      .sort((a,b) => a.displayName.localeCompare(b.displayName))
+                      .map((student, idx) => (
+                      <TableRow key={student.id} className="hover:bg-slate-50 transition-colors">
+                        <TableCell className="text-center font-medium text-slate-500">{idx + 1}</TableCell>
+                        <TableCell>
+                          <div className="font-bold text-slate-700">{student.displayName}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">NIS: {student.nis || '-'}</div>
+                        </TableCell>
+                        <TableCell className="font-medium text-slate-600">{student.kelas}</TableCell>
+                        <TableCell>
+                           {student.jurusan && student.jurusan !== 'Semua' ? (
+                             <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                               {student.jurusan}
+                             </span>
+                           ) : <span className="text-slate-400">-</span>}
+                        </TableCell>
+                        <TableCell>
+                           {student.sesiId && student.sesiId !== 'none' ? (
+                             <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                               SESI: {sesi.find(s => s.id === student.sesiId)?.name || '?'}
+                             </span>
+                           ) : <span className="text-slate-400">-</span>}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-2">
+                             <Button 
+                               variant="ghost" 
+                               size="sm" 
+                               className="h-8 w-8 p-0 text-blue-500 hover:text-blue-600 hover:bg-blue-50 focus:ring-0"
+                               onClick={() => editSiswaAction(student)}
+                             >
+                               <Pencil className="w-3.5 h-3.5" />
+                             </Button>
+                             <Button 
+                               variant="ghost" 
+                               size="sm" 
+                               className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50 focus:ring-0"
+                               onClick={() => hapusData('users', student.id)}
+                             >
+                               <Trash2 className="w-3.5 h-3.5" />
+                             </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {users.filter(u => u.role === 'siswa' && (filterKelasSiswa === 'Semua' || u.kelas === filterKelasSiswa)).length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-32 text-center text-slate-400">
+                          <div className="flex flex-col items-center justify-center py-6">
+                            <UserCircle className="w-10 h-10 mb-2 opacity-20" />
+                            <p>Tidak ada data siswa{filterKelasSiswa !== 'Semua' ? ` untuk kelas ${filterKelasSiswa}` : ''}.</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
           </div>
         </div>
         )}
