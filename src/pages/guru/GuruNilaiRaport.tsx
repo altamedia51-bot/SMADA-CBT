@@ -198,7 +198,7 @@ export default function GuruNilaiRaport() {
       });
 
       if (validStudentIds.length === 0) {
-         toast.error(`Tidak ada nilai awal ${type.toUpperCase()} yang bisa dikatrol.`);
+         toast.error(`Tidak ada nilai awal ${type.toUpperCase()} yang bisa dikonversi.`);
          return;
       }
 
@@ -229,7 +229,7 @@ export default function GuruNilaiRaport() {
       });
 
       setNilaiData(newData);
-      toast.success(`Berhasil mengkatrol nilai ${type.toUpperCase()}.`);
+      toast.success(`Berhasil mengkonversi nilai ${type.toUpperCase()}.`);
   };
 
   const handleGenerateDeskripsi = () => {
@@ -452,7 +452,7 @@ export default function GuruNilaiRaport() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
          <div>
             <h1 className="text-2xl font-bold text-slate-800">Input Nilai Mapel (Kurikulum Merdeka)</h1>
-            <p className="text-sm text-slate-500">Kelola nilai Formatif, Sumatif, PTS, dan PSAS dengan batasan nilai 0-100 dan fitur katrol nilai otomatis.</p>
+            <p className="text-sm text-slate-500">Kelola nilai Formatif, Sumatif, PTS, dan PSAS dengan batasan nilai 0-100 dan fitur konversi nilai otomatis.</p>
          </div>
       </div>
 
@@ -594,26 +594,26 @@ export default function GuruNilaiRaport() {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                    <Card className="bg-yellow-50/50 border-yellow-200">
                        <CardContent className="p-4 flex flex-col items-start gap-3">
-                           <h3 className="font-bold text-sm text-yellow-800">Skalakan / Katrol Nilai PTS</h3>
+                           <h3 className="font-bold text-sm text-yellow-800">Konversi Otomatis Nilai PTS</h3>
                            <div className="flex items-center gap-2">
                                <Input type="number" value={katrolPtsMin} onChange={e => setKatrolPtsMin(Number(e.target.value))} className="w-20 bg-white" placeholder="Min" />
                                <span className="text-slate-500 font-bold">-</span>
                                <Input type="number" value={katrolPtsMax} onChange={e => setKatrolPtsMax(Number(e.target.value))} className="w-20 bg-white" placeholder="Max" />
                                <Button onClick={() => handleProsesKatrol('pts')} size="sm" variant="outline" className="border-yellow-300 text-yellow-700 hover:bg-yellow-100">Proses</Button>
                            </div>
-                           <p className="text-[11px] text-yellow-700">Nilai PTS akan diskalakan otomatis ke dalam rentang {katrolPtsMin} hingga {katrolPtsMax}.</p>
+                           <p className="text-[11px] text-yellow-700">Nilai PTS akan direntangkan secara proporsional ke dalam interval {katrolPtsMin} hingga {katrolPtsMax}.</p>
                        </CardContent>
                    </Card>
                    <Card className="bg-emerald-50/50 border-emerald-200">
                        <CardContent className="p-4 flex flex-col items-start gap-3">
-                           <h3 className="font-bold text-sm text-emerald-800">Skalakan / Katrol Nilai PSAS</h3>
+                           <h3 className="font-bold text-sm text-emerald-800">Konversi Otomatis Nilai PSAS</h3>
                            <div className="flex items-center gap-2">
                                <Input type="number" value={katrolPsasMin} onChange={e => setKatrolPsasMin(Number(e.target.value))} className="w-20 bg-white" placeholder="Min" />
                                <span className="text-slate-500 font-bold">-</span>
                                <Input type="number" value={katrolPsasMax} onChange={e => setKatrolPsasMax(Number(e.target.value))} className="w-20 bg-white" placeholder="Max" />
                                <Button onClick={() => handleProsesKatrol('psas')} size="sm" variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-100">Proses</Button>
                            </div>
-                           <p className="text-[11px] text-emerald-700">Nilai PSAS akan diskalakan otomatis ke dalam rentang {katrolPsasMin} hingga {katrolPsasMax}.</p>
+                           <p className="text-[11px] text-emerald-700">Nilai PSAS akan direntangkan secara proporsional ke dalam interval {katrolPsasMin} hingga {katrolPsasMax}.</p>
                        </CardContent>
                    </Card>
                </div>
@@ -686,11 +686,11 @@ export default function GuruNilaiRaport() {
                            
                            {/* PTS */}
                            <TableHead className="text-center w-[65px] p-1 border-l bg-yellow-50/20 text-[11px] font-bold">Awal</TableHead>
-                           <TableHead className="text-center w-[65px] p-1 border-r text-blue-600 bg-yellow-50/20 text-[11px] font-bold">Katrol</TableHead>
+                           <TableHead className="text-center w-[65px] p-1 border-r text-blue-600 bg-yellow-50/20 text-[11px] font-bold">Reskalakan</TableHead>
                            
                            {/* PSAS */}
                            <TableHead className="text-center w-[65px] p-1 border-l bg-emerald-50/20 text-[11px] font-bold">Awal</TableHead>
-                           <TableHead className="text-center w-[65px] p-1 border-r text-blue-600 bg-emerald-50/20 text-[11px] font-bold">Katrol</TableHead>
+                           <TableHead className="text-center w-[65px] p-1 border-r text-blue-600 bg-emerald-50/20 text-[11px] font-bold">Reskalakan</TableHead>
                         </TableRow>
                      </TableHeader>
                      <TableBody>

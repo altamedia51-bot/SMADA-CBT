@@ -175,7 +175,7 @@ export default function AdminInputNilai() {
           return data && typeof data[type] === 'number';
        });
        if (validStudentIds.length === 0) {
-          toast.error(`Tidak ada nilai awal ${type.toUpperCase()} yang bisa dikatrol.`);
+          toast.error(`Tidak ada nilai awal ${type.toUpperCase()} yang bisa dikonversi.`);
           return;
        }
        const values = validStudentIds.map(id => nilaiData[id][type] as number);
@@ -196,7 +196,7 @@ export default function AdminInputNilai() {
           newData[id] = { ...newData[id], [fieldKatrol]: Math.round(newVal) };
        });
        setNilaiData(newData);
-       toast.success(`Berhasil mengkatrol nilai ${type.toUpperCase()}.`);
+       toast.success(`Berhasil mengkonversi nilai ${type.toUpperCase()}.`);
   };
 
   const handleGenerateDeskripsi = () => {
@@ -446,7 +446,7 @@ export default function AdminInputNilai() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card className="bg-amber-50 border-amber-200">
                         <CardContent className="p-4 pt-4 space-y-3">
-                            <h3 className="font-black text-xs text-amber-800 uppercase tracking-widest">Katrol Nilai PTS</h3>
+                            <h3 className="font-black text-xs text-amber-800 uppercase tracking-widest">Konversi Nilai PTS</h3>
                             <div className="flex items-center gap-2">
                                 <Input type="number" value={katrolPtsMin} onChange={e => setKatrolPtsMin(Number(e.target.value))} className="w-20 bg-white" />
                                 <span className="font-bold text-slate-400">-</span>
@@ -457,7 +457,7 @@ export default function AdminInputNilai() {
                     </Card>
                     <Card className="bg-emerald-50 border-emerald-200">
                         <CardContent className="p-4 pt-4 space-y-3">
-                            <h3 className="font-black text-xs text-emerald-800 uppercase tracking-widest">Katrol Nilai PSAS</h3>
+                            <h3 className="font-black text-xs text-emerald-800 uppercase tracking-widest">Konversi Nilai PSAS</h3>
                             <div className="flex items-center gap-2">
                                 <Input type="number" value={katrolPsasMin} onChange={e => setKatrolPsasMin(Number(e.target.value))} className="w-20 bg-white" />
                                 <span className="font-bold text-slate-400">-</span>
@@ -512,9 +512,9 @@ export default function AdminInputNilai() {
                              {deskripsiFormatif.map((d,i) => d.trim() !== '' ? <TableHead key={`hf${i}`} className="p-1 text-center w-12 text-[10px] bg-blue-50/50">F{i+1}</TableHead> : null)}
                              {deskripsiSumatif.map((d,i) => d.trim() !== '' ? <TableHead key={`hs${i}`} className="p-1 text-center w-12 text-[10px] bg-fuchsia-50/50">S{i+1}</TableHead> : null)}
                              <TableHead className="p-1 text-center text-[9px] bg-yellow-50/50">AWAL</TableHead>
-                             <TableHead className="p-1 text-center text-[9px] bg-yellow-50 text-blue-600">KATROL</TableHead>
+                             <TableHead className="p-1 text-center text-[9px] bg-yellow-50 text-blue-600">KONVERSI</TableHead>
                              <TableHead className="p-1 text-center text-[9px] bg-emerald-50/50">AWAL</TableHead>
-                             <TableHead className="p-1 text-center text-[9px] bg-emerald-50 text-blue-600">KATROL</TableHead>
+                             <TableHead className="p-1 text-center text-[9px] bg-emerald-50 text-blue-600">KONVERSI</TableHead>
                           </TableRow>
                        </TableHeader>
                        <TableBody>

@@ -125,7 +125,7 @@ export default function Panduan() {
                  <ul className="list-disc pl-5 mt-2 space-y-1 text-slate-700">
                    <li>Pilih Kelas dan Mapel yang Bapak/Ibu ampu untuk membuka tabel nilai. Hanya guru pengampu mapel bersangkutan yang dapat mengeditnya.</li>
                    <li>Terdapat 8 kolom untuk masing-masing Nilai Formatif dan Nilai Sumatif.</li>
-                   <li>Jika ada nilai yang kurang memenuhi KKM, manfaatkan fitur <b>Katrol PTS</b> atau <b>Katrol PSAS</b> secara otomatis.</li>
+                   <li>Jika ada nilai yang kurang memenuhi KKM, manfaatkan fitur <b>Konversi Nilai PTS/PSAS Otomatis</b>.</li>
                    <li>Sistem dapat membuat Capaian Kompetensi (Deskripsi Raport) secara <b>Otomatis</b> mengikuti persentase KKM dan capaian siswa sesuai Panduan Deskripsi yang telah diset.</li>
                    <li>Gunakan fasilitas <b>Export Excel</b> & <b>Import Excel</b> untuk pengisian nilai secara offline yang lebih cepat memuat satu kelas.</li>
                  </ul>
