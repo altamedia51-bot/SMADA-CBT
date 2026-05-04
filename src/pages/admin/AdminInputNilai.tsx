@@ -92,29 +92,11 @@ export default function AdminInputNilai() {
           }
        });
 
-       const docsSnap = await getDocs(collection(db, 'nilai_raport'));
-       let pastSiswaIds = new Set<string>();
-       if (settings.activeTahunAjaran && tahunAjaran !== settings.activeTahunAjaran) {
-          const suffix = `_${tahunAjaran.replace(/\//g, '-')}_${semester}`;
-          const prefix = `${selectedKelas}_`;
-          const relatedDocs = docsSnap.docs.filter(d => d.id.startsWith(prefix) && d.id.endsWith(suffix));
-          for (const d of relatedDocs) {
-             const data = d.data().nilai || {};
-             Object.keys(data).forEach(id => pastSiswaIds.add(id));
-          }
-       }
-
        const qSiswa = query(collection(db, 'users'));
        const snapSiswa = await getDocs(qSiswa);
        const filteredSiswa = snapSiswa.docs
           .map(d => ({ id: d.id, ...d.data() }))
-          .filter((u: any) => {
-             if (u.role !== 'siswa') return false;
-             if (u.historyKelas && u.historyKelas[tahunAjaran]) {
-                 return u.historyKelas[tahunAjaran] === selectedKelas || pastSiswaIds.has(u.id);
-             }
-             return u.kelas === selectedKelas || pastSiswaIds.has(u.id);
-          })
+          .filter((u: any) => u.role === 'siswa' && u.kelas === selectedKelas)
           .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
        
        setSiswaConfig(filteredSiswa);

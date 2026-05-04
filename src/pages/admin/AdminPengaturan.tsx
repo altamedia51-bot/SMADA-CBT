@@ -94,45 +94,6 @@ export default function AdminPengaturan() {
      return 'ALUMNI'; // fallback if we can't parse it
   };
 
-  const handleRestoreSiswa = async () => {
-      if (!confirm("Apakah Anda yakin ingin mengembalikan kelas siswa dari tahun ajaran sebelumnya? Fitur ini akan mencari riwayat kelas siswa dan mengembalikannya.")) return;
-      setIsLoading(true);
-      try {
-         const qSiswa = query(collection(db, 'users'), where('role', '==', 'siswa'));
-         const snapSiswa = await getDocs(qSiswa);
-         let currentBatch = writeBatch(db);
-         let count = 0;
-         let opCount = 0;
-         let batchArray: any[] = [];
-         
-         for (const d of snapSiswa.docs) {
-            const s = d.data();
-            // Get any available class from history if exists
-            const history = s.historyKelas || {};
-            const keys = Object.keys(history);
-            if (keys.length > 0) {
-               // Restore to the first found class in history
-               const prevClass = history[keys[keys.length - 1]];
-               currentBatch.update(d.ref, { kelas: prevClass, isActive: true });
-               count++;
-               opCount++;
-               if (opCount >= 400) {
-                  batchArray.push(currentBatch.commit());
-                  currentBatch = writeBatch(db);
-                  opCount = 0;
-               }
-            }
-         }
-         batchArray.push(currentBatch.commit());
-         await Promise.all(batchArray);
-         toast.success(`Berhasil mengembalikan rincian kelas ${count} siswa seperti semula.`);
-      } catch (err: any) {
-         toast.error("Gagal mengembalikan data: " + err.message);
-      } finally {
-         setIsLoading(false);
-      }
-  };
-
   const handleSwitchTahunAjaran = async (ta: string) => {
       setIsLoading(true);
       try {
@@ -154,51 +115,12 @@ export default function AdminPengaturan() {
       }
       setIsLoading(true);
       try {
-         const qKelas = query(collection(db, 'kelas'));
-         const snapKelas = await getDocs(qKelas);
-         const allKelas = snapKelas.docs.map(d => d.data());
-         
-         const qSiswa = query(collection(db, 'users'), where('role', '==', 'siswa'));
-         const snapSiswa = await getDocs(qSiswa);
-         
-         // We need to chunk the batches since Firestore limit is 500 writes per batch
-         let currentBatch = writeBatch(db);
-         let operationCount = 0;
-         let batchArray: any[] = [];
-         let promoteCount = 0;
-         
-         for (const d of snapSiswa.docs) {
-            const s = d.data();
-            if (!s.kelas || s.kelas === 'ALUMNI') continue;
-            
-            const historyObj = s.historyKelas || {};
-            historyObj[activeTahunAjaran] = s.kelas;
-            
-            const nextClass = getNextClassString(s.kelas, allKelas);
-            if (nextClass === 'ALUMNI') {
-               currentBatch.update(d.ref, { kelas: 'ALUMNI', isActive: false, historyKelas: historyObj });
-            } else {
-               currentBatch.update(d.ref, { kelas: nextClass, historyKelas: historyObj });
-            }
-            promoteCount++;
-            operationCount++;
-            
-            if (operationCount >= 400) {
-               batchArray.push(currentBatch.commit());
-               currentBatch = writeBatch(db);
-               operationCount = 0;
-            }
-         }
-         
-         // Update settings after promoting
-         currentBatch.set(doc(db, 'settings', 'general'), {
+         await setDoc(doc(db, 'settings', 'general'), {
             activeTahunAjaran: newTahunInput,
             historyTahunAjaran: arrayUnion(newTahunInput)
          }, { merge: true });
          
-         batchArray.push(currentBatch.commit());
-         await Promise.all(batchArray);
-         toast.success(`Tahun Ajaran baru berhasil dibuat. ${promoteCount} siswa berhasil dinaikkan kelas/lulus.`);
+         toast.success(`Tahun Ajaran baru berhasil dibuat.`);
          setLocalActiveTahunAjaran(newTahunInput);
          setGlobalActiveTahunAjaran(newTahunInput);
          if (!historyTahunAjaran.includes(newTahunInput)) {
@@ -307,24 +229,15 @@ export default function AdminPengaturan() {
                  Ganti Ke Tahun Ajaran Baru
               </Button>
            </div>
-           
-           <div className="bg-orange-50 border border-orange-200 rounded-xl p-5 mt-4">
-              <h3 className="font-bold text-orange-800 mb-2">Pemulihan Data Siswa</h3>
-              <p className="text-sm text-orange-700 mb-4">Gunakan fitur ini jika data siswa sebelumnya kosong karena perubahan tahun ajaran. Ini akan merevert kelas semua siswa ke kelas aslinya.</p>
-              <Button onClick={handleRestoreSiswa} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-100 font-bold">
-                 Pulihkan Data Siswa (Undo)
-              </Button>
-           </div>
         </CardContent>
       </Card>
 
       <Dialog open={showTahunModal} onOpenChange={setShowTahunModal}>
          <DialogContent>
             <DialogHeader>
-               <DialogTitle>Mulai Tahun Ajaran Baru?</DialogTitle>
+               <DialogTitle>Tahun Ajaran Baru</DialogTitle>
                <DialogDescription>
-                  Tindakan ini akan <b>Otomatis Menaikkan Kelas Semua Siswa</b> (Siswa tingkat tertinggi akan diluluskan).<br/><br/>
-                  Nilai Raport Tahun Ajaran baru akan mulai dari kosong otomatis.
+                  Masukkan Tahun Ajaran baru untuk aplikasi. Nilai raport dan rekam jejak pada pengaturan tahun ajaran baru akan diatur otomatis.
                </DialogDescription>
             </DialogHeader>
             <div className="py-4">

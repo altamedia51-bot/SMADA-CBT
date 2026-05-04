@@ -87,22 +87,6 @@ export default function AdminLayout() {
           <span className="font-extrabold text-xl tracking-tight ml-3 text-white truncate">{settings.appName || 'CBT System'}</span>
         </div>
 
-        <div className="p-4 border-b border-[#1a2942] bg-[#0E1726]/50">
-          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-1 block flex items-center gap-1.5">
-            <CalendarClock className="w-3 h-3" /> Tahun Ajaran
-          </label>
-          <Select value={activeTahunAjaran || ''} onValueChange={(val) => setActiveTahunAjaran(val)}>
-            <SelectTrigger className="w-full bg-[#1a2942]/50 border-transparent text-slate-300 font-bold hover:bg-[#1a2942] transition-colors focus:ring-1 focus:ring-blue-500/50">
-              <SelectValue placeholder="Pilih Tahun Ajaran" />
-            </SelectTrigger>
-            <SelectContent>
-               {(settings.historyTahunAjaran || ['2023/2024', '2024/2025', '2025/2026']).map(ta => (
-                  <SelectItem key={ta} value={ta} className="font-bold">{ta}</SelectItem>
-               ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
            {navItems.map((item) => {
              const isActive = location.pathname === item.path || (item.subItems && item.subItems.some(sub => location.pathname.startsWith(sub.path.split('?')[0])));
