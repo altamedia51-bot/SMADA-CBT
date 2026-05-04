@@ -106,14 +106,20 @@ export default function AdminCetakAkademik() {
         const data = d.data().nilai || {};
         for (const [siswaId, stData] of Object.entries<any>(data)) {
           if (!allNilai[siswaId]) allNilai[siswaId] = {};
+          
+          let avgF = 0;
+          let avgS = 0;
+          let finalPts = 0;
+          let finalPsas = 0;
           let nilaiAkhir = 0;
+
           if (stData) {
              const fValid = Array.isArray(stData.formatif) ? stData.formatif.filter((v:any) => typeof v === 'number') as number[] : [];
-             const avgF = fValid.length > 0 ? fValid.reduce((a,b) => a+b, 0) / fValid.length : 0;
+             avgF = fValid.length > 0 ? fValid.reduce((a,b) => a+b, 0) / fValid.length : 0;
              const sValid = Array.isArray(stData.sumatif) ? stData.sumatif.filter((v:any) => typeof v === 'number') as number[] : [];
-             const avgS = sValid.length > 0 ? sValid.reduce((a,b) => a+b, 0) / sValid.length : 0;
-             const finalPts = typeof stData.katrol_pts === 'number' && stData.katrol_pts > 0 ? stData.katrol_pts : (typeof stData.pts === 'number' ? stData.pts : 0);
-             const finalPsas = typeof stData.katrol_psas === 'number' && stData.katrol_psas > 0 ? stData.katrol_psas : (typeof stData.psas === 'number' ? stData.psas : 0);
+             avgS = sValid.length > 0 ? sValid.reduce((a,b) => a+b, 0) / sValid.length : 0;
+             finalPts = typeof stData.katrol_pts === 'number' && stData.katrol_pts > 0 ? stData.katrol_pts : (typeof stData.pts === 'number' ? stData.pts : 0);
+             finalPsas = typeof stData.katrol_psas === 'number' && stData.katrol_psas > 0 ? stData.katrol_psas : (typeof stData.psas === 'number' ? stData.psas : 0);
              const components = [];
              if (avgF > 0) components.push(avgF);
              if (avgS > 0) components.push(avgS);
@@ -124,7 +130,10 @@ export default function AdminCetakAkademik() {
           allNilai[siswaId][m.id] = {
             nilai: Math.round(nilaiAkhir),
             nilai_pts: typeof stData?.pts === 'number' ? Math.round(stData.pts) : null,
-            deskripsi: stData?.deskripsi || ''
+            deskripsi: stData?.deskripsi || '',
+            nf: Math.round(avgF),
+            slm: Math.round(avgS),
+            sas: Math.round(finalPsas)
           };
         }
       }
@@ -319,64 +328,113 @@ export default function AdminCetakAkademik() {
                 </div>
              </div>
              <div id="print-container" className="mx-auto bg-white p-0">
-                 {/* LEDGER LAYOUT (More Comprehensive/Detailed) */}
+                 {/* LEDGER LAYOUT (Detailed Grid Style from PDF) */}
                  {printMode === 'ledger' && (
-                    <div className="pdf-page p-8 font-sans" style={{ width: '420mm', minHeight: '297mm' }}>
-                        <div className="border-[2px] border-black p-4">
-                           <div className="text-center font-bold mb-4 uppercase tracking-tighter">
-                              <h1 className="text-xl">LEGER NILAI AKADEMIK PESERTA DIDIK</h1>
-                              <p className="text-sm">TAHUN PELAJARAN {tahunAjaran} - SEMESTER {semester.toUpperCase()}</p>
-                           </div>
-                           
-                           <div className="flex justify-between text-[11px] font-bold mb-4">
-                              <span>SEKOLAH: SMA DARUSSALAM</span>
-                              <span>KELAS: {selectedKelas}</span>
-                              <span>WALI KELAS: {profile?.displayName || '-'}</span>
-                           </div>
-
-                           <table className="w-full border-collapse border-2 border-black text-[9px]">
-                              <thead>
-                                 <tr className="bg-slate-50">
-                                    <th className="border border-black p-1 w-6" rowSpan={2}>NO</th>
-                                    <th className="border border-black p-1 w-24" rowSpan={2}>NIS/NISN</th>
-                                    <th className="border border-black p-1" rowSpan={2}>NAMA LENGKAP</th>
-                                    <th className="border border-black p-1" colSpan={relevantMapels.length}>NILAI MAPEL (AKHIR)</th>
-                                    <th className="border border-black p-1 w-12" rowSpan={2}>JML</th>
-                                    <th className="border border-black p-1 w-12" rowSpan={2}>RRT</th>
-                                    <th className="border border-black p-1 w-12" rowSpan={2}>RANK</th>
-                                    <th className="border border-black p-1 w-24" rowSpan={2}>KET</th>
-                                 </tr>
-                                 <tr>
-                                    {relevantMapels.map(m => (
-                                       <th key={m.id} className="border border-black p-1 h-32 w-8 font-bold">
-                                          <div className="rotate-[-90deg] flex items-center justify-center whitespace-nowrap">
-                                             {m.name}
-                                          </div>
-                                       </th>
-                                    ))}
-                                 </tr>
-                              </thead>
-                              <tbody>
-                                 {sortedSiswa.sort((a,b)=>a.displayName.localeCompare(b.displayName)).map((s, idx) => (
-                                    <tr key={s.id}>
-                                       <td className="border border-black p-1 text-center font-bold">{idx+1}</td>
-                                       <td className="border border-black p-1 text-center">{s.nis || '-'}</td>
-                                       <td className="border border-black p-1 px-2 uppercase font-bold text-[8px] whitespace-nowrap">{s.displayName}</td>
-                                       {relevantMapels.map(m => (
-                                          <td key={m.id} className="border border-black p-1 text-center font-bold">{raportData[s.id]?.[m.id]?.nilai || '-'}</td>
-                                       ))}
-                                       <td className="border border-black p-1 text-center font-black bg-slate-50">{s.total}</td>
-                                       <td className="border border-black p-1 text-center font-black bg-slate-100">{s.rerata.toFixed(1)}</td>
-                                       <td className="border border-black p-1 text-center font-black">{s.rank}</td>
-                                       <td className="border border-black p-1 text-center text-[7px] italic font-bold">Terlampaui</td>
-                                    </tr>
+                    <div className="pdf-page p-6 font-sans bg-white" style={{ width: '420mm', minHeight: '297mm' }}>
+                        <div className="text-center font-bold mb-6 uppercase tracking-widest leading-tight">
+                           <h1 className="text-xl">KUMPULAN NILAI KELAS {selectedKelas} SMT. {semester === 'Ganjil' ? '1' : '2'} TH. PEL. {tahunAjaran}</h1>
+                        </div>
+                        
+                        <table className="w-full border-collapse border-[1px] border-black text-[9px]">
+                           <thead>
+                              <tr className="bg-slate-50">
+                                 <th className="border border-black p-1 w-8" rowSpan={2}>No.</th>
+                                 <th className="border border-black p-1 w-[250px]" rowSpan={2}>
+                                    NAMA PESERTA DIDIK<br/>
+                                    Nomor Induk/NISN<br/>
+                                    Tempat dan Tanggal Lahir<br/>
+                                    Nama Orang Tua<br/>
+                                    Alamat
+                                 </th>
+                                 <th className="border border-black p-1" colSpan={relevantMapels.length}>MATA PELAJARAN</th>
+                                 <th className="border border-black p-1 w-12" rowSpan={2}>Jml</th>
+                                 <th className="border border-black p-1 w-12" rowSpan={2}>Rrt</th>
+                                 <th className="border border-black p-1 w-12" rowSpan={2}>Rnk</th>
+                                 <th className="border border-black p-1 w-12" rowSpan={2}>Abs</th>
+                              </tr>
+                              <tr>
+                                 {relevantMapels.map(m => (
+                                    <th key={m.id} className="border border-black p-1 h-36 w-8 font-bold">
+                                       <div className="rotate-[-90deg] flex items-center justify-center whitespace-nowrap overflow-visible uppercase text-[8px]">
+                                          {m.name}
+                                       </div>
+                                    </th>
                                  ))}
-                              </tbody>
-                           </table>
-                           <div className="mt-8 flex justify-end">
-                              <div className="w-64 text-center text-xs font-bold space-y-16">
-                                 <div>Banyuwangi, {tanggalRaportInput}<br/>Wali Kelas,</div>
-                                 <div>( {profile?.displayName || '__________________'} )</div>
+                              </tr>
+                           </thead>
+                           <tbody>
+                              {sortedSiswa.sort((a, b) => a.displayName.localeCompare(b.displayName)).map((s, idx) => (
+                                 <tr key={s.id}>
+                                    <td className="border border-black p-1 text-center font-bold align-top">{idx + 1}</td>
+                                    <td className="border border-black p-1 leading-[1.3] align-top">
+                                       <div className="flex h-full">
+                                          <div className="flex-1 space-y-0.5">
+                                             <div className="font-black uppercase text-[10px]">{s.displayName}</div>
+                                             <div className="text-slate-600">{s.nis || '-'}{s.nisn ? ` / ${s.nisn}` : ''}</div>
+                                             <div className="text-slate-500 italic">{s.tempatLahir || '-'}, {s.tanggalLahir || '-'}</div>
+                                             <div className="text-slate-600">{s.namaAyah || s.namaIbu || '-'}</div>
+                                             <div className="text-slate-500 truncate">{s.alamat || '-'}</div>
+                                          </div>
+                                          <div className="w-8 border-l border-black flex flex-col justify-between text-[7px] font-bold text-center bg-slate-50">
+                                             <div className="flex-1 flex items-center justify-center border-b border-black/10">NF</div>
+                                             <div className="flex-1 flex items-center justify-center border-b border-black/10">SLM</div>
+                                             <div className="flex-1 flex items-center justify-center border-b border-black/10">SAS</div>
+                                             <div className="flex-1 flex items-center justify-center font-black">NA</div>
+                                          </div>
+                                       </div>
+                                    </td>
+                                    {relevantMapels.map(m => {
+                                       const data = raportData[s.id]?.[m.id] || {};
+                                       return (
+                                          <td key={m.id} className="border border-black p-0 text-center align-top">
+                                             <div className="flex flex-col h-full text-[8px] min-h-[56px]">
+                                                <div className="flex-1 flex items-center justify-center border-b border-black/10 bg-blue-50/10">{data.nf || '-'}</div>
+                                                <div className="flex-1 flex items-center justify-center border-b border-black/10 bg-fuchsia-50/10">{data.slm || '-'}</div>
+                                                <div className="flex-1 flex items-center justify-center border-b border-black/10 bg-amber-50/10">{data.sas || '-'}</div>
+                                                <div className="flex-1 flex items-center justify-center font-black bg-slate-100">{data.nilai || '-'}</div>
+                                             </div>
+                                          </td>
+                                       );
+                                    })}
+                                    <td className="border border-black p-0 text-center font-bold bg-slate-50">
+                                       <div className="h-full flex items-center justify-center min-h-[48px]">{s.total}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center font-bold">
+                                       <div className="h-full flex items-center justify-center min-h-[48px]">{s.rerata.toFixed(1).replace('.', ',')}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center font-bold bg-slate-50">
+                                       <div className="h-full flex items-center justify-center min-h-[48px]">{s.rank}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center">
+                                       <div className="grid grid-rows-3 divide-y divide-black/20 h-full text-[7px] min-h-[48px]">
+                                          <div className="flex items-center justify-center">S: -</div>
+                                          <div className="flex items-center justify-center">I: -</div>
+                                          <div className="flex items-center justify-center">A: -</div>
+                                       </div>
+                                    </td>
+                                 </tr>
+                              ))}
+                           </tbody>
+                        </table>
+
+                        <div className="mt-4 flex justify-between items-start">
+                           <div className="text-[10px] font-bold border p-2 border-black/10 rounded">
+                              <span className="block italic opacity-70">Keterangan:</span>
+                              <div className="flex gap-4">
+                                 <span>NF : Nilai Formatif</span>
+                                 <span>SLM : Sumatif Lingkup Materi</span>
+                                 <span>SAS : Sumatif Akhir Semester</span>
+                                 <span>NA : Nilai Akhir</span>
+                              </div>
+                           </div>
+                           <div className="grid grid-cols-2 gap-20 text-center text-[10px] font-bold">
+                              <div className="space-y-16">
+                                 <div>Mengetahui,<br/>Waka Kurikulum</div>
+                                 <div className="uppercase">( _________________ )<br/><span className="font-normal">NIP. _________________</span></div>
+                              </div>
+                              <div className="space-y-16">
+                                 <div>Banyuwangi, {tanggalRaportInput}<br/>Kepala Sekolah,</div>
+                                 <div className="uppercase">( {kepalaSekolah || '__________________'} )<br/><span className="font-normal">NIP. {nipKepalaSekolah || '__________________'}</span></div>
                               </div>
                            </div>
                         </div>
@@ -792,14 +850,36 @@ export default function AdminCetakAkademik() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                            {sortedSiswa.sort((a,b)=>a.displayName.localeCompare(b.displayName)).map((siswa, idx) => (
-                              <tr key={siswa.id} className="hover:bg-slate-50 font-medium">
-                                 <td className="p-3 text-center border-x border-slate-100 text-slate-400">{idx+1}</td>
-                                 <td className="p-3 border-x border-slate-100 font-bold text-slate-700 truncate max-w-[200px] uppercase text-[9px]">{siswa.displayName}</td>
+                              <tr key={siswa.id} className="hover:bg-slate-50 transition-colors">
+                                 <td className="p-3 text-center border-x border-slate-100 text-slate-400 font-bold">{idx+1}</td>
+                                 <td className="p-3 border-x border-slate-100 font-bold text-slate-700 truncate max-w-[200px] uppercase text-[9px]">
+                                    <div className="flex">
+                                       <div className="flex-1">
+                                          {siswa.displayName}
+                                          <div className="text-[7px] text-slate-400 font-normal normal-case">{siswa.nis || '-'}</div>
+                                       </div>
+                                       <div className="w-5 flex flex-col font-black text-[6px] text-slate-300 ml-1 border-l border-slate-100 pl-1">
+                                          <div className="flex-1">F</div>
+                                          <div className="flex-1">S</div>
+                                          <div className="flex-1">P</div>
+                                          <div className="flex-1">A</div>
+                                       </div>
+                                    </div>
+                                 </td>
                                  {relevantMapels.map(m => {
-                                    const val = raportData[siswa.id]?.[m.id]?.nilai;
-                                    return <td key={m.id} className="p-2 text-center border-x border-slate-100 font-bold">{val || '-'}</td>;
+                                    const data = raportData[siswa.id]?.[m.id] || {};
+                                    return (
+                                       <td key={m.id} className="p-0 border-x border-slate-100 text-center min-w-[50px]">
+                                          <div className="grid grid-cols-2 grid-rows-2 text-[7px] font-bold h-full">
+                                             <div className="p-1 border-b border-r border-slate-100 bg-blue-50/20 text-blue-400" title="Formatif (NF)">{data.nf || '-'}</div>
+                                             <div className="p-1 border-b border-slate-100 bg-fuchsia-50/20 text-fuchsia-400" title="Sumatif (SLM)">{data.slm || '-'}</div>
+                                             <div className="p-1 border-r border-slate-100 bg-amber-50/20 text-amber-500" title="SAS">{data.sas || '-'}</div>
+                                             <div className="p-1 bg-slate-100 text-slate-900 border-t border-slate-100" title="NA">{data.nilai || '-'}</div>
+                                          </div>
+                                       </td>
+                                    );
                                  })}
-                                 <td className="p-3 text-center border-x border-slate-100 bg-slate-50 font-black">{siswa.total}</td>
+                                 <td className="p-3 text-center border-x border-slate-100 bg-slate-50 font-black text-slate-800">{siswa.total}</td>
                                  <td className="p-3 text-center border-x border-slate-100 bg-blue-50/30 text-blue-600 font-black">{siswa.rerata.toFixed(1).replace('.', ',')}</td>
                                  <td className="p-3 text-center border-x border-slate-100 font-black text-rose-500">{siswa.rank}</td>
                               </tr>
