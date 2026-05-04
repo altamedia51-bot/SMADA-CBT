@@ -112,31 +112,7 @@ export default function AdminPengaturan() {
       }
       setIsLoading(true);
       try {
-         const qKelas = query(collection(db, 'kelas'));
-         const snapKelas = await getDocs(qKelas);
-         const allKelas = snapKelas.docs.map(d => d.data());
-         
-         const qSiswa = query(collection(db, 'users'), where('role', '==', 'siswa'));
-         const snapSiswa = await getDocs(qSiswa);
-         
          const batch = writeBatch(db);
-         let promoteCount = 0;
-         
-         snapSiswa.docs.forEach(d => {
-            const s = d.data();
-            if (!s.kelas || s.kelas === 'ALUMNI') return;
-            
-            const historyObj = s.historyKelas || {};
-            historyObj[activeTahunAjaran] = s.kelas;
-            
-            const nextClass = getNextClassString(s.kelas, allKelas);
-            if (nextClass === 'ALUMNI') {
-               batch.update(d.ref, { kelas: 'ALUMNI', isActive: false, historyKelas: historyObj });
-            } else {
-               batch.update(d.ref, { kelas: nextClass, historyKelas: historyObj });
-            }
-            promoteCount++;
-         });
          
          batch.set(doc(db, 'settings', 'general'), {
             activeTahunAjaran: newTahunInput,
@@ -144,7 +120,7 @@ export default function AdminPengaturan() {
          }, { merge: true });
          
          await batch.commit();
-         toast.success(`Tahun Ajaran baru berhasil dibuat. ${promoteCount} siswa berhasil diproses.`);
+         toast.success(`Tahun Ajaran baru berhasil dibuat.`);
          setActiveTahunAjaran(newTahunInput);
          setShowTahunModal(false);
       } catch(err:any) {

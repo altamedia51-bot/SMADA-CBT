@@ -148,25 +148,11 @@ export default function GuruRaportKelas() {
         d.id.startsWith(prefix) && d.id.endsWith(suffix)
       );
 
-      let pastSiswaIds = new Set<string>();
-      if (settings.activeTahunAjaran && tahunAjaran !== settings.activeTahunAjaran) {
-          for (const d of relatedDocs) {
-             const data = d.data().nilai || {};
-             Object.keys(data).forEach(id => pastSiswaIds.add(id));
-          }
-      }
-
       // Load Siswa for this class
       const usersSnap = await getDocs(query(collection(db, 'users')));
       const siswas = usersSnap.docs
         .map(d => ({ id: d.id, ...d.data() }))
-        .filter((u: any) => {
-           if (u.role !== 'siswa') return false;
-           if (settings.activeTahunAjaran && tahunAjaran !== settings.activeTahunAjaran) {
-               return (u.historyKelas && u.historyKelas[tahunAjaran] === profile.waliKelas) || pastSiswaIds.has(u.id);
-           }
-           return u.kelas === profile.waliKelas;
-        })
+        .filter((u: any) => u.role === 'siswa' && u.kelas === profile.waliKelas)
         .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
       
       setSiswaList(siswas);
