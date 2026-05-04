@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '../../store/auth.store';
 import { Save, Loader2, Wand2, FileDown, Upload } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { useAppSettings } from '../../hooks/useAppSettings';
 
 interface NilaiSiswa {
   formatif: (number | '')[];
@@ -23,13 +24,20 @@ interface NilaiSiswa {
 
 export default function AdminInputNilai() {
   const { profile } = useAuthStore();
+  const { settings } = useAppSettings();
   const [kelas, setKelas] = useState<any[]>([]);
   const [mapel, setMapel] = useState<any[]>([]);
   
   const [selectedKelas, setSelectedKelas] = useState('');
   const [selectedMapel, setSelectedMapel] = useState('');
-  const [tahunAjaran, setTahunAjaran] = useState('2024/2025');
+  const [tahunAjaran, setTahunAjaran] = useState(settings.activeTahunAjaran || '2025/2026');
   const [semester, setSemester] = useState('Ganjil');
+
+  useEffect(() => {
+     if (settings.activeTahunAjaran) {
+        setTahunAjaran(settings.activeTahunAjaran);
+     }
+  }, [settings.activeTahunAjaran]);
   
   const [siswaConfig, setSiswaConfig] = useState<any[]>([]);
   const [kkm, setKkm] = useState<number>(75);
@@ -333,11 +341,9 @@ export default function AdminInputNilai() {
                         <SelectValue placeholder="Pilih TA" />
                      </SelectTrigger>
                      <SelectContent>
-                        {Array.from({length: 5}).map((_, i) => {
-                           const startYear = new Date().getFullYear() - 2 + i;
-                           const ta = `${startYear}/${startYear + 1}`;
-                           return <SelectItem key={ta} value={ta}>{ta}</SelectItem>;
-                        })}
+                        {(settings.historyTahunAjaran || ['2023/2024', '2024/2025', '2025/2026']).map((val) => (
+                           <SelectItem key={val} value={val}>{val}</SelectItem>
+                        ))}
                      </SelectContent>
                   </Select>
                </div>

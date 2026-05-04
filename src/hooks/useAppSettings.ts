@@ -5,11 +5,15 @@ import { db } from '../lib/firebase';
 export interface AppSettings {
   logo?: string;
   appName?: string;
+  activeTahunAjaran?: string;
+  historyTahunAjaran?: string[];
 }
 
 export function useAppSettings() {
   const [settings, setSettings] = useState<AppSettings>({
     appName: 'CBT System',
+    activeTahunAjaran: '2025/2026',
+    historyTahunAjaran: ['2023/2024', '2024/2025', '2025/2026']
   });
   const [loading, setLoading] = useState(true);
 
@@ -20,6 +24,8 @@ export function useAppSettings() {
         const newSettings = {
           logo: data.logo || '',
           appName: data.appName || 'CBT System',
+          activeTahunAjaran: data.activeTahunAjaran || '2025/2026',
+          historyTahunAjaran: data.historyTahunAjaran || ['2023/2024', '2024/2025', '2025/2026']
         };
         setSettings(newSettings);
         

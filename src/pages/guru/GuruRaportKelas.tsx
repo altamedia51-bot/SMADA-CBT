@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Settings, Printer, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAppSettings } from '../../hooks/useAppSettings';
 import domtoimage from 'dom-to-image';
 import { jsPDF } from 'jspdf';
 
@@ -19,10 +20,17 @@ export default function GuruRaportKelas() {
   const [mapelList, setMapelList] = useState<any[]>([]);
   const [siswaList, setSiswaList] = useState<any[]>([]);
   
-  const [tahunAjaran, setTahunAjaran] = useState('2024/2025');
+  const { settings } = useAppSettings();
+  const [tahunAjaran, setTahunAjaran] = useState(settings.activeTahunAjaran || '2025/2026');
   const [semester, setSemester] = useState('Ganjil');
   const [raportData, setRaportData] = useState<Record<string, Record<string, any>>>({}); // siswaId -> mapelId -> nilaiInfo
   const [pembinaanData, setPembinaanData] = useState<Record<string, string>>({}); // siswaId -> catatan
+
+  useEffect(() => {
+     if (settings.activeTahunAjaran) {
+        setTahunAjaran(settings.activeTahunAjaran);
+     }
+  }, [settings.activeTahunAjaran]);
 
   const [loading, setLoading] = useState(false);
   const [printMode, setPrintMode] = useState<'raport' | 'ledger' | 'raport_pts' | 'ledger_pts' | null>(null);
@@ -584,11 +592,9 @@ export default function GuruRaportKelas() {
                         <SelectValue placeholder="Pilih TA" />
                      </SelectTrigger>
                      <SelectContent>
-                        {Array.from({length: 5}).map((_, i) => {
-                           const startYear = new Date().getFullYear() - 2 + i;
-                           const ta = `${startYear}/${startYear + 1}`;
-                           return <SelectItem key={ta} value={ta}>{ta}</SelectItem>;
-                        })}
+                        {(settings.historyTahunAjaran || ['2023/2024', '2024/2025', '2025/2026']).map((val) => (
+                           <SelectItem key={val} value={val}>{val}</SelectItem>
+                        ))}
                      </SelectContent>
                   </Select>
                </div>

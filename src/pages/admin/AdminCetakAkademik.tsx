@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Settings, Printer, FileText, Loader2, AlertCircle, LayoutGrid, FileStack, BookOpen } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useAppSettings } from '../../hooks/useAppSettings';
 import domtoimage from 'dom-to-image';
 import { jsPDF } from 'jspdf';
 
@@ -26,10 +27,17 @@ export default function AdminCetakAkademik() {
   const [siswaList, setSiswaList] = useState<any[]>([]);
   
   const [selectedKelas, setSelectedKelas] = useState('');
-  const [tahunAjaran, setTahunAjaran] = useState('2024/2025');
+  const { settings } = useAppSettings();
+  const [tahunAjaran, setTahunAjaran] = useState(settings.activeTahunAjaran || '2025/2026');
   const [semester, setSemester] = useState('Ganjil');
   const [raportData, setRaportData] = useState<Record<string, Record<string, any>>>({}); 
   const [pembinaanData, setPembinaanData] = useState<Record<string, string>>({}); 
+
+  useEffect(() => {
+     if (settings.activeTahunAjaran) {
+        setTahunAjaran(settings.activeTahunAjaran);
+     }
+  }, [settings.activeTahunAjaran]);
 
   const [loading, setLoading] = useState(false);
   const [printMode, setPrintMode] = useState<'raport' | 'ledger' | 'raport_pts' | 'ledger_pts' | 'dkn' | 'halaman_1_2' | 'halaman_12_13' | 'cover' | null>(null);
@@ -751,11 +759,9 @@ export default function AdminCetakAkademik() {
                   <Select value={tahunAjaran} onValueChange={setTahunAjaran}>
                      <SelectTrigger className="h-12 border-slate-200 font-bold"><SelectValue placeholder="Pilih TA" /></SelectTrigger>
                      <SelectContent>
-                        {Array.from({length: 5}).map((_, i) => {
-                           const startYear = new Date().getFullYear() - 2 + i;
-                           const ta = `${startYear}/${startYear+1}`;
-                           return <SelectItem key={ta} value={ta}>{ta}</SelectItem>;
-                        })}
+                        {(settings.historyTahunAjaran || ['2023/2024', '2024/2025', '2025/2026']).map((val) => (
+                           <SelectItem key={val} value={val}>{val}</SelectItem>
+                        ))}
                      </SelectContent>
                   </Select>
                </div>
