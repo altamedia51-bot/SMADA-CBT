@@ -118,10 +118,10 @@ export default function GuruNilaiRaport() {
           .map(d => ({ id: d.id, ...d.data() }))
           .filter((u: any) => {
              if (u.role !== 'siswa') return false;
-             if (settings.activeTahunAjaran && tahunAjaran !== settings.activeTahunAjaran) {
-                 return (u.historyKelas && u.historyKelas[tahunAjaran] === selectedKelas) || pastSiswaIds.has(u.id);
+             if (u.historyKelas && u.historyKelas[tahunAjaran]) {
+                 return u.historyKelas[tahunAjaran] === selectedKelas || pastSiswaIds.has(u.id);
              }
-             return u.kelas === selectedKelas;
+             return u.kelas === selectedKelas || pastSiswaIds.has(u.id);
           })
           .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
        

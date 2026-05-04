@@ -98,9 +98,12 @@ export default function AdminPengaturan() {
       try {
          const qSiswa = query(collection(db, 'users'), where('role', '==', 'siswa'));
          const snapSiswa = await getDocs(qSiswa);
-         const batch = writeBatch(db);
+         let currentBatch = writeBatch(db);
          let count = 0;
-         snapSiswa.docs.forEach(d => {
+         let opCount = 0;
+         let batchArray: any[] = [];
+         
+         for (const d of snapSiswa.docs) {
             const s = d.data();
             // Get any available class from history if exists
             const history = s.historyKelas || {};
@@ -108,11 +111,18 @@ export default function AdminPengaturan() {
             if (keys.length > 0) {
                // Restore to the first found class in history
                const prevClass = history[keys[keys.length - 1]];
-               batch.update(d.ref, { kelas: prevClass, isActive: true });
+               currentBatch.update(d.ref, { kelas: prevClass, isActive: true });
                count++;
+               opCount++;
+               if (opCount >= 400) {
+                  batchArray.push(currentBatch.commit());
+                  currentBatch = writeBatch(db);
+                  opCount = 0;
+               }
             }
-         });
-         await batch.commit();
+         }
+         batchArray.push(currentBatch.commit());
+         await Promise.all(batchArray);
          toast.success(`Berhasil mengembalikan rincian kelas ${count} siswa seperti semula.`);
       } catch (err: any) {
          toast.error("Gagal mengembalikan data: " + err.message);
@@ -148,32 +158,43 @@ export default function AdminPengaturan() {
          const qSiswa = query(collection(db, 'users'), where('role', '==', 'siswa'));
          const snapSiswa = await getDocs(qSiswa);
          
-         const batch = writeBatch(db);
+         // We need to chunk the batches since Firestore limit is 500 writes per batch
+         let currentBatch = writeBatch(db);
+         let operationCount = 0;
+         let batchArray: any[] = [];
          let promoteCount = 0;
          
-         snapSiswa.docs.forEach(d => {
+         for (const d of snapSiswa.docs) {
             const s = d.data();
-            if (!s.kelas || s.kelas === 'ALUMNI') return;
+            if (!s.kelas || s.kelas === 'ALUMNI') continue;
             
             const historyObj = s.historyKelas || {};
             historyObj[activeTahunAjaran] = s.kelas;
             
             const nextClass = getNextClassString(s.kelas, allKelas);
             if (nextClass === 'ALUMNI') {
-               batch.update(d.ref, { kelas: 'ALUMNI', isActive: false, historyKelas: historyObj });
+               currentBatch.update(d.ref, { kelas: 'ALUMNI', isActive: false, historyKelas: historyObj });
             } else {
-               batch.update(d.ref, { kelas: nextClass, historyKelas: historyObj });
+               currentBatch.update(d.ref, { kelas: nextClass, historyKelas: historyObj });
             }
             promoteCount++;
-         });
+            operationCount++;
+            
+            if (operationCount >= 400) {
+               batchArray.push(currentBatch.commit());
+               currentBatch = writeBatch(db);
+               operationCount = 0;
+            }
+         }
          
          // Update settings after promoting
-         batch.set(doc(db, 'settings', 'general'), {
+         currentBatch.set(doc(db, 'settings', 'general'), {
             activeTahunAjaran: newTahunInput,
             historyTahunAjaran: arrayUnion(newTahunInput)
          }, { merge: true });
          
-         await batch.commit();
+         batchArray.push(currentBatch.commit());
+         await Promise.all(batchArray);
          toast.success(`Tahun Ajaran baru berhasil dibuat. ${promoteCount} siswa berhasil dinaikkan kelas/lulus.`);
          setActiveTahunAjaran(newTahunInput);
          setShowTahunModal(false);

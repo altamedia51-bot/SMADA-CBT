@@ -162,10 +162,10 @@ export default function GuruRaportKelas() {
         .map(d => ({ id: d.id, ...d.data() }))
         .filter((u: any) => {
            if (u.role !== 'siswa') return false;
-           if (settings.activeTahunAjaran && tahunAjaran !== settings.activeTahunAjaran) {
-               return (u.historyKelas && u.historyKelas[tahunAjaran] === profile.waliKelas) || pastSiswaIds.has(u.id);
+           if (u.historyKelas && u.historyKelas[tahunAjaran]) {
+               return u.historyKelas[tahunAjaran] === profile.waliKelas || pastSiswaIds.has(u.id);
            }
-           return u.kelas === profile.waliKelas;
+           return u.kelas === profile.waliKelas || pastSiswaIds.has(u.id);
         })
         .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
       
