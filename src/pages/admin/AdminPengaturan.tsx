@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Settings, Upload, Image as ImageIcon, CalendarClock, ArrowUpCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function AdminPengaturan() {
   const [logoBase64, setLogoBase64] = useState<string>('');
@@ -73,6 +74,11 @@ export default function AdminPengaturan() {
      if (k && (k.tingkat === 12 || currentName.startsWith('XII ') || currentName.startsWith('IX ') || currentName.startsWith('VI '))) {
         return 'ALUMNI';
      }
+     
+     // Kurikulum Merdeka
+     if (currentName.startsWith('X E')) return currentName.replace('X E', 'XI F');
+     if (currentName.startsWith('XI F')) return currentName.replace('XI F', 'XII F');
+     
      if (currentName.startsWith('X ')) return currentName.replace('X ', 'XI ');
      if (currentName.startsWith('XI ')) return currentName.replace('XI ', 'XII ');
      if (currentName.startsWith('VII ')) return currentName.replace('VII ', 'VIII ');
@@ -84,6 +90,19 @@ export default function AdminPengaturan() {
      if (/^8\s/.test(currentName)) return currentName.replace(/^8/, '9');
      
      return 'ALUMNI'; // fallback if we can't parse it
+  };
+
+  const handleSwitchTahunAjaran = async (ta: string) => {
+      setIsLoading(true);
+      try {
+         await setDoc(doc(db, 'settings', 'general'), { activeTahunAjaran: ta }, { merge: true });
+         setActiveTahunAjaran(ta);
+         toast.success(`Tahun Ajaran aktif diubah ke ${ta}`);
+      } catch (err: any) {
+         toast.error("Gagal mengubah Tahun Ajaran: " + err.message);
+      } finally {
+         setIsLoading(false);
+      }
   };
 
   const handleGantiTahunAjaran = async () => {
@@ -206,11 +225,22 @@ export default function AdminPengaturan() {
         </CardHeader>
         <CardContent className="space-y-6">
            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
+              <div className="flex-1">
                  <p className="text-sm text-slate-500 font-bold mb-1">Tahun Ajaran Aktif Saat Ini</p>
-                 <p className="text-3xl font-black text-indigo-700">{activeTahunAjaran}</p>
+                 <div className="flex items-center gap-2">
+                   <Select value={activeTahunAjaran} onValueChange={handleSwitchTahunAjaran}>
+                      <SelectTrigger className="w-full md:w-[250px] h-12 text-xl font-black text-indigo-700 bg-white border-slate-200 shadow-sm">
+                         <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                         {(historyTahunAjaran || ['2023/2024', '2024/2025', '2025/2026']).map(ta => (
+                            <SelectItem key={ta} value={ta} className="font-bold">{ta}</SelectItem>
+                         ))}
+                      </SelectContent>
+                   </Select>
+                 </div>
               </div>
-              <Button onClick={() => setShowTahunModal(true)} className="bg-indigo-600 hover:bg-indigo-700 font-bold">
+              <Button onClick={() => setShowTahunModal(true)} className="bg-indigo-600 hover:bg-indigo-700 font-bold shrink-0 shadow-md">
                  <ArrowUpCircle className="w-4 h-4 mr-2" />
                  Ganti Ke Tahun Ajaran Baru
               </Button>
