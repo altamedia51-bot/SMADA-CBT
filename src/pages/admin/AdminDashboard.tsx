@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { RefreshCcw, Search, Clock, Users, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function AdminDashboard() {
   const { profile } = useAuthStore();
@@ -19,25 +20,69 @@ export default function AdminDashboard() {
   const [pesertaList, setPesertaList] = useState<any[]>([]);
   const [searchPeserta, setSearchPeserta] = useState('');
   const [totalSiswa, setTotalSiswa] = useState(0);
+  const [siswaPerTingkat, setSiswaPerTingkat] = useState({ 10: 0, 11: 0, 12: 0 });
+  const [totalGuru, setTotalGuru] = useState(0);
+  const [totalJurusan, setTotalJurusan] = useState(0);
+  const [showPanduan, setShowPanduan] = useState(false);
 
   // 1. Fetch Ujian List
   useEffect(() => {
     const qUjian = query(collection(db, 'ujian'));
     const unsub = onSnapshot(qUjian, (snap) => {
-      // In real scenario, filter by status == 'aktif'
       setUjianList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
     return () => unsub();
   }, []);
 
-  // Fetch Total Siswa
+  // Fetch Kelas to map name -> tingkat
+  const [kelasMap, setKelasMap] = useState<Record<string, number>>({});
   useEffect(() => {
-    const qSiswa = query(collection(db, 'users'), where('role', '==', 'siswa'));
-    const unsub = onSnapshot(qSiswa, (snap) => {
-      setTotalSiswa(snap.docs.length);
+    const unsub = onSnapshot(collection(db, 'kelas'), (snap) => {
+      const map: Record<string, number> = {};
+      snap.docs.forEach(d => {
+        const data = d.data();
+        if (data.name && data.tingkat) {
+           map[data.name] = data.tingkat;
+        }
+      });
+      setKelasMap(map);
     });
     return () => unsub();
   }, []);
+
+  // Fetch Total Siswa, Guru, Jurusan
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'users'), (snap) => {
+      let siswaCount = 0;
+      let guruCount = 0;
+      let tingkatCount = { 10: 0, 11: 0, 12: 0 };
+      const jurusans = new Set<string>();
+
+      snap.docs.forEach(doc => {
+         const data = doc.data();
+         if (data.role === 'siswa') {
+            siswaCount++;
+            if (data.jurusan && data.jurusan !== 'Semua') {
+               jurusans.add(data.jurusan);
+            }
+            // Count by tingkat
+            const tingkat = kelasMap[data.kelas] || 0;
+            if (tingkat === 10) tingkatCount[10]++;
+            else if (tingkat === 11) tingkatCount[11]++;
+            else if (tingkat === 12) tingkatCount[12]++;
+         } else if (data.role === 'guru' || data.role === 'karyawan' || data.role === 'admin') {
+            // Count everyone else as staff for this metric, or just guru
+            if (data.role !== 'siswa') guruCount++;
+         }
+      });
+
+      setTotalSiswa(siswaCount);
+      setSiswaPerTingkat(tingkatCount);
+      setTotalGuru(guruCount);
+      setTotalJurusan(jurusans.size);
+    });
+    return () => unsub();
+  }, [kelasMap]);
 
   // 2. Fetch Peserta for Selected Ujian
   useEffect(() => {
@@ -79,28 +124,118 @@ export default function AdminDashboard() {
   return (
     <div className="font-sans">
       {/* Dashboard Grid Layout */}
-      <main className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-4 md:grid-rows-[100px_minmax(400px,1fr)] gap-5">
+      <main className="p-6 md:p-8 flex flex-col gap-5">
         
         {/* Stats Row */}
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Total Siswa</p>
-          <p className="text-2xl font-bold">{totalSiswa}</p>
-        </Card>
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Ujian Aktif</p>
-          <p className="text-2xl font-bold text-primary">{ujianList.length}</p>
-        </Card>
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Peserta Berlangsung</p>
-          <p className="text-2xl font-bold">{pesertaList.length > 0 ? pesertaList.length : '--'}</p>
-        </Card>
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Server Latency</p>
-          <p className="text-2xl font-bold text-[var(--success)]">24ms</p>
-        </Card>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+           <Card className="p-5 flex flex-col justify-center border-l-4 border-l-blue-500 shadow-sm relative overflow-hidden">
+             <div className="z-10">
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1 font-bold">Total Siswa Aktif</p>
+                <div className="flex items-baseline gap-2">
+                   <p className="text-3xl font-black text-slate-800">{totalSiswa}</p>
+                   <span className="text-xs font-semibold text-slate-400">Siswa</span>
+                </div>
+                <div className="mt-3 flex gap-2 text-[10px] sm:text-xs">
+                   <div className="bg-slate-100 px-2 py-1 rounded font-semibold text-slate-600">X: {siswaPerTingkat[10]}</div>
+                   <div className="bg-slate-100 px-2 py-1 rounded font-semibold text-slate-600">XI: {siswaPerTingkat[11]}</div>
+                   <div className="bg-slate-100 px-2 py-1 rounded font-semibold text-slate-600">XII: {siswaPerTingkat[12]}</div>
+                </div>
+             </div>
+             <Users className="absolute right-[-10px] bottom-[-10px] w-24 h-24 text-blue-50 opacity-50 pointer-events-none" />
+           </Card>
 
-        {/* Real-time Monitoring Widget */}
-        <Card className="p-0 md:col-span-3 flex flex-col overflow-hidden">
+           <Card className="p-5 flex flex-col justify-center border-l-4 border-l-emerald-500 shadow-sm relative overflow-hidden">
+             <div className="z-10">
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1 font-bold">Ujian Aktif & Berlangsung</p>
+                <div className="flex items-baseline gap-2">
+                   <p className="text-3xl font-black text-emerald-600">{ujianList.length}</p>
+                   <span className="text-xs font-semibold text-slate-400">Ujian Berjalan</span>
+                </div>
+                <div className="mt-3 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded text-xs w-fit font-bold shadow-sm">
+                   {pesertaList.length > 0 ? pesertaList.length : '0'} Peserta Mengerjakan
+                </div>
+             </div>
+             <Clock className="absolute right-[-10px] bottom-[-10px] w-24 h-24 text-emerald-50 opacity-50 pointer-events-none" />
+           </Card>
+
+           <Card className="p-5 flex flex-col justify-center border-l-4 border-l-amber-500 shadow-sm relative overflow-hidden">
+             <div className="z-10">
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1 font-bold">Total Jurusan</p>
+                <div className="flex items-baseline gap-2">
+                   <p className="text-3xl font-black text-slate-800">{totalJurusan}</p>
+                   <span className="text-xs font-semibold text-slate-400">Program Keahlian</span>
+                </div>
+                <p className="mt-3 text-xs text-slate-500 font-medium">Data jurusan diambil dari seluruh pengguna siswa aktif.</p>
+             </div>
+             <AlertTriangle className="absolute right-[-10px] bottom-[-10px] w-24 h-24 text-amber-50 opacity-50 pointer-events-none" />
+           </Card>
+
+           <Card className="p-5 flex flex-col justify-center border-l-4 border-l-indigo-500 shadow-sm relative overflow-hidden">
+             <div className="z-10">
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-1 font-bold">Guru & Karyawan</p>
+                <div className="flex items-baseline gap-2">
+                   <p className="text-3xl font-black text-slate-800">{totalGuru}</p>
+                   <span className="text-xs font-semibold text-slate-400">Pegawai Aktif</span>
+                </div>
+                <p className="mt-3 text-xs text-slate-500 font-medium">Termasuk Tenaga Pendidik dan Kependidikan.</p>
+             </div>
+             <Users className="absolute right-[-10px] bottom-[-10px] w-24 h-24 text-indigo-50 opacity-50 pointer-events-none" />
+           </Card>
+        </div>
+
+        {/* Action Bar & Guide Toggle */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+           <div className="flex flex-wrap gap-2 text-sm text-slate-600 font-medium font-mono">
+              <span className="bg-slate-100 px-3 py-1 rounded-md border border-slate-200">Server Status: <span className="text-emerald-500 font-bold ml-1">Normal</span></span>
+              <span className="bg-slate-100 px-3 py-1 rounded-md border border-slate-200">Latency: <span className="text-emerald-500 font-bold ml-1">~24ms</span></span>
+           </div>
+           <Button onClick={() => setShowPanduan(!showPanduan)} variant={showPanduan ? "default" : "outline"} className="w-full sm:w-auto shadow-sm font-bold tracking-tight">
+              {showPanduan ? 'Sembunyikan Panduan CBT' : 'Tampilkan Panduan CBT'}
+           </Button>
+        </div>
+
+        {/* Panduan Sistem */}
+        {showPanduan && (
+           <Card className="p-6 bg-gradient-to-br from-indigo-900 to-blue-900 text-white shadow-xl shadow-indigo-900/20 border-0 rounded-2xl overflow-hidden relative">
+             <div className="relative z-10">
+                <h3 className="text-2xl font-black mb-2 tracking-tight">Panduan CBT</h3>
+                <p className="text-indigo-100 mb-6 text-sm max-w-3xl">Berikut langkah-langkah dasar untuk mengelola sistem ujian CBT (Computer Based Test) secara efektif.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                   <div className="bg-white/10 p-5 rounded-xl border border-white/10 backdrop-blur-sm">
+                      <h4 className="font-bold text-amber-300 mb-2 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-amber-400/20 flex items-center justify-center text-amber-300 text-xs text-center border border-amber-400/30">1</span> Siapkan Data Master</h4>
+                      <p className="text-xs leading-relaxed text-indigo-50 opacity-90">
+                         Pastikan Master Data (Mata Pelajaran, Kelas, dan Sesi) sudah disiapkan. Kemudian import data Siswa dan Guru melalui menu Master Data menggunakan file template CSV yang disediakan.
+                      </p>
+                   </div>
+                   <div className="bg-white/10 p-5 rounded-xl border border-white/10 backdrop-blur-sm">
+                      <h4 className="font-bold text-emerald-300 mb-2 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-emerald-400/20 flex items-center justify-center text-emerald-300 text-xs text-center border border-emerald-400/30">2</span> Buat Bank Soal</h4>
+                      <p className="text-xs leading-relaxed text-indigo-50 opacity-90">
+                         Masuk ke menu Bank Soal. Buat Bank Soal baru dan tambahkan soal secara manual atau import dari Word/Excel. Anda juga bisa menautkan Audio jika itu soal Listening.
+                      </p>
+                   </div>
+                   <div className="bg-white/10 p-5 rounded-xl border border-white/10 backdrop-blur-sm">
+                      <h4 className="font-bold text-fuchsia-300 mb-2 flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-fuchsia-400/20 flex items-center justify-center text-fuchsia-300 text-xs text-center border border-fuchsia-400/30">3</span> Aktifkan Ujian</h4>
+                      <p className="text-xs leading-relaxed text-indigo-50 opacity-90">
+                         Masuk ke menu Jadwal Ujian. Pilih Bank Soal yang sudah siap. Tentukan peserta Ujian (bisa berdasarkan Kelas, Sesi, Jurusan dsb) kemudian atur Waktu Tes di sisi guru dan aktifkan.
+                      </p>
+                   </div>
+                </div>
+                <div className="mt-6 flex gap-3 text-xs justify-end">
+                   <div className="bg-white/10 rounded-full px-4 py-1.5 border border-white/20">Modul Administrasi CBT V1.0</div>
+                </div>
+             </div>
+             
+             {/* Decorative Elements */}
+             <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50" />
+             <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-50" />
+           </Card>
+        )}
+
+        {/* Monitoring & Quick Menu */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+           {/* Real-time Monitoring Widget */}
+           <Card className="p-0 md:col-span-3 flex flex-col overflow-hidden max-h-[600px]">
           {/* Header Monitoring */}
           <div className="px-5 py-4 border-b bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -233,6 +368,30 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+        </Card>
+        </div>
+
+        {/* Grafik Container */}
+        <Card className="p-5">
+           <h3 className="font-semibold text-slate-800 mb-6">Grafik Jumlah Siswa per Tingkat</h3>
+           <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={[
+                    { name: 'Kelas X', Jumlah: siswaPerTingkat[10] },
+                    { name: 'Kelas XI', Jumlah: siswaPerTingkat[11] },
+                    { name: 'Kelas XII', Jumlah: siswaPerTingkat[12] },
+                 ]}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dx={-10} />
+                    <Tooltip 
+                       cursor={{fill: '#f1f5f9'}}
+                       contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Bar dataKey="Jumlah" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                 </BarChart>
+              </ResponsiveContainer>
+           </div>
         </Card>
 
       </main>
