@@ -1003,121 +1003,143 @@ export default function AdminMasterData() {
              setShowSiswaModal(open);
              if (!open) resetSiswaForm();
           }}>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto p-4 md:p-6 rounded-2xl">
               <DialogHeader>
-                <DialogTitle>{editingSiswa ? 'Edit Siswa' : 'Tambah Siswa Baru'}</DialogTitle>
-                <DialogDescription>
-                  {editingSiswa ? 'Ubah detail siswa di bawah ini.' : 'Masukkan detail siswa baru.'}
+                <DialogTitle className="text-xl md:text-2xl font-black text-slate-800">{editingSiswa ? 'Edit Siswa' : 'Tambah Siswa Baru'}</DialogTitle>
+                <DialogDescription className="text-sm md:text-base text-slate-500">
+                  {editingSiswa ? 'Ubah detail siswa di bawah ini.' : 'Masukkan detail informasi siswa baru.'}
                 </DialogDescription>
               </DialogHeader>
-              <form onSubmit={saveSiswa} className="space-y-4 pt-4">
+              <form onSubmit={saveSiswa} className="space-y-6 pt-4">
                 <div className="flex flex-col gap-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input 
-                      placeholder="NAMA LENGKAP SISWA" 
-                      className="flex-1 uppercase font-medium h-11"
-                      value={siswaForm.nama}
-                      onChange={e => setSiswaForm({...siswaForm, nama: e.target.value})}
-                    />
-                    <div className="flex gap-2">
-                      <Select 
-                        value={siswaForm.kelas} 
-                        onValueChange={val => setSiswaForm({...siswaForm, kelas: val})}
-                      >
-                        <SelectTrigger className="flex-[2] h-11 font-medium bg-white">
-                          <SelectValue placeholder="PILIH KELAS" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {kelas.sort((a,b) => a.name.localeCompare(b.name)).map(k => (
-                            <SelectItem key={k.id} value={k.name}>{k.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select 
-                        value={siswaForm.jurusan} 
-                        onValueChange={val => setSiswaForm({...siswaForm, jurusan: val})}
-                      >
-                        <SelectTrigger className="flex-[1] h-11 font-medium bg-white">
-                          <SelectValue placeholder="JURUSAN" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Semua">Semua</SelectItem>
-                          <SelectItem value="IPA">IPA</SelectItem>
-                          <SelectItem value="IPS">IPS</SelectItem>
-                          <SelectItem value="Bahasa">Bahasa</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="w-full md:w-1/2">
+                       <label className="block text-xs font-bold text-slate-500 mb-1">NAMA LENGKAP</label>
+                       <Input 
+                         placeholder="Masukkan Nama Lengkap" 
+                         className="w-full uppercase font-medium h-11 bg-slate-50 focus:bg-white transition-colors"
+                         value={siswaForm.nama}
+                         onChange={e => setSiswaForm({...siswaForm, nama: e.target.value})}
+                       />
+                    </div>
+                    <div className="w-full md:w-1/2 flex flex-col sm:flex-row gap-4">
+                      <div className="flex-1">
+                        <label className="block text-xs font-bold text-slate-500 mb-1">KELAS</label>
+                        <Select 
+                          value={siswaForm.kelas} 
+                          onValueChange={val => setSiswaForm({...siswaForm, kelas: val})}
+                        >
+                          <SelectTrigger className="w-full h-11 font-medium bg-slate-50 focus:bg-white transition-colors">
+                            <SelectValue placeholder="Pilih Kelas" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {kelas.sort((a,b) => a.name.localeCompare(b.name)).map(k => (
+                              <SelectItem key={k.id} value={k.name}>{k.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex-[0.6]">
+                        <label className="block text-xs font-bold text-slate-500 mb-1">JURUSAN</label>
+                        <Select 
+                          value={siswaForm.jurusan} 
+                          onValueChange={val => setSiswaForm({...siswaForm, jurusan: val})}
+                        >
+                          <SelectTrigger className="w-full h-11 font-medium bg-slate-50 focus:bg-white transition-colors">
+                            <SelectValue placeholder="Jurusan" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Semua">Semua</SelectItem>
+                            <SelectItem value="IPA">IPA</SelectItem>
+                            <SelectItem value="IPS">IPS</SelectItem>
+                            <SelectItem value="Bahasa">Bahasa</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Input 
-                      placeholder="NIS / NOMOR INDUK SISWA" 
-                      className="h-11 font-mono"
-                      value={siswaForm.nis}
-                      onChange={e => setSiswaForm({...siswaForm, nis: e.target.value})}
-                    />
-                    <Select 
-                      value={siswaForm.sesiId} 
-                      onValueChange={val => setSiswaForm({...siswaForm, sesiId: val})}
-                    >
-                      <SelectTrigger className="h-11 font-medium bg-white">
-                        <SelectValue placeholder="PILIH SESI">
-                          {siswaForm.sesiId === 'none' ? 'Tidak Ada' : siswaForm.sesiId ? `${sesi.find(s=>s.id===siswaForm.sesiId)?.name} (${sesi.find(s=>s.id===siswaForm.sesiId)?.kode})` : "PILIH SESI"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Tidak Ada</SelectItem>
-                        {sesi.sort((a,b) => a.name.localeCompare(b.name)).map(s => (
-                          <SelectItem key={s.id} value={s.id}>{s.name} ({s.kode})</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="w-full md:w-1/3">
+                      <label className="block text-xs font-bold text-slate-500 mb-1">NIS / NOMOR INDUK</label>
                       <Input 
-                        type="file" 
-                        accept="image/*"
-                        className="h-11 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 flex-1 pt-1.5"
-                        onChange={handleFotoUpload}
+                        placeholder="Masukkan NIS" 
+                        className="w-full h-11 font-mono bg-slate-50 focus:bg-white transition-colors"
+                        value={siswaForm.nis}
+                        onChange={e => setSiswaForm({...siswaForm, nis: e.target.value})}
                       />
-                      {siswaForm.fotoUrl && (
-                        <div className="w-11 h-11 shrink-0 rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
-                          <img src={siswaForm.fotoUrl} alt="Preview" className="w-full h-full object-cover" />
-                        </div>
-                      )}
+                    </div>
+                    <div className="w-full md:w-1/3">
+                      <label className="block text-xs font-bold text-slate-500 mb-1">SESI UJIAN (OPSIONAL)</label>
+                      <Select 
+                        value={siswaForm.sesiId} 
+                        onValueChange={val => setSiswaForm({...siswaForm, sesiId: val})}
+                      >
+                        <SelectTrigger className="w-full h-11 font-medium bg-slate-50 focus:bg-white transition-colors">
+                          <SelectValue placeholder="Pilih Sesi">
+                            {siswaForm.sesiId === 'none' ? 'Tidak Ada' : siswaForm.sesiId ? `${sesi.find(s=>s.id===siswaForm.sesiId)?.name} (${sesi.find(s=>s.id===siswaForm.sesiId)?.kode})` : "Pilih Sesi"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Tidak Ada</SelectItem>
+                          {sesi.sort((a,b) => a.name.localeCompare(b.name)).map(s => (
+                            <SelectItem key={s.id} value={s.id}>{s.name} ({s.kode})</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-full md:w-1/3">
+                      <label className="block text-xs font-bold text-slate-500 mb-1">FOTO (OPSIONAL)</label>
+                      <div className="flex items-center gap-2">
+                        <Input 
+                          type="file" 
+                          accept="image/*"
+                          className="h-11 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 flex-1 pt-2 w-full text-xs"
+                          onChange={handleFotoUpload}
+                        />
+                        {siswaForm.fotoUrl && (
+                          <div className="w-11 h-11 shrink-0 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shadow-inner">
+                            <img src={siswaForm.fotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
                 
                 {!editingSiswa ? (
-                  <Input 
-                    type="password"
-                    placeholder="PASSWORD (OPSIONAL, DEFAULT: siswa123)" 
-                    className="h-11"
-                    value={siswaForm.password}
-                    onChange={e => setSiswaForm({...siswaForm, password: e.target.value})}
-                  />
-                ) : (
-                  <div className="space-y-1">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">PASSWORD (OPSIONAL)</label>
                     <Input 
                       type="password"
-                      placeholder="PASSWORD TIDAK DAPAT DIUBAH VIA APLIKASI" 
-                      className="h-11 bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
+                      placeholder="Default: siswa123" 
+                      className="w-full h-11 bg-slate-50 focus:bg-white transition-colors"
+                      value={siswaForm.password}
+                      onChange={e => setSiswaForm({...siswaForm, password: e.target.value})}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1 bg-amber-50 p-3 rounded-xl border border-amber-100">
+                    <label className="block text-xs font-bold text-amber-800 mb-1">PASSWORD AKUN</label>
+                    <Input 
+                      type="password"
+                      placeholder="TIDAK DAPAT DIUBAH VIA APLIKASI" 
+                      className="w-full h-11 bg-white text-slate-400 border-amber-200/50 cursor-not-allowed"
                       disabled
                     />
-                    <p className="text-[11px] text-amber-600 font-medium px-1 flex gap-1 items-start">
-                      <span className="text-amber-500 font-bold">*</span> 
-                      Demi keamanan Firebase, password akun tidak bisa diubah langsung. Jika siswa lupa password, hapus data ini dan buat ulang dengan NIS berbeda.
+                    <p className="text-[11px] text-amber-700 font-medium pt-1 flex gap-1.5 items-start">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> 
+                      <span>Demi keamanan, password langsung tidak bisa diubah di sini. Hapus data ini dan buat ulang jika siswa lupa password.</span>
                     </p>
                   </div>
                 )}
 
-                <div className="flex justify-end gap-3 pt-2">
-                  <Button type="button" variant="outline" onClick={resetSiswaForm}>
-                    Batal
+                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-slate-100">
+                  <Button type="button" variant="outline" onClick={resetSiswaForm} className="w-full sm:w-auto h-11 px-6 border-slate-200 text-slate-600 hover:bg-slate-100">
+                    Batalkan
                   </Button>
-                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-                     Simpan
+                  <Button type="submit" className="w-full sm:w-auto h-11 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20">
+                     Simpan Data Siswa
                   </Button>
                 </div>
               </form>

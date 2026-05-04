@@ -97,7 +97,7 @@ export default function AdminLayout() {
                      }}
                      className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all ${
                        isActive 
-                         ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
+                         ? 'bg-[#1a2942] text-white border-l-4 border-blue-500 rounded-l-none pl-3' 
                          : 'text-slate-400 hover:text-slate-100 hover:bg-[#1a2942]'
                      }`}
                    >
@@ -190,7 +190,7 @@ export default function AdminLayout() {
                  onClick={() => navigate(item.path)}
                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all ${
                    isActive 
-                     ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
+                     ? 'bg-[#1a2942] text-white border-l-4 border-blue-500 rounded-l-none pl-3' 
                      : 'text-slate-400 hover:text-slate-100 hover:bg-[#1a2942]'
                  }`}
                >
