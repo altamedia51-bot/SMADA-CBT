@@ -140,10 +140,10 @@ export default function GuruRaportKelas() {
   }, []);
 
   useEffect(() => {
-    if (profile?.waliKelas) {
+    if (profile?.waliKelas && mapelList.length > 0) {
       loadData();
     }
-  }, [profile?.waliKelas, tahunAjaran, semester]);
+  }, [profile?.waliKelas, tahunAjaran, semester, mapelList.length]);
 
   const loadData = async () => {
     if (!profile?.waliKelas) return;
@@ -320,7 +320,7 @@ export default function GuruRaportKelas() {
   // usedMapel: mapped ones that have scores
   const usedMapel = mapelList.filter(m => siswaList.some(s => {
       const data = raportData[s.id]?.[m.id];
-      return data && (isPtsMode ? typeof data.nilai_pts === 'number' : true);
+      return !!data;
   }));
 
   // stats calculation
@@ -466,7 +466,9 @@ export default function GuruRaportKelas() {
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center min-w-[200px]">NAMA</th>
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">L/P</th>
                                  <th colSpan={printMode === 'dkn' ? usedMapel.length : usedMapel.length * 5} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">MATA PELAJARAN</th>
-                                 <th colSpan={3} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">ABSENSI</th>
+                                 {printMode !== 'dkn' && (
+                                    <th colSpan={3} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">ABSENSI</th>
+                                 )}
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Jumlah</div></th>
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Rerata</div></th>
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Ranking</div></th>
@@ -480,7 +482,7 @@ export default function GuruRaportKelas() {
                                        <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">{m.name}</div>
                                     </th>
                                  ))}
-                                 <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
+                                 {printMode !== 'dkn' && ( <> <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
                                     <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Sakit</div>
                                  </th>
                                  <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
@@ -488,7 +490,7 @@ export default function GuruRaportKelas() {
                                  </th>
                                  <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
                                     <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Alpa</div>
-                                 </th>
+                                 </th> </> )}
                               </tr>
                            </thead>
                            <tbody>
@@ -519,9 +521,9 @@ export default function GuruRaportKelas() {
                                           );
                                        }
                                     })}
-                                    <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.sakit || '0'}</td>
-                                    <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.izin || '0'}</td>
-                                    <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.alpa || '0'}</td>
+                                    {printMode !== 'dkn' && ( <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.sakit || '0'}</td> )}
+                                    {printMode !== 'dkn' && ( <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.izin || '0'}</td> )}
+                                    {printMode !== 'dkn' && ( <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.alpa || '0'}</td> )}
                                     <td className="border border-slate-400 px-2 py-1 text-center font-bold text-slate-700">{jumlahNilaiSiswa[siswa.id] || ''}</td>
                                     <td className="border border-slate-400 px-2 py-1 text-center font-bold text-blue-700">{rataRataSiswa[siswa.id]?.toFixed(1) || ''}</td>
                                     <td className="border border-slate-400 px-2 py-1 text-center font-bold text-amber-700">{rankSiswa[siswa.id] || ''}</td>
