@@ -41,6 +41,7 @@ export default function AdminMasterData() {
   
   // Student Form State
   const [filterKelasSiswa, setFilterKelasSiswa] = useState('Semua');
+  const [showSiswaModal, setShowSiswaModal] = useState(false);
   const [editingSiswa, setEditingSiswa] = useState<any>(null);
   const [siswaForm, setSiswaForm] = useState({
     nama: '',
@@ -621,6 +622,7 @@ export default function AdminMasterData() {
   const resetSiswaForm = () => {
     setEditingSiswa(null);
     setSiswaForm({ nama: '', kelas: '', jurusan: 'Semua', sesiId: '', fotoUrl: '', nis: '', password: '' });
+    setShowSiswaModal(false);
   };
 
   const editSiswaAction = (siswa: any) => {
@@ -634,8 +636,7 @@ export default function AdminMasterData() {
       nis: siswa.nis || '',
       password: '' // Don't show password
     });
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setShowSiswaModal(true);
   };
 
   const generateSiswaContoh = async () => {
@@ -997,15 +998,153 @@ export default function AdminMasterData() {
 
         {/* --- TABS: DATA SISWA --- */}
         {currentTab === 'siswa' && (
-        <div className="space-y-8">
-          {/* Section: Edit/Tambah Siswa */}
-          <Card className="p-0 border border-emerald-100 overflow-hidden shadow-sm">
-            <div className="bg-white p-4 border-b flex justify-between items-center">
-              <div className="flex items-center gap-2 text-emerald-700 font-bold">
-                <UserPlus className="w-5 h-5" />
-                <span>{editingSiswa ? 'Edit Siswa' : 'Tambah Siswa Baru'}</span>
+        <div className="space-y-4">
+          <Dialog open={showSiswaModal} onOpenChange={(open) => {
+             setShowSiswaModal(open);
+             if (!open) resetSiswaForm();
+          }}>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>{editingSiswa ? 'Edit Siswa' : 'Tambah Siswa Baru'}</DialogTitle>
+                <DialogDescription>
+                  {editingSiswa ? 'Ubah detail siswa di bawah ini.' : 'Masukkan detail siswa baru.'}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={saveSiswa} className="space-y-4 pt-4">
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input 
+                      placeholder="NAMA LENGKAP SISWA" 
+                      className="flex-1 uppercase font-medium h-11"
+                      value={siswaForm.nama}
+                      onChange={e => setSiswaForm({...siswaForm, nama: e.target.value})}
+                    />
+                    <div className="flex gap-2">
+                      <Select 
+                        value={siswaForm.kelas} 
+                        onValueChange={val => setSiswaForm({...siswaForm, kelas: val})}
+                      >
+                        <SelectTrigger className="flex-[2] h-11 font-medium bg-white">
+                          <SelectValue placeholder="PILIH KELAS" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {kelas.sort((a,b) => a.name.localeCompare(b.name)).map(k => (
+                            <SelectItem key={k.id} value={k.name}>{k.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select 
+                        value={siswaForm.jurusan} 
+                        onValueChange={val => setSiswaForm({...siswaForm, jurusan: val})}
+                      >
+                        <SelectTrigger className="flex-[1] h-11 font-medium bg-white">
+                          <SelectValue placeholder="JURUSAN" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Semua">Semua</SelectItem>
+                          <SelectItem value="IPA">IPA</SelectItem>
+                          <SelectItem value="IPS">IPS</SelectItem>
+                          <SelectItem value="Bahasa">Bahasa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Input 
+                      placeholder="NIS / NOMOR INDUK SISWA" 
+                      className="h-11 font-mono"
+                      value={siswaForm.nis}
+                      onChange={e => setSiswaForm({...siswaForm, nis: e.target.value})}
+                    />
+                    <Select 
+                      value={siswaForm.sesiId} 
+                      onValueChange={val => setSiswaForm({...siswaForm, sesiId: val})}
+                    >
+                      <SelectTrigger className="h-11 font-medium bg-white">
+                        <SelectValue placeholder="PILIH SESI">
+                          {siswaForm.sesiId === 'none' ? 'Tidak Ada' : siswaForm.sesiId ? `${sesi.find(s=>s.id===siswaForm.sesiId)?.name} (${sesi.find(s=>s.id===siswaForm.sesiId)?.kode})` : "PILIH SESI"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Tidak Ada</SelectItem>
+                        {sesi.sort((a,b) => a.name.localeCompare(b.name)).map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.name} ({s.kode})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-2">
+                      <Input 
+                        type="file" 
+                        accept="image/*"
+                        className="h-11 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 flex-1 pt-1.5"
+                        onChange={handleFotoUpload}
+                      />
+                      {siswaForm.fotoUrl && (
+                        <div className="w-11 h-11 shrink-0 rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
+                          <img src={siswaForm.fotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {!editingSiswa ? (
+                  <Input 
+                    type="password"
+                    placeholder="PASSWORD (OPSIONAL, DEFAULT: siswa123)" 
+                    className="h-11"
+                    value={siswaForm.password}
+                    onChange={e => setSiswaForm({...siswaForm, password: e.target.value})}
+                  />
+                ) : (
+                  <div className="space-y-1">
+                    <Input 
+                      type="password"
+                      placeholder="PASSWORD TIDAK DAPAT DIUBAH VIA APLIKASI" 
+                      className="h-11 bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
+                      disabled
+                    />
+                    <p className="text-[11px] text-amber-600 font-medium px-1 flex gap-1 items-start">
+                      <span className="text-amber-500 font-bold">*</span> 
+                      Demi keamanan Firebase, password akun tidak bisa diubah langsung. Jika siswa lupa password, hapus data ini dan buat ulang dengan NIS berbeda.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button type="button" variant="outline" onClick={resetSiswaForm}>
+                    Batal
+                  </Button>
+                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                     Simpan
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          {/* Section: Database Siswa */}
+          <div className="space-y-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center rounded gap-4 pt-4 border-t">
+              <div className="flex items-center gap-4 w-full md:w-auto">
+                 <h3 className="text-xl font-extrabold text-slate-800 tracking-tight whitespace-nowrap">
+                   Data Siswa
+                 </h3>
+                 <Select value={filterKelasSiswa} onValueChange={setFilterKelasSiswa}>
+                   <SelectTrigger className="w-[140px] md:w-[180px] bg-white h-9 border-slate-200">
+                     <SelectValue placeholder="Pilih Kelas" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     <SelectItem value="Semua">Semua Kelas</SelectItem>
+                     {Array.from(new Set(users.filter(u => u.role === 'siswa' && u.kelas).map(u => u.kelas))).sort().map(className => (
+                       <SelectItem key={className as string} value={className as string}>{className as string}</SelectItem>
+                     ))}
+                   </SelectContent>
+                 </Select>
               </div>
-              <div className="flex gap-2">
+
+              <div className="flex gap-2 w-full md:w-auto justify-end overflow-x-auto pb-2 md:pb-0">
                 <Input 
                   type="file" 
                   accept=".csv, .xlsx, .xls" 
@@ -1014,154 +1153,16 @@ export default function AdminMasterData() {
                   onChange={handleSiswaFileUpload}
                   disabled={isImporting}
                 />
-                <Button variant="outline" size="sm" onClick={downloadTemplate} className="h-8 border-slate-200 text-slate-600 bg-slate-50">
-                  <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" /> Template
+                <Button variant="outline" size="sm" onClick={downloadTemplate} className="h-9 border-slate-200 text-slate-600 bg-slate-50 shrink-0">
+                  <FileSpreadsheet className="w-4 h-4 mr-1.5" /> Template
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-8 border-blue-200 text-blue-600 bg-blue-50">
-                  <CloudUpload className="w-3.5 h-3.5 mr-1.5" /> Upload Excel
+                <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-9 border-blue-200 text-blue-600 bg-blue-50 shrink-0">
+                  <CloudUpload className="w-4 h-4 mr-1.5" /> Upload Excel
                 </Button>
-                <Button variant="outline" size="sm" onClick={generateSiswaContoh} className="h-8 border-emerald-200 text-emerald-600 bg-emerald-50">
-                  <Plus className="w-3.5 h-3.5 mr-1.5" /> Generate Siswa Contoh
+                <Button size="sm" onClick={() => { resetSiswaForm(); setShowSiswaModal(true); }} className="h-9 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shrink-0">
+                  <UserPlus className="w-4 h-4 mr-1.5" /> Tambah Siswa
                 </Button>
               </div>
-            </div>
-            
-            <form onSubmit={saveSiswa} className="p-6 space-y-4">
-              <div className="flex flex-col gap-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input 
-                    placeholder="NAMA LENGKAP SISWA" 
-                    className="flex-1 uppercase font-medium h-11"
-                    value={siswaForm.nama}
-                    onChange={e => setSiswaForm({...siswaForm, nama: e.target.value})}
-                  />
-                  <div className="flex gap-2">
-                    <Select 
-                      value={siswaForm.kelas} 
-                      onValueChange={val => setSiswaForm({...siswaForm, kelas: val})}
-                    >
-                      <SelectTrigger className="flex-[2] h-11 font-medium bg-white">
-                        <SelectValue placeholder="PILIH KELAS" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {kelas.sort((a,b) => a.name.localeCompare(b.name)).map(k => (
-                          <SelectItem key={k.id} value={k.name}>{k.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select 
-                      value={siswaForm.jurusan} 
-                      onValueChange={val => setSiswaForm({...siswaForm, jurusan: val})}
-                    >
-                      <SelectTrigger className="flex-[1] h-11 font-medium bg-white">
-                        <SelectValue placeholder="JURUSAN" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Semua">Semua</SelectItem>
-                        <SelectItem value="IPA">IPA</SelectItem>
-                        <SelectItem value="IPS">IPS</SelectItem>
-                        <SelectItem value="Bahasa">Bahasa</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Input 
-                    placeholder="NIS / NOMOR INDUK SISWA" 
-                    className="h-11 font-mono"
-                    value={siswaForm.nis}
-                    onChange={e => setSiswaForm({...siswaForm, nis: e.target.value})}
-                  />
-                  <Select 
-                    value={siswaForm.sesiId} 
-                    onValueChange={val => setSiswaForm({...siswaForm, sesiId: val})}
-                  >
-                    <SelectTrigger className="h-11 font-medium bg-white">
-                      <SelectValue placeholder="PILIH SESI">
-                        {siswaForm.sesiId === 'none' ? 'Tidak Ada' : siswaForm.sesiId ? `${sesi.find(s=>s.id===siswaForm.sesiId)?.name} (${sesi.find(s=>s.id===siswaForm.sesiId)?.kode})` : "PILIH SESI"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Tidak Ada</SelectItem>
-                      {sesi.sort((a,b) => a.name.localeCompare(b.name)).map(s => (
-                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.kode})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex items-center gap-2">
-                    <Input 
-                      type="file" 
-                      accept="image/*"
-                      className="h-11 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 flex-1 pt-1.5"
-                      onChange={handleFotoUpload}
-                    />
-                    {siswaForm.fotoUrl && (
-                      <div className="w-11 h-11 shrink-0 rounded-lg overflow-hidden border border-slate-200 bg-slate-50">
-                        <img src={siswaForm.fotoUrl} alt="Preview" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              {!editingSiswa ? (
-                <Input 
-                  type="password"
-                  placeholder="PASSWORD (OPSIONAL, DEFAULT: siswa123)" 
-                  className="h-11"
-                  value={siswaForm.password}
-                  onChange={e => setSiswaForm({...siswaForm, password: e.target.value})}
-                />
-              ) : (
-                <div className="space-y-1">
-                  <Input 
-                    type="password"
-                    placeholder="PASSWORD TIDAK DAPAT DIUBAH VIA APLIKASI" 
-                    className="h-11 bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
-                    disabled
-                  />
-                  <p className="text-[11px] text-amber-600 font-medium px-1 flex gap-1 items-start">
-                    <span className="text-amber-500 font-bold">*</span> 
-                    Demi keamanan Firebase, password akun tidak bisa diubah langsung. Jika siswa lupa password, hapus data ini dan buat ulang dengan NIS berbeda.
-                  </p>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <Button type="submit" className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-sm">
-                   Simpan
-                </Button>
-                {editingSiswa && (
-                  <Button type="button" variant="outline" onClick={resetSiswaForm} className="h-11 px-8 border-slate-300 text-slate-600 font-medium">
-                    Batal
-                  </Button>
-                )}
-              </div>
-              
-              <p className="text-[11px] text-slate-400 italic">
-                Tip: Untuk upload banyak, gunakan file CSV dengan format: <b>Nama, Kelas, Password(opsional)</b>.
-              </p>
-            </form>
-          </Card>
-
-          {/* Section: Database Siswa */}
-          <div className="space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center rounded gap-4 pt-4 border-t">
-              <h3 className="text-xl font-extrabold text-slate-800 tracking-tight">
-                Database Siswa <span className="text-sm font-normal text-slate-400 ml-2">(Klik nama untuk lihat profil)</span>
-              </h3>
-              <Select value={filterKelasSiswa} onValueChange={setFilterKelasSiswa}>
-                <SelectTrigger className="w-full md:w-[220px] bg-white h-10 border-slate-200">
-                  <SelectValue placeholder="Pilih Kelas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Semua">Semua Kelas</SelectItem>
-                  {Array.from(new Set(users.filter(u => u.role === 'siswa' && u.kelas).map(u => u.kelas))).sort().map(className => (
-                    <SelectItem key={className as string} value={className as string}>{className as string}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
             
             <Card className="p-0 border border-slate-200 shadow-sm overflow-hidden">
