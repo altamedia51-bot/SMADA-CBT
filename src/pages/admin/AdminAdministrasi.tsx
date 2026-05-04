@@ -93,15 +93,29 @@ export default function AdminAdministrasi() {
         )}
 
         {section === 'kurikulum' && (
-           <Card className="p-6 border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="font-black text-slate-800 mb-4 flex items-center gap-3 text-lg">
+           <Card className="p-6 border-slate-200 shadow-sm hover:shadow-md transition-shadow md:col-span-2">
+              <h3 className="font-black text-slate-800 mb-6 flex items-center gap-3 text-lg border-b pb-4">
                  <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
                     <ClipboardCheck className="w-5 h-5" />
                  </div>
-                 Data Akademik
+                 Data Akademik & Kurikulum
               </h3>
-              <div className="p-10 border-2 border-dashed border-slate-100 rounded-xl text-center text-slate-400 text-sm font-bold italic bg-slate-50/30">
-                 Ledger, DKN, & Raport Terintegrasi
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                 {[
+                    { label: 'Input Nilai Keseluruhan', path: '/admin/kurikulum/akademik/nilai', icon: FileText, color: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+                    { label: 'DKN (Daftar Nilai)', path: '/admin/kurikulum/akademik/dkn', icon: ClipboardCheck, color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+                    { label: 'Cetak Raport', path: '/admin/kurikulum/akademik/raport', icon: FileText, color: 'bg-amber-50 text-amber-700 border-amber-100' },
+                    { label: 'Ledger Kelas', path: '/admin/kurikulum/akademik/leger', icon: Box, color: 'bg-rose-50 text-rose-700 border-rose-100' },
+                 ].map((mod) => (
+                    <button
+                       key={mod.path}
+                       onClick={() => window.location.href = mod.path}
+                       className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all hover:scale-105 active:scale-95 text-center gap-3 cursor-pointer ${mod.color}`}
+                    >
+                       <mod.icon className="w-8 h-8 opacity-80" />
+                       <span className="font-black text-xs uppercase tracking-tighter leading-tight">{mod.label}</span>
+                    </button>
+                 ))}
               </div>
            </Card>
         )}

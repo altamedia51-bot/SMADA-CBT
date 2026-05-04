@@ -39,7 +39,7 @@ export default function AdminLayout() {
             { label: 'Input Nilai', path: '/admin/kurikulum/akademik/nilai', icon: FileText },
             { label: 'DKN', path: '/admin/kurikulum/akademik/dkn', icon: FileText },
             { label: 'Raport', path: '/admin/kurikulum/akademik/raport', icon: FileText },
-            { label: 'Ledger', path: '/admin/leger', icon: LineChart },
+            { label: 'Ledger', path: '/admin/kurikulum/akademik/leger', icon: LineChart },
           ]
         },
         { label: 'Sarpras', path: '/admin/sarpras', icon: Box },

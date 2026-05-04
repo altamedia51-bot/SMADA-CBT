@@ -30,6 +30,8 @@ import { Toaster } from '@/components/ui/sonner';
 import AdminLeger from './pages/admin/AdminLeger';
 import AdminPengaturan from './pages/admin/AdminPengaturan';
 import AdminAdministrasi from './pages/admin/AdminAdministrasi';
+import AdminInputNilai from './pages/admin/AdminInputNilai';
+import AdminCetakAkademik from './pages/admin/AdminCetakAkademik';
 
 import Panduan from './pages/shared/Panduan';
 
@@ -49,9 +51,10 @@ export default function App() {
             
             {/* Administrasi Routes */}
             <Route path="kurikulum" element={<AdminAdministrasi />} />
-            <Route path="kurikulum/akademik/nilai" element={<AdminAdministrasi />} />
-            <Route path="kurikulum/akademik/dkn" element={<AdminAdministrasi />} />
-            <Route path="kurikulum/akademik/raport" element={<AdminAdministrasi />} />
+            <Route path="kurikulum/akademik/nilai" element={<AdminInputNilai />} />
+            <Route path="kurikulum/akademik/dkn" element={<AdminCetakAkademik />} />
+            <Route path="kurikulum/akademik/raport" element={<AdminCetakAkademik />} />
+            <Route path="kurikulum/akademik/leger" element={<AdminCetakAkademik />} />
             
             <Route path="sarpras" element={<AdminAdministrasi />} />
             <Route path="kesiswaan" element={<AdminAdministrasi />} />
