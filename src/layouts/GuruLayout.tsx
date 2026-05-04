@@ -1,15 +1,23 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, ClipboardCheck, BookOpen, Printer, UserRound, HelpCircle, Users, GraduationCap, FileText } from 'lucide-react';
+import { LogOut, LayoutDashboard, ClipboardCheck, BookOpen, Printer, UserRound, HelpCircle, Users, GraduationCap, FileText, CalendarClock } from 'lucide-react';
 import { useIdleLogout } from '../hooks/useIdleLogout';
 import { useAppSettings } from '../hooks/useAppSettings';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function GuruLayout() {
-  const { profile } = useAuthStore();
+  const { profile, activeTahunAjaran, setActiveTahunAjaran } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const { settings } = useAppSettings();
+  const { settings, loading } = useAppSettings();
+
+  useEffect(() => {
+     if (!loading && settings.activeTahunAjaran && !activeTahunAjaran) {
+        setActiveTahunAjaran(settings.activeTahunAjaran);
+     }
+  }, [loading, settings.activeTahunAjaran, activeTahunAjaran, setActiveTahunAjaran]);
 
   useIdleLogout(10); // Auto logout 10 menit
 
@@ -39,6 +47,22 @@ export default function GuruLayout() {
           <span className="ml-2 bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider shrink-0">
             GURU
           </span>
+        </div>
+
+        <div className="p-4 border-b border-[#1a2942] bg-[#0E1726]/50">
+          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1 mb-1 block flex items-center gap-1.5">
+            <CalendarClock className="w-3 h-3" /> Tahun Ajaran
+          </label>
+          <Select value={activeTahunAjaran || ''} onValueChange={(val) => setActiveTahunAjaran(val)}>
+            <SelectTrigger className="w-full bg-[#1a2942]/50 border-transparent text-slate-300 font-bold hover:bg-[#1a2942] transition-colors focus:ring-1 focus:ring-blue-500/50">
+              <SelectValue placeholder="Pilih Tahun Ajaran" />
+            </SelectTrigger>
+            <SelectContent>
+               {(settings.historyTahunAjaran || ['2023/2024', '2024/2025', '2025/2026']).map(ta => (
+                  <SelectItem key={ta} value={ta} className="font-bold">{ta}</SelectItem>
+               ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">

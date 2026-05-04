@@ -18,16 +18,20 @@ interface AuthState {
   user: FirebaseUser | null;
   profile: UserProfile | null;
   loading: boolean;
+  activeTahunAjaran: string | null;
   setUser: (user: FirebaseUser | null) => void;
   setProfile: (profile: UserProfile | null) => void;
   setLoading: (loading: boolean) => void;
+  setActiveTahunAjaran: (ta: string) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   profile: null,
   loading: true,
+  activeTahunAjaran: null,
   setUser: (user) => set({ user }),
   setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),
+  setActiveTahunAjaran: (ta) => set({ activeTahunAjaran: ta }),
 }));

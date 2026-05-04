@@ -16,7 +16,7 @@ import domtoimage from 'dom-to-image';
 import { jsPDF } from 'jspdf';
 
 export default function AdminCetakAkademik() {
-  const { profile } = useAuthStore();
+  const { profile, activeTahunAjaran: authTahunAjaran } = useAuthStore();
   const location = useLocation();
   const isDknView = location.pathname.includes('/dkn');
   const isRaportView = location.pathname.includes('/raport');
@@ -28,16 +28,18 @@ export default function AdminCetakAkademik() {
   
   const [selectedKelas, setSelectedKelas] = useState('');
   const { settings } = useAppSettings();
-  const [tahunAjaran, setTahunAjaran] = useState(settings.activeTahunAjaran || '2025/2026');
+  const [tahunAjaran, setTahunAjaran] = useState(authTahunAjaran || settings.activeTahunAjaran || '2025/2026');
   const [semester, setSemester] = useState('Ganjil');
   const [raportData, setRaportData] = useState<Record<string, Record<string, any>>>({}); 
   const [pembinaanData, setPembinaanData] = useState<Record<string, string>>({}); 
 
   useEffect(() => {
-     if (settings.activeTahunAjaran) {
+     if (authTahunAjaran) {
+        setTahunAjaran(authTahunAjaran);
+     } else if (settings.activeTahunAjaran) {
         setTahunAjaran(settings.activeTahunAjaran);
      }
-  }, [settings.activeTahunAjaran]);
+  }, [authTahunAjaran, settings.activeTahunAjaran]);
 
   const [loading, setLoading] = useState(false);
   const [printMode, setPrintMode] = useState<'raport' | 'ledger' | 'raport_pts' | 'ledger_pts' | 'dkn' | 'halaman_1_2' | 'halaman_12_13' | 'cover' | null>(null);

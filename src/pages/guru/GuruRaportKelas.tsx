@@ -15,22 +15,24 @@ import domtoimage from 'dom-to-image';
 import { jsPDF } from 'jspdf';
 
 export default function GuruRaportKelas() {
-  const profile = useAuthStore(state => state.profile);
+  const { profile, activeTahunAjaran: authTahunAjaran } = useAuthStore();
   
   const [mapelList, setMapelList] = useState<any[]>([]);
   const [siswaList, setSiswaList] = useState<any[]>([]);
   
   const { settings } = useAppSettings();
-  const [tahunAjaran, setTahunAjaran] = useState(settings.activeTahunAjaran || '2025/2026');
+  const [tahunAjaran, setTahunAjaran] = useState(authTahunAjaran || settings.activeTahunAjaran || '2025/2026');
   const [semester, setSemester] = useState('Ganjil');
   const [raportData, setRaportData] = useState<Record<string, Record<string, any>>>({}); // siswaId -> mapelId -> nilaiInfo
   const [pembinaanData, setPembinaanData] = useState<Record<string, string>>({}); // siswaId -> catatan
 
   useEffect(() => {
-     if (settings.activeTahunAjaran) {
+     if (authTahunAjaran) {
+        setTahunAjaran(authTahunAjaran);
+     } else if (settings.activeTahunAjaran) {
         setTahunAjaran(settings.activeTahunAjaran);
      }
-  }, [settings.activeTahunAjaran]);
+  }, [authTahunAjaran, settings.activeTahunAjaran]);
 
   const [loading, setLoading] = useState(false);
   const [printMode, setPrintMode] = useState<'raport' | 'ledger' | 'raport_pts' | 'ledger_pts' | null>(null);

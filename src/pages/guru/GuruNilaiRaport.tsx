@@ -23,21 +23,23 @@ interface NilaiSiswa {
 }
 
 export default function GuruNilaiRaport() {
-  const { profile } = useAuthStore();
+  const { profile, activeTahunAjaran: authTahunAjaran } = useAuthStore();
   const { settings } = useAppSettings();
   const [kelas, setKelas] = useState<any[]>([]);
   const [mapel, setMapel] = useState<any[]>([]);
   
   const [selectedKelas, setSelectedKelas] = useState('');
   const [selectedMapel, setSelectedMapel] = useState('');
-  const [tahunAjaran, setTahunAjaran] = useState(settings.activeTahunAjaran || '2025/2026');
+  const [tahunAjaran, setTahunAjaran] = useState(authTahunAjaran || settings.activeTahunAjaran || '2025/2026');
   const [semester, setSemester] = useState('Ganjil');
 
   useEffect(() => {
-     if (settings.activeTahunAjaran) {
+     if (authTahunAjaran) {
+        setTahunAjaran(authTahunAjaran);
+     } else if (settings.activeTahunAjaran) {
         setTahunAjaran(settings.activeTahunAjaran);
      }
-  }, [settings.activeTahunAjaran]);
+  }, [authTahunAjaran, settings.activeTahunAjaran]);
   
   const [siswaConfig, setSiswaConfig] = useState<any[]>([]);
   const [kkm, setKkm] = useState<number>(75);
