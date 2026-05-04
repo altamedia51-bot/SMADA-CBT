@@ -92,6 +92,35 @@ export default function AdminPengaturan() {
      return 'ALUMNI'; // fallback if we can't parse it
   };
 
+  const handleRestoreSiswa = async () => {
+      if (!confirm("Apakah Anda yakin ingin mengembalikan kelas siswa dari tahun ajaran sebelumnya? Fitur ini akan mencari riwayat kelas siswa dan mengembalikannya.")) return;
+      setIsLoading(true);
+      try {
+         const qSiswa = query(collection(db, 'users'), where('role', '==', 'siswa'));
+         const snapSiswa = await getDocs(qSiswa);
+         const batch = writeBatch(db);
+         let count = 0;
+         snapSiswa.docs.forEach(d => {
+            const s = d.data();
+            // Get any available class from history if exists
+            const history = s.historyKelas || {};
+            const keys = Object.keys(history);
+            if (keys.length > 0) {
+               // Restore to the first found class in history
+               const prevClass = history[keys[keys.length - 1]];
+               batch.update(d.ref, { kelas: prevClass, isActive: true });
+               count++;
+            }
+         });
+         await batch.commit();
+         toast.success(`Berhasil mengembalikan rincian kelas ${count} siswa seperti semula.`);
+      } catch (err: any) {
+         toast.error("Gagal mengembalikan data: " + err.message);
+      } finally {
+         setIsLoading(false);
+      }
+  };
+
   const handleSwitchTahunAjaran = async (ta: string) => {
       setIsLoading(true);
       try {
@@ -223,6 +252,14 @@ export default function AdminPengaturan() {
               <Button onClick={() => setShowTahunModal(true)} className="bg-indigo-600 hover:bg-indigo-700 font-bold shrink-0 shadow-md">
                  <ArrowUpCircle className="w-4 h-4 mr-2" />
                  Ganti Ke Tahun Ajaran Baru
+              </Button>
+           </div>
+           
+           <div className="bg-orange-50 border border-orange-200 rounded-xl p-5 mt-4">
+              <h3 className="font-bold text-orange-800 mb-2">Pemulihan Data Siswa</h3>
+              <p className="text-sm text-orange-700 mb-4">Gunakan fitur ini jika data siswa sebelumnya kosong karena perubahan tahun ajaran. Ini akan merevert kelas semua siswa ke kelas aslinya.</p>
+              <Button onClick={handleRestoreSiswa} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-100 font-bold">
+                 Pulihkan Data Siswa (Undo)
               </Button>
            </div>
         </CardContent>
