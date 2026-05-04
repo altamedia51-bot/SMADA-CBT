@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Settings, Printer, FileText } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Settings, Printer, FileText, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppSettings } from '../../hooks/useAppSettings';
 import domtoimage from 'dom-to-image';
@@ -35,22 +36,33 @@ export default function GuruRaportKelas() {
   }, [authTahunAjaran, settings.activeTahunAjaran]);
 
   const [loading, setLoading] = useState(false);
-  const [printMode, setPrintMode] = useState<'raport' | 'ledger' | 'raport_pts' | 'ledger_pts' | null>(null);
+  const [printMode, setPrintMode] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   
   // Settings Raport
   const [kepalaSekolah, setKepalaSekolah] = useState('');
   const [nipKepalaSekolah, setNipKepalaSekolah] = useState('');
+  const [dataGuru, setDataGuru] = useState<any[]>([]);
   // format YYYY-MM-DD for input date type
   const [tanggalRaportInput, setTanggalRaportInput] = useState(new Date().toISOString().split('T')[0]);
   const [printConfig, setPrintConfig] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchGuru = async () => {
+      const q = query(collection(db, 'users'));
+      const snapshot = await getDocs(q);
+      const guruArr = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as any).filter((user: any) => user.role === 'guru' || user.role === 'admin');
+      setDataGuru(guruArr);
+    };
+    fetchGuru();
+  }, []);
 
   useEffect(() => {
     const savedConfig = localStorage.getItem('printConfig');
     if (savedConfig) setPrintConfig(JSON.parse(savedConfig));
   }, []);
 
-  const handlePrint = (mode: 'raport' | 'ledger' | 'raport_pts' | 'ledger_pts') => {
+  const handlePrint = (mode: string) => {
       setPrintMode(mode);
   };
 
@@ -73,7 +85,7 @@ export default function GuruRaportKelas() {
       element.classList.remove('my-8', 'shadow-2xl', 'mx-auto');
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      const isLandscape = printMode.startsWith('ledger');
+      const isLandscape = printMode.startsWith('ledger') || printMode === 'dkn';
       const pdf = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -233,6 +245,22 @@ export default function GuruRaportKelas() {
     }
   };
 
+  const generateCatatanOtomatis = () => {
+      const baru = { ...pembinaanData };
+      siswaList.forEach(s => {
+          const rank = rankSiswa[s.id];
+          if (!rank) return;
+          if (rank === 1) baru[s.id] = "Sangat baik, tetap pertahankan prestasimu dan jadikan motivasi untuk terus maju!";
+          else if (rank === 2) baru[s.id] = "Prestasi yang sangat membanggakan, pertahankan dan terus tingkatkan belajarmu!";
+          else if (rank === 3) baru[s.id] = "Hasil yang luar biasa, terus semangat belajar dan tingkatkan terus prestasimu.";
+          else if (rank <= 5) baru[s.id] = "Sangat bagus, kamu masuk peringkat 5 besar! Tetap semangat belajar.";
+          else if (rank <= 10) baru[s.id] = "Prestasi yang baik. Tingkatkan lagi belajarmu agar bisa masuk 5 besar.";
+          else baru[s.id] = "Terus semangat belajar, tingkatkan kedisiplinan dan jangan mudah menyerah.";
+      });
+      setPembinaanData(baru);
+      toast.success("Catatan otomatis diisi berdasarkan ranking awal.");
+  };
+
   if (!profile?.waliKelas) {
     return (
       <div className="p-8 text-center text-slate-500">
@@ -349,9 +377,9 @@ export default function GuruRaportKelas() {
 
          <div id="print-container" 
               className="mx-auto bg-white shadow-2xl my-8 print:my-0 print:shadow-none font-sans text-slate-900"
-              style={{ width: printMode.startsWith('ledger') ? '100%' : '210mm', minHeight: '297mm', padding: '0mm' }}>
+              style={{ width: (printMode.startsWith('ledger') || printMode === 'dkn') ? '100%' : '210mm', minHeight: '297mm', padding: '0mm' }}>
             
-            {printMode.startsWith('ledger') && (
+            {(printMode.startsWith('ledger') || printMode === 'dkn') && (
               <div className="bg-white p-4">
                  {printConfig ? (
                     <div className="text-center border-b-[3px] border-black pb-4 mb-6 mt-4 mx-4 relative">
@@ -373,7 +401,9 @@ export default function GuruRaportKelas() {
                     </div>
                  )}
                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold uppercase tracking-widest underline">LEDGER NILAI {printMode.includes('pts') ? 'PTS ' : ''}KELAS {profile.waliKelas}</h3>
+                    <h3 className="text-xl font-bold uppercase tracking-widest underline">
+                       {printMode === 'dkn' ? `DAFTAR KUMPULAN NILAI (DKN) KELAS ${profile.waliKelas}` : `LEDGER NILAI ${printMode.includes('pts') ? 'PTS ' : ''}KELAS ${profile.waliKelas}`}
+                    </h3>
                  </div>
                  <div className="overflow-x-auto">
                     <div className="min-w-max">
@@ -476,6 +506,7 @@ export default function GuruRaportKelas() {
 
             {printMode.startsWith('raport') && siswaList.map((siswa, i) => (
                <div key={siswa.id} className={`pdf-page w-full print:relative bg-white font-sans text-sm pb-10 ${i > 0 ? "mt-8 print:mt-0 print:break-before-page page-break" : ""}`} style={{ minHeight: '297mm', padding: '10mm' }}>
+                  <div className={(printMode === 'raport' || printMode === 'raport_pts') ? 'block' : 'hidden'}>
                   {printConfig ? (
                     <div className="text-center border-b-[3px] border-black pb-4 mb-6 mt-2 relative">
                         {printConfig.kopKiri && <img src={printConfig.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
@@ -566,6 +597,72 @@ export default function GuruRaportKelas() {
                         <p>NIP. {nipKepalaSekolah || '_________________________'}</p>
                       </div>
                   </div>
+                  </div>
+
+                  {printMode === 'raport_halaman_1' && (
+                     <div className="py-10 px-8 text-center min-h-screen flex items-center justify-center border-4 border-double border-black m-8">
+                       <div>
+                         <h1 className="text-4xl font-extrabold uppercase mb-8">RAPOR PELAJAR</h1>
+                         <h2 className="text-2xl font-bold uppercase mb-2">SEKOLAH MENENGAH ATAS</h2>
+                         <h2 className="text-2xl uppercase mb-16">(SMA)</h2>
+
+                         <div className="mx-auto border-2 border-black w-[400px] p-6 mb-24">
+                           <div className="grid grid-cols-[120px_10px_1fr] text-left text-lg font-bold gap-4 mb-4">
+                              <span>NAMA PENDIDIK</span><span>:</span><span>{siswa.displayName}</span>
+                           </div>
+                           <div className="grid grid-cols-[120px_10px_1fr] text-left text-lg font-bold gap-4 mb-4">
+                              <span>NISN</span><span>:</span><span>{siswa.nisn || '_________________'}</span>
+                           </div>
+                           <div className="grid grid-cols-[120px_10px_1fr] text-left text-lg font-bold gap-4 mb-4">
+                              <span>KELAS</span><span>:</span><span>{profile.waliKelas}</span>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+                  )}
+
+                  {printMode === 'raport_halaman_prestasi' && (
+                     <div className="py-10 px-8">
+                        <h3 className="font-bold text-lg mb-6 uppercase">C. PRESTASI</h3>
+                        <table className="w-full border-collapse border border-black mb-10">
+                           <thead>
+                              <tr className="bg-gray-100">
+                                 <th className="border border-black p-2 w-12 text-center">No</th>
+                                 <th className="border border-black p-2">Jenis Prestasi</th>
+                                 <th className="border border-black p-2">Keterangan</th>
+                              </tr>
+                           </thead>
+                           <tbody>
+                              {[1, 2, 3].map(n => (
+                                 <tr key={n}>
+                                    <td className="border border-black p-2 text-center h-10">{n}</td>
+                                    <td className="border border-black p-2"></td>
+                                    <td className="border border-black p-2"></td>
+                                 </tr>
+                              ))}
+                           </tbody>
+                        </table>
+
+                        <h3 className="font-bold text-lg mb-6 uppercase">D. KETIDAKHADIRAN</h3>
+                        <div className="w-[300px] border border-black mb-16">
+                           <div className="grid grid-cols-[1fr_80px_40px] px-4 py-2 border-b border-black">
+                              <span>Sakit</span><span className="text-right">.....</span><span>hari</span>
+                           </div>
+                           <div className="grid grid-cols-[1fr_80px_40px] px-4 py-2 border-b border-black">
+                              <span>Izin</span><span className="text-right">.....</span><span>hari</span>
+                           </div>
+                           <div className="grid grid-cols-[1fr_80px_40px] px-4 py-2">
+                              <span>Tanpa Keterangan</span><span className="text-right">.....</span><span>hari</span>
+                           </div>
+                        </div>
+
+                        <h3 className="font-bold text-lg mb-6 uppercase">E. CATATAN WALIKELAS</h3>
+                        <div className="border border-black p-4 min-h-[100px] mb-16">
+                           <p className="italic">{pembinaanData[siswa.id] || ''}</p>
+                        </div>
+                     </div>
+                  )}
+
                </div>
             ))}
          </div>
@@ -578,7 +675,7 @@ export default function GuruRaportKelas() {
     <div className={`p-4 md:p-8 space-y-6 ${printMode === 'ledger' ? 'print:block print:p-0 bg-white' : 'print:hidden'}`}>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Raport Kelas {profile.waliKelas}</h1>
+            <h1 className="text-2xl font-bold text-slate-800">Administrasi Raport {profile.waliKelas}</h1>
             <p className="text-sm text-slate-500">Rekapitulasi Nilai Akhir dari semua mapel, Ranking, dan Catatan Wali Kelas.</p>
          </div>
       </div>
@@ -626,11 +723,25 @@ export default function GuruRaportKelas() {
                      <div className="grid gap-4 py-4">
                        <div className="space-y-2">
                          <label className="text-sm font-medium">Nama Kepala Sekolah</label>
-                         <Input 
-                           placeholder="Contoh: Drs. H. Ahmad, M.Pd." 
+                         <Select 
                            value={kepalaSekolah}
-                           onChange={(e) => setKepalaSekolah(e.target.value)}
-                         />
+                           onValueChange={(val) => {
+                              setKepalaSekolah(val);
+                              const selectedGuru = dataGuru.find(g => g.displayName === val);
+                              if (selectedGuru && selectedGuru.nip) {
+                                 setNipKepalaSekolah(selectedGuru.nip);
+                              }
+                           }}
+                         >
+                           <SelectTrigger className="w-full bg-white">
+                              <SelectValue placeholder="Pilih Kepala Sekolah..." />
+                           </SelectTrigger>
+                           <SelectContent>
+                              {dataGuru.map(g => (
+                                <SelectItem key={g.id} value={g.displayName || g.id}>{g.displayName || g.id}</SelectItem>
+                              ))}
+                           </SelectContent>
+                         </Select>
                        </div>
                        <div className="space-y-2">
                          <label className="text-sm font-medium">NIP Kepala Sekolah</label>
@@ -652,24 +763,26 @@ export default function GuruRaportKelas() {
                    </DialogContent>
                  </Dialog>
 
-                 <Button onClick={() => handlePrint('ledger')} variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
-                    <Printer className="w-4 h-4 mr-2" />
-                    Cetak Ledger
-                 </Button>
+                 <DropdownMenu>
+                   <DropdownMenuTrigger asChild>
+                     <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                        <Printer className="w-4 h-4 mr-2" />
+                        Cetak Laporan <ChevronDown className="w-4 h-4 ml-2" />
+                     </Button>
+                   </DropdownMenuTrigger>
+                   <DropdownMenuContent align="end" className="w-64">
+                      <DropdownMenuItem onClick={() => handlePrint('dkn')}><Printer className="w-4 h-4 mr-2" /> Cetak DKN (Daftar Kumpulan Nilai)</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePrint('ledger')}><Printer className="w-4 h-4 mr-2" /> Cetak Ledger Akhir</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePrint('ledger_pts')}><Printer className="w-4 h-4 mr-2" /> Cetak Ledger PTS</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePrint('raport_pts')}><Printer className="w-4 h-4 mr-2" /> Cetak PTS</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePrint('raport')}><Printer className="w-4 h-4 mr-2" /> Cetak Raport Semester</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePrint('raport_halaman_1')}><Printer className="w-4 h-4 mr-2" /> Halaman 1 2 Identitas Siswa</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePrint('raport_halaman_prestasi')}><Printer className="w-4 h-4 mr-2" /> Halaman 12 13 Prestasi / Mutasi</DropdownMenuItem>
+                   </DropdownMenuContent>
+                 </DropdownMenu>
 
-                 <Button onClick={() => handlePrint('raport')} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-                    <Printer className="w-4 h-4 mr-2" />
-                    Cetak Raport
-                 </Button>
-
-                 <Button onClick={() => handlePrint('ledger_pts')} variant="outline" className="border-indigo-600 text-indigo-600 hover:bg-indigo-50">
-                    <Printer className="w-4 h-4 mr-2" />
-                    Ledger PTS
-                 </Button>
-
-                 <Button onClick={() => handlePrint('raport_pts')} variant="outline" className="border-purple-600 text-purple-600 hover:bg-purple-50">
-                    <Printer className="w-4 h-4 mr-2" />
-                    Cetak PTS
+                 <Button onClick={generateCatatanOtomatis} variant="secondary" className="border border-slate-300">
+                    Isi Otomatis Catatan
                  </Button>
                  
                  <Button onClick={savePembinaan} className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -687,7 +800,7 @@ export default function GuruRaportKelas() {
            {siswaList.length > 0 && (
               <Card className="overflow-hidden border border-slate-200 print:shadow-none print:border-none">
                  <CardHeader className="bg-slate-50 border-b print:bg-white print:border-none print:px-0">
-                    <CardTitle className="text-lg">Ledger Nilai Kelas</CardTitle>
+                    <CardTitle className="text-lg">Daftar Kumpulan Nilai (DKN)</CardTitle>
                     <CardDescription className="print:hidden">Daftar nilai seluruh mapel yang ditempuh dan rata-ratanya.</CardDescription>
                  </CardHeader>
                  <CardContent className="p-0 overflow-x-auto print:overflow-visible">

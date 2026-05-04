@@ -25,7 +25,7 @@ export default function GuruLayout() {
     { label: 'Paket Soal', path: '/guru/paket-soal', icon: BookOpen },
     { label: 'Hasil Ujian', path: '/guru/hasil', icon: ClipboardCheck },
     { label: 'Input Nilai Mapel', path: '/guru/nilai-raport', icon: GraduationCap },
-    ...(profile?.waliKelas ? [{ label: 'Raport Kelas', path: '/guru/raport-kelas', icon: FileText }] : []),
+    ...(profile?.waliKelas ? [{ label: 'Administrasi Raport', path: '/guru/raport-kelas', icon: FileText }] : []),
     ...(profile?.waliKelas ? [{ label: 'Data Siswa', path: '/guru/data-siswa', icon: Users }] : []),
     { label: 'Panduan', path: '/guru/panduan', icon: HelpCircle },
     { label: 'Profil', path: '/guru/profil', icon: UserRound },
