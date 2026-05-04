@@ -17,7 +17,7 @@ export default function AdminMasterData() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const isAdministrasi = location.pathname.includes('/administrasi');
-  const currentTab = searchParams.get('tab') || (isAdministrasi ? 'siswa' : 'ruang');
+  const currentTab = searchParams.get('tab') || 'siswa';
 
   const [mapel, setMapel] = useState<any[]>([]);
   const [kelas, setKelas] = useState<any[]>([]);
@@ -25,6 +25,7 @@ export default function AdminMasterData() {
   const [ruang, setRuang] = useState<any[]>([]);
   const [sesi, setSesi] = useState<any[]>([]);
   const [jenisUjian, setJenisUjian] = useState<any[]>([]);
+  const [ekstra, setEkstra] = useState<any[]>([]);
 
   // Form states
   const [newRuangKode, setNewRuangKode] = useState('');
@@ -33,6 +34,9 @@ export default function AdminMasterData() {
   const [newSesiName, setNewSesiName] = useState('');
   const [newJenisUjianKode, setNewJenisUjianKode] = useState('');
   const [newJenisUjianName, setNewJenisUjianName] = useState('');
+  const [newEkstraName, setNewEkstraName] = useState('');
+  const [editingEkstra, setEditingEkstra] = useState<any>(null);
+  const [showFormEkstra, setShowFormEkstra] = useState(false);
   
   // Student Form State
   const [editingSiswa, setEditingSiswa] = useState<any>(null);
@@ -135,7 +139,12 @@ export default function AdminMasterData() {
       setJenisUjian(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
-    return () => { unMapel(); unKelas(); unUsers(); unRuang(); unSesi(); unJenisUjian(); };
+    const qEkstra = query(collection(db, 'ekstra'));
+    const unEkstra = onSnapshot(qEkstra, (snap) => {
+      setEkstra(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => { unMapel(); unKelas(); unUsers(); unRuang(); unSesi(); unJenisUjian(); unEkstra(); };
   }, []);
 
   const tanganiTambahMapel = async (e: React.FormEvent) => {
@@ -303,6 +312,30 @@ export default function AdminMasterData() {
       setNewJenisUjianName('');
     } catch (err: any) {
       toast.error('Gagal menyimpan jenis ujian: ' + err.message);
+    }
+  };
+
+  const tanganiTambahEkstra = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEkstraName) return;
+    try {
+      if (editingEkstra) {
+        await updateDoc(doc(db, 'ekstra', editingEkstra.id), {
+          name: newEkstraName,
+          updatedAt: serverTimestamp()
+        });
+        setEditingEkstra(null);
+        toast.success('Ekstrakurikuler berhasil diperbarui');
+      } else {
+        await addDoc(collection(db, 'ekstra'), {
+          name: newEkstraName,
+          createdAt: serverTimestamp()
+        });
+        toast.success('Ekstrakurikuler berhasil ditambahkan');
+      }
+      setNewEkstraName('');
+    } catch (err: any) {
+      toast.error('Gagal menyimpan ekstrakurikuler: ' + err.message);
     }
   };
 
@@ -808,6 +841,7 @@ export default function AdminMasterData() {
       case 'guru': return 'Data Guru';
       case 'kelas': return 'Data Kelas';
       case 'mapel': return 'Data Mapel';
+      case 'ekstra': return 'Data Ekstra';
       case 'ruang': return 'Data Ruang';
       case 'sesi': return 'Data Sesi';
       case 'jenis_ujian': return 'Jenis Ujian';
@@ -821,6 +855,7 @@ export default function AdminMasterData() {
       case 'guru': return '👨‍🏫';
       case 'kelas': return '🏫';
       case 'mapel': return '📚';
+      case 'ekstra': return '🎨';
       case 'ruang': return '🏫';
       case 'sesi': return '⏱️';
       case 'jenis_ujian': return '📝';
@@ -1803,8 +1838,8 @@ export default function AdminMasterData() {
                     {jenisUjian.length === 0 ? (
                        <tr><td colSpan={4} className="py-12 text-center text-slate-400 font-medium">Belum ada data.</td></tr>
                     ) : (
-                      jenisUjian.sort((a,b) => a.kode.localeCompare(b.kode)).map((item, i) => (
-                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                       jenisUjian.sort((a,b) => a.kode.localeCompare(b.kode)).map((item, i) => (
+                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
                            <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
                            <td className="py-5 px-6 text-sm font-bold text-blue-600">{item.kode}</td>
                            <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
@@ -1814,8 +1849,76 @@ export default function AdminMasterData() {
                                 <button onClick={() => hapusData('jenis_ujian', item.id)} className="text-rose-400 hover:text-rose-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
                               </div>
                            </td>
-                        </tr>
-                      ))
+                         </tr>
+                       ))
+                    )}
+                 </tbody>
+               </table>
+             </div>
+          </Card>
+        </div>
+        )}
+
+        {currentTab === 'ekstra' && (
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 py-2">
+            <div className="relative w-full md:w-80">
+              <Input 
+                placeholder="Cari ekstra..." 
+                className="pl-10 bg-white border-slate-200 rounded-full h-11 text-sm font-medium shadow-sm w-full focus-visible:ring-blue-500" 
+              />
+              <svg className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" onClick={() => setShowFormEkstra(!showFormEkstra)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-full px-6 font-bold text-xs h-10 shadow-md shadow-indigo-600/20">
+                 <Plus className="w-3.5 h-3.5 mr-2" /> TAMBAH DATA
+              </Button>
+            </div>
+          </div>
+
+          {showFormEkstra && (
+          <Card className="p-0 border border-indigo-100 overflow-hidden shadow-sm">
+            <form onSubmit={tanganiTambahEkstra} className="p-6 flex flex-wrap gap-4 items-end bg-white">
+              <div className="grid gap-1.5 flex-1 min-w-[240px]">
+                <label className="text-xs font-bold text-slate-500 uppercase">{editingEkstra ? 'Edit Nama Ekstrakurikuler' : 'Nama Ekstrakurikuler'}</label>
+                <Input value={newEkstraName} onChange={e => setNewEkstraName(e.target.value)} placeholder="Contoh: Pramuka" className="h-11 border-slate-200 font-bold" />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all">Simpan</Button>
+                {editingEkstra && <Button type="button" variant="outline" className="h-11 px-6 font-bold" onClick={() => { setEditingEkstra(null); setNewEkstraName(''); setShowFormEkstra(false); }}>Batal</Button>}
+              </div>
+            </form>
+          </Card>
+          )}
+
+          <Card className="bg-white border-0 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] rounded-2xl overflow-hidden py-2 px-4">
+             <div className="overflow-x-auto min-h-[300px]">
+               <table className="w-full">
+                 <thead>
+                   <tr className="border-b-2 border-slate-100">
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
+                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA EKSTRAKURIKULER</th>
+                     <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-50">
+                    {ekstra.length === 0 ? (
+                       <tr><td colSpan={3} className="py-12 text-center text-slate-400 font-medium">Belum ada data ekstrakurikuler.</td></tr>
+                    ) : (
+                       ekstra.sort((a,b) => a.name.localeCompare(b.name)).map((item, i) => (
+                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                           <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
+                           <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
+                           <td className="py-5 px-6 text-right">
+                              <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => { setEditingEkstra(item); setNewEkstraName(item.name || ''); setShowFormEkstra(true); }} className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
+                                <button onClick={() => hapusData('ekstra', item.id)} className="text-rose-400 hover:text-rose-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                              </div>
+                           </td>
+                         </tr>
+                       ))
                     )}
                  </tbody>
                </table>

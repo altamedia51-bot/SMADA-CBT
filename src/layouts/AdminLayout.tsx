@@ -16,6 +16,7 @@ export default function AdminLayout() {
 
   const [isMasterDataOpen, setIsMasterDataOpen] = useState(true);
   const [isAdministrasiOpen, setIsAdministrasiOpen] = useState(false);
+  const [isKurikulumOpen, setIsKurikulumOpen] = useState(false);
   const [isManajemenUjianOpen, setIsManajemenUjianOpen] = useState(false);
 
   const navItems = [
@@ -23,26 +24,38 @@ export default function AdminLayout() {
     { label: 'Master Data', path: '/admin/master-data', icon: Database, 
       id: 'master-data',
       subItems: [
-        { label: 'Data Ruang', path: '/admin/master-data?tab=ruang', icon: Box },
-        { label: 'Data Sesi', path: '/admin/master-data?tab=sesi', icon: Clock },
-        { label: 'Jenis Ujian', path: '/admin/master-data?tab=jenis_ujian', icon: Tags }
+        { label: 'Data Siswa', path: '/admin/master-data?tab=siswa', icon: Users },
+        { label: 'Data Guru', path: '/admin/master-data?tab=guru', icon: GraduationCap },
+        { label: 'Data Kelas', path: '/admin/master-data?tab=kelas', icon: School },
+        { label: 'Data Mapel', path: '/admin/master-data?tab=mapel', icon: Library },
+        { label: 'Data Ekstra', path: '/admin/master-data?tab=ekstra', icon: Tags }
       ]
     },
-    { label: 'Administrasi', path: '/admin/administrasi', icon: FileText,
+    { label: 'Administrasi', path: '/admin/administrasi', icon: ClipboardCheck,
       id: 'administrasi',
       subItems: [
-        { label: 'Data Siswa', path: '/admin/administrasi?tab=siswa', icon: Users },
-        { label: 'Data Guru', path: '/admin/administrasi?tab=guru', icon: GraduationCap },
-        { label: 'Data Kelas', path: '/admin/administrasi?tab=kelas', icon: School },
-        { label: 'Data Mapel', path: '/admin/administrasi?tab=mapel', icon: Library }
+        { label: 'Kurikulum', path: '/admin/kurikulum', icon: FileText, id: 'kurikulum',
+          nestedItems: [
+            { label: 'Input Nilai', path: '/admin/kurikulum/akademik/nilai', icon: FileText },
+            { label: 'DKN', path: '/admin/kurikulum/akademik/dkn', icon: FileText },
+            { label: 'Raport', path: '/admin/kurikulum/akademik/raport', icon: FileText },
+            { label: 'Ledger', path: '/admin/leger', icon: LineChart },
+          ]
+        },
+        { label: 'Sarpras', path: '/admin/sarpras', icon: Box },
+        { label: 'Kesiswaan', path: '/admin/kesiswaan', icon: Users },
+        { label: 'Humas', path: '/admin/humas', icon: Users }
       ]
     },
-    { label: 'Manajemen Ujian', path: '/admin/bank-soal', icon: FileText,
+    { label: 'Manajemen Ujian', path: '/admin/bank-soal', icon: Tags,
       id: 'manajemen-ujian',
       subItems: [
         { label: 'Bank Soal', path: '/admin/bank-soal', icon: FileText },
         { label: 'Jadwal Ujian', path: '/admin/ujian', icon: Calendar },
-        { label: 'Hasil Ujian', path: '/admin/hasil', icon: ClipboardCheck }
+        { label: 'Hasil Ujian', path: '/admin/hasil', icon: ClipboardCheck },
+        { label: 'Data Ruang', path: '/admin/master-data?tab=ruang', icon: Box },
+        { label: 'Data Sesi', path: '/admin/master-data?tab=sesi', icon: Clock },
+        { label: 'Jenis Ujian', path: '/admin/master-data?tab=jenis_ujian', icon: Tags }
       ]
     },
     { label: 'Cetak', path: '/admin/cetak', icon: Printer },
@@ -103,7 +116,44 @@ export default function AdminLayout() {
                          
                          const isSubActive = (subItemTab && currentTab === subItemTab) || 
                             (!subItemTab && location.pathname === subItem.path) ||
-                            (!currentTab && location.pathname === item.path && ((item.id === 'master-data' && subItemTab === 'ruang') || (item.id === 'administrasi' && subItemTab === 'siswa')));
+                            (!currentTab && location.pathname === item.path && ((item.id === 'master-data' && subItemTab === 'siswa') || (item.id === 'manajemen-ujian' && subItemTab === 'ruang')));
+                         
+                         if ((subItem as any).nestedItems) {
+                            return (
+                               <div key={subItem.path} className="space-y-1">
+                                  <button
+                                     onClick={() => setIsKurikulumOpen(!isKurikulumOpen)}
+                                     className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm font-medium rounded-lg transition-all ${
+                                        isKurikulumOpen ? 'text-slate-200 bg-[#1a2942]/50' : 'text-slate-400 hover:text-slate-200 hover:bg-[#1a2942]/50'
+                                     }`}
+                                  >
+                                     <div className="flex items-center gap-3">
+                                        <div className={`w-1.5 h-1.5 rounded-full ${isKurikulumOpen ? 'bg-blue-500' : 'bg-slate-600'}`} />
+                                        {subItem.label}
+                                     </div>
+                                     {isKurikulumOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                                  </button>
+                                  {isKurikulumOpen && (
+                                     <div className="pl-4 space-y-1">
+                                        {(subItem as any).nestedItems.map((nested: any) => (
+                                           <button
+                                              key={nested.path}
+                                              onClick={() => navigate(nested.path)}
+                                              className={`w-full flex items-center gap-3 px-4 py-2 text-xs font-medium rounded-lg transition-all ${
+                                                 location.pathname === nested.path 
+                                                   ? 'text-blue-400 font-bold' 
+                                                   : 'text-slate-500 hover:text-slate-300'
+                                              }`}
+                                           >
+                                              <div className={`w-1 h-1 rounded-full ${location.pathname === nested.path ? 'bg-blue-500' : 'bg-slate-700'}`} />
+                                              {nested.label}
+                                           </button>
+                                        ))}
+                                     </div>
+                                  )}
+                               </div>
+                            )
+                         }
                          return (
                            <button
                              key={subItem.path}

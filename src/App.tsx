@@ -29,6 +29,7 @@ import { Toaster } from '@/components/ui/sonner';
 
 import AdminLeger from './pages/admin/AdminLeger';
 import AdminPengaturan from './pages/admin/AdminPengaturan';
+import AdminAdministrasi from './pages/admin/AdminAdministrasi';
 
 import Panduan from './pages/shared/Panduan';
 
@@ -45,7 +46,17 @@ export default function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="master-data" element={<AdminMasterData />} />
-            <Route path="administrasi" element={<AdminMasterData />} />
+            
+            {/* Administrasi Routes */}
+            <Route path="kurikulum" element={<AdminAdministrasi />} />
+            <Route path="kurikulum/akademik/nilai" element={<AdminAdministrasi />} />
+            <Route path="kurikulum/akademik/dkn" element={<AdminAdministrasi />} />
+            <Route path="kurikulum/akademik/raport" element={<AdminAdministrasi />} />
+            
+            <Route path="sarpras" element={<AdminAdministrasi />} />
+            <Route path="kesiswaan" element={<AdminAdministrasi />} />
+            <Route path="humas" element={<AdminAdministrasi />} />
+
             <Route path="bank-soal" element={<AdminBankSoal />} />
             <Route path="bank-soal/:paketId" element={<GuruSoalDetail />} />
             <Route path="ujian" element={<AdminUjian />} />
