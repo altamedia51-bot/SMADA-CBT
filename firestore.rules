@@ -137,5 +137,11 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (isAdmin() || isGuru());
     }
+
+    // 16. Absensi Wali
+    match /absensi_wali/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || isGuru());
+    }
   }
 }
