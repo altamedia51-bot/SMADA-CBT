@@ -38,6 +38,7 @@ export default function GuruRaportKelas() {
 
   const [loading, setLoading] = useState(false);
   const [printMode, setPrintMode] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'dkn' | 'leger'>('leger');
   const [isExporting, setIsExporting] = useState(false);
   
   // Settings Raport
@@ -473,7 +474,7 @@ export default function GuruRaportKelas() {
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Rerata</div></th>
                                  <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Ranking</div></th>
                                  {printMode !== 'dkn' && (
-                                    <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-4 py-1 text-center">Catatan / Pembinaan</th>
+                                     <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-4 py-1 text-center">Catatan / Pembinaan</th>
                                  )}
                               </tr>
                               <tr>
@@ -878,7 +879,18 @@ export default function GuruRaportKelas() {
            {siswaList.length > 0 && (
               <Card className="overflow-hidden border border-slate-200 print:shadow-none print:border-none">
                  <CardHeader className="bg-slate-50 border-b print:bg-white print:border-none print:px-0">
-                    <CardTitle className="text-lg">Daftar Kumpulan Nilai (DKN)</CardTitle>
+                    <CardTitle className="text-lg flex items-center justify-between overflow-visible">
+                        <span>{viewMode === 'leger' ? 'Leger Kelas' : 'Daftar Kumpulan Nilai (DKN)'}</span>
+                        <Select value={viewMode} onValueChange={(val: any) => setViewMode(val)}>
+                           <SelectTrigger className="w-[180px] h-8 text-sm">
+                              <SelectValue placeholder="Mode Tampilan" />
+                           </SelectTrigger>
+                           <SelectContent>
+                              <SelectItem value="dkn">Tampilan DKN</SelectItem>
+                              <SelectItem value="leger">Tampilan Leger</SelectItem>
+                           </SelectContent>
+                        </Select>
+                     </CardTitle>
                     <CardDescription className="print:hidden">Daftar nilai seluruh mapel yang ditempuh dan rata-ratanya.</CardDescription>
                  </CardHeader>
                  <CardContent className="p-0 overflow-x-auto print:overflow-visible">
@@ -891,11 +903,11 @@ export default function GuruRaportKelas() {
                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center min-w-[200px]">NAMA</th>
                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">L/P</th>
                                 <th colSpan={usedMapel.length} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">MATA PELAJARAN</th>
-                                 <th colSpan={3} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">ABSENSI</th>
+                                 {viewMode === 'leger' && <th colSpan={3} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">ABSENSI</th>}
                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Jumlah</div></th>
                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Rerata</div></th>
                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Ranking</div></th>
-                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-4 py-1 text-center">Catatan / Pembinaan</th>
+                                 {viewMode === 'leger' && <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-4 py-1 text-center">Catatan / Pembinaan</th>}
                              </tr>
                              <tr>
                                 {usedMapel.map(m => (
@@ -903,15 +915,15 @@ export default function GuruRaportKelas() {
                                       <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap">{m.name}</div>
                                    </th>
                                 ))}
-                                <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
-                                   <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Sakit</div>
-                                </th>
-                                <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
-                                   <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Izin</div>
-                                </th>
-                                <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
-                                   <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Alpa</div>
-                                </th>
+                                {viewMode === 'leger' && ( <> <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
+                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Sakit</div>
+                                 </th>
+                                 <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
+                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Izin</div>
+                                 </th>
+                                 <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
+                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Alpa</div>
+                                 </th> </> )}
                              </tr>
                           </thead>
                           <tbody>
@@ -929,45 +941,45 @@ export default function GuruRaportKelas() {
                                          </td>
                                       );
                                    })}
-                                   <td className="border border-slate-400 p-0 overflow-hidden w-8">
-                                      <input 
-                                         type="text" 
-                                         className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
-                                         value={absensiData[siswa.id]?.sakit || ''}
-                                         placeholder="0"
-                                         onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), sakit: e.target.value } })}
-                                      />
-                                   </td>
-                                   <td className="border border-slate-400 p-0 overflow-hidden w-8">
-                                      <input 
-                                         type="text" 
-                                         className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
-                                         value={absensiData[siswa.id]?.izin || ''}
-                                         placeholder="0"
-                                         onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), izin: e.target.value } })}
-                                      />
-                                   </td>
-                                   <td className="border border-slate-400 p-0 overflow-hidden w-8">
-                                      <input 
-                                         type="text" 
-                                         className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
-                                         value={absensiData[siswa.id]?.alpa || ''}
-                                         placeholder="0"
-                                         onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), alpa: e.target.value } })}
-                                      />
-                                   </td>
+                                   {viewMode === 'leger' && ( <> <td className="border border-slate-400 p-0 overflow-hidden w-8">
+                                       <input 
+                                          type="text" 
+                                          className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
+                                          value={absensiData[siswa.id]?.sakit || ''}
+                                          placeholder="0"
+                                          onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), sakit: e.target.value } })}
+                                       />
+                                    </td>
+                                    <td className="border border-slate-400 p-0 overflow-hidden w-8">
+                                       <input 
+                                          type="text" 
+                                          className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
+                                          value={absensiData[siswa.id]?.izin || ''}
+                                          placeholder="0"
+                                          onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), izin: e.target.value } })}
+                                       />
+                                    </td>
+                                    <td className="border border-slate-400 p-0 overflow-hidden w-8">
+                                       <input 
+                                          type="text" 
+                                          className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
+                                          value={absensiData[siswa.id]?.alpa || ''}
+                                          placeholder="0"
+                                          onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), alpa: e.target.value } })}
+                                       />
+                                    </td> </> )}
                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-slate-700">{jumlahNilaiSiswa[siswa.id] || ''}</td>
                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-blue-700">{rataRataSiswa[siswa.id]?.toFixed(1) || ''}</td>
                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-amber-700">{rankSiswa[siswa.id] || ''}</td>
-                                   <td className="border border-slate-400 p-0">
-                                      <input 
-                                         type="text" 
-                                         className="w-full h-full px-2 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-xs" 
-                                         placeholder="-"
-                                         value={pembinaanData[siswa.id] || ''}
-                                         onChange={(e) => setPembinaanData({ ...pembinaanData, [siswa.id]: e.target.value })}
-                                      />
-                                   </td>
+                                   {viewMode === 'leger' && ( <td className="border border-slate-400 p-0">
+                                       <input 
+                                          type="text" 
+                                          className="w-full h-full px-2 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-xs" 
+                                          placeholder="-"
+                                          value={pembinaanData[siswa.id] || ''}
+                                          onChange={(e) => setPembinaanData({ ...pembinaanData, [siswa.id]: e.target.value })}
+                                       />
+                                    </td> )}
                                 </tr>
                              ))}
                              

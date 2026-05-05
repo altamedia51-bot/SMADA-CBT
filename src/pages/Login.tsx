@@ -137,7 +137,7 @@ export default function Login() {
         console.error("Login detail error:", errorMessage);
         
         if (errorMessage.includes('user-not-found') || errorMessage.includes('invalid-credential') || errorMessage.includes('wrong-password')) {
-          toast.error('Kredensial tidak valid. Cek Username/NIP (Perhatikan Huruf Besar/Kecil) dan Password Anda.');
+          toast.error('Kredensial tidak valid. Cek Username (Perhatikan Huruf Besar/Kecil) dan Password Anda.');
         } else if (errorMessage.includes('too-many-requests')) {
           toast.error('Terlalu banyak percobaan gagal. Silakan tunggu sebentar sebelum mencoba lagi.');
         } else {
@@ -265,7 +265,7 @@ export default function Login() {
                   </Button>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">Username / NIP</label>
+                  <label className="text-sm font-bold text-slate-700 ml-1">Username</label>
                   <Input 
                     placeholder="Username..." 
                     className="h-12 bg-white border-slate-200 rounded-xl"

@@ -74,6 +74,7 @@ export default function AdminMasterData() {
   const [guruForm, setGuruForm] = useState({
     nama: '',
     nip: '',
+    username: '',
     password: '',
     nomorWa: '',
     waliKelas: '',
@@ -677,8 +678,8 @@ export default function AdminMasterData() {
   // Manage Guru logic
   const saveGuru = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guruForm.nama || !guruForm.nip) {
-      toast.error('Mohon isi Nama and NIP');
+    if (!guruForm.nama || !guruForm.username || !guruForm.nip) {
+      toast.error('Mohon isi Nama, NIP, dan Username');
       return;
     }
     try {
@@ -688,6 +689,7 @@ export default function AdminMasterData() {
         await updateDoc(doc(db, 'users', currentUid), {
           displayName: guruForm.nama,
           nip: guruForm.nip,
+          username: guruForm.username.toString().toLowerCase().trim(),
           nomorWa: guruForm.nomorWa,
           waliKelas: guruForm.waliKelas,
           mengampu: guruForm.mengampu.filter(m => m.mapelId),
@@ -695,8 +697,8 @@ export default function AdminMasterData() {
         });
         toast.success(`Data guru ${guruForm.nama} diperbarui.`);
       } else {
-        const cleanNip = guruForm.nip.toString().toLowerCase().trim();
-        const email = `guru_${cleanNip}@edutest.local`;
+        const cleanUsername = guruForm.username.toString().toLowerCase().trim();
+        const email = `guru_${cleanUsername}@edutest.local`;
         const pass = guruForm.password || 'guru123';
         const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`, {
           method: 'POST',
@@ -713,14 +715,14 @@ export default function AdminMasterData() {
            currentUid = data.localId;
            const { setDoc } = await import('firebase/firestore');
            await setDoc(doc(db, 'users', currentUid), {
-             uid: currentUid, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
+             uid: currentUid, email, displayName: guruForm.nama, role: 'guru', username: guruForm.username.toString().toLowerCase().trim(), nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
            }, { merge: true });
         } else if (data.error?.message === 'EMAIL_EXISTS') {
            // If auth exists, just create a fallback profile so the user can still login (since their Firebase Auth account is still alive).
            currentUid = `recovered_guru_${cleanNip}`;
            const { setDoc } = await import('firebase/firestore');
            await setDoc(doc(db, 'users', currentUid), {
-             uid: null, email, displayName: guruForm.nama, role: 'guru', nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
+             uid: null, email, displayName: guruForm.nama, role: 'guru', username: guruForm.username.toString().toLowerCase().trim(), nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
            }, { merge: true });
            toast.success('Guru terhubung dengan akun yang sudah ada sebelumnya.');
         }
@@ -755,7 +757,7 @@ export default function AdminMasterData() {
 
   const resetGuruForm = () => {
     setEditingGuru(null);
-    setGuruForm({ nama: '', nip: '', password: '', nomorWa: '', waliKelas: '', mengampu: [{ mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }] });
+    setGuruForm({ nama: '', nip: '', username: '', password: '', nomorWa: '', waliKelas: '', mengampu: [{ mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }] });
     setShowGuruModal(false);
   };
 
@@ -946,6 +948,7 @@ export default function AdminMasterData() {
 
           const name = findVal(['Nama', 'nama', 'name', 'DisplayName'])?.toString().trim();
           const nip = findVal(['NIP', 'nip', 'ID Pegawai', 'ID'])?.toString().trim();
+          const username = findVal(['Username', 'username'])?.toString().trim() || nip; // fallback to nip
           const nomorWa = findVal(['Nomor WA', 'whatsapp', 'No WA', 'Nomor HP'])?.toString().trim() || '';
           const password = findVal(['Password', 'password', 'pass', 'PIN'])?.toString().trim() || 'guru123';
           
@@ -956,7 +959,8 @@ export default function AdminMasterData() {
             continue;
           }
 
-          const email = `guru_${nip.toString().toLowerCase().trim()}@edutest.local`;
+          const cleanUsername = (username || nip).toString().toLowerCase().trim();
+          const email = `guru_${cleanUsername}@edutest.local`;
 
           try {
             const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`, {
@@ -1038,8 +1042,8 @@ export default function AdminMasterData() {
 
   const downloadTemplateGuru = () => {
     downloadExcel([
-      { Nama: 'Budigantara', NIP: '198702319238', 'Nomor WA': '081234567890', Password: 'guru123' },
-      { Nama: 'Susi Susanti', NIP: '198203112345', 'Nomor WA': '087712345678', Password: 'guru123' }
+      { Nama: 'Budigantara', NIP: '198702319238', Username: 'budikeren', 'Nomor WA': '081234567890', Password: 'guru123' },
+      { Nama: 'Susi Susanti', NIP: '198203112345', Username: 'susi82', 'Nomor WA': '087712345678', Password: 'guru123' }
     ], "template_guru.xlsx", "Template_Guru");
   };
 
@@ -1437,12 +1441,21 @@ export default function AdminMasterData() {
                      />
                   </div>
                   <div>
-                     <label className="block text-xs font-bold text-slate-500 mb-1">NIP / ID PEGAWAI</label>
+                     <label className="block text-xs font-bold text-slate-500 mb-1">NIP CETAK RAPOR</label>
                      <Input 
                        placeholder="Masukkan NIP" 
                        className="h-11 bg-slate-50 focus:bg-white transition-colors"
                        value={guruForm.nip}
                        onChange={e => setGuruForm({...guruForm, nip: e.target.value})}
+                     />
+                  </div>
+                  <div>
+                     <label className="block text-xs font-bold text-slate-500 mb-1">USERNAME LOGIN</label>
+                     <Input 
+                       placeholder="Masukkan Username" 
+                       className="h-11 bg-slate-50 focus:bg-white transition-colors"
+                       value={guruForm.username}
+                       onChange={e => setGuruForm({...guruForm, username: e.target.value})}
                      />
                   </div>
                   <div>
@@ -1596,7 +1609,7 @@ export default function AdminMasterData() {
               <TableHeader>
                 <TableRow className="bg-slate-50">
                   <TableHead>Nama Guru</TableHead>
-                  <TableHead>NIP / Username</TableHead>
+                  <TableHead>NIP</TableHead><TableHead>Username</TableHead>
                   <TableHead>No. WA</TableHead>
                   <TableHead>Wali Kelas</TableHead>
                   <TableHead>Mapel Diampu</TableHead>
@@ -1631,7 +1644,7 @@ export default function AdminMasterData() {
                             let parsedMengampu = [...initMengampu];
                             while(parsedMengampu.length < 3) parsedMengampu.push({ mapelId:'', kelas:[] });
                             setEditingGuru(g); 
-                            setGuruForm({nama:g.displayName, nip:g.nip||'', password:'', nomorWa: g.nomorWa || '', waliKelas: g.waliKelas || '', mengampu: parsedMengampu }); 
+                            setGuruForm({nama:g.displayName, nip:g.nip||'', username: g.username || '', password:'', nomorWa: g.nomorWa || '', waliKelas: g.waliKelas || '', mengampu: parsedMengampu }); 
                             setShowGuruModal(true);
                          }} className="text-blue-500">
                            <Pencil className="w-4 h-4" />

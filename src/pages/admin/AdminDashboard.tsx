@@ -386,8 +386,10 @@ export default function AdminDashboard() {
             <h3 className="font-semibold mb-2 text-lg">Menu Cepat Administrasi</h3>
             <div className="flex-1 space-y-2 mt-4 text-sm">
                 <div className="flex items-center gap-2 opacity-90 cursor-pointer hover:underline" onClick={() => navigate('/admin/ujian')}><span className="w-1.5 h-1.5 rounded-full bg-white"/> Manajemen Bank Soal / Ujian</div>
-                <div className="flex items-center gap-2 opacity-90"><span className="w-1.5 h-1.5 rounded-full bg-white"/> Tambah Peserta Ujian</div>
                 <div className="flex items-center gap-2 opacity-90 cursor-pointer hover:underline" onClick={() => navigate('/admin/hasil')}><span className="w-1.5 h-1.5 rounded-full bg-white"/> Laporan Hasil Akhir</div>
+                <div className="flex items-center gap-2 opacity-90 cursor-pointer hover:underline" onClick={() => navigate('/admin/kurikulum/akademik/dkn')}><span className="w-1.5 h-1.5 rounded-full bg-white"/> Cetak DKN</div>
+                <div className="flex items-center gap-2 opacity-90 cursor-pointer hover:underline" onClick={() => navigate('/admin/kurikulum/akademik/leger')}><span className="w-1.5 h-1.5 rounded-full bg-white"/> Cetak Leger</div>
+                <div className="flex items-center gap-2 opacity-90 cursor-pointer hover:underline" onClick={() => navigate('/admin/kurikulum/akademik/raport')}><span className="w-1.5 h-1.5 rounded-full bg-white"/> Cetak Raport</div>
             </div>
           </div>
           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />

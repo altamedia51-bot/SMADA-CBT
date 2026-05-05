@@ -32,6 +32,7 @@ export default function AdminCetakAkademik() {
   const [semester, setSemester] = useState('Ganjil');
   const [raportData, setRaportData] = useState<Record<string, Record<string, any>>>({}); 
   const [pembinaanData, setPembinaanData] = useState<Record<string, string>>({}); 
+  const [absensiData, setAbsensiData] = useState<Record<string, any>>({}); 
 
   useEffect(() => {
      if (authTahunAjaran) {
@@ -154,6 +155,10 @@ export default function AdminCetakAkademik() {
       const pembinaanRef = doc(db, 'pembinaan_wali', `${selectedKelas}_${tahunAjaran.replace(/\//g, '-')}_${semester}`);
       const pembinaanSnap = await getDoc(pembinaanRef);
       setPembinaanData(pembinaanSnap.exists() ? pembinaanSnap.data().catatan || {} : {});
+
+      const absensiRef = doc(db, 'absensi_wali', `${selectedKelas}_${tahunAjaran.replace(/\//g, '-')}_${semester}`);
+      const absensiSnap = await getDoc(absensiRef);
+      setAbsensiData(absensiSnap.exists() ? absensiSnap.data().data || {} : {});
 
     } catch (err: any) {
       toast.error('Gagal memuat data: ' + err.message);
@@ -419,9 +424,9 @@ export default function AdminCetakAkademik() {
                                     </td>
                                     <td className="border border-black p-0 text-center">
                                        <div className="grid grid-rows-3 divide-y divide-black/20 h-full text-[7px] min-h-[48px]">
-                                          <div className="flex items-center justify-center">S: -</div>
-                                          <div className="flex items-center justify-center">I: -</div>
-                                          <div className="flex items-center justify-center">A: -</div>
+                                          <div className="flex items-center justify-center">S: {absensiData[s.id]?.sakit || '-'}</div>
+                                          <div className="flex items-center justify-center">I: {absensiData[s.id]?.izin || '-'}</div>
+                                          <div className="flex items-center justify-center">A: {absensiData[s.id]?.alpa || '-'}</div>
                                        </div>
                                     </td>
                                  </tr>
@@ -580,9 +585,9 @@ export default function AdminCetakAkademik() {
                               <h3 className="text-xs font-bold uppercase">D. Ketidakhadiran</h3>
                               <table className="w-[300px] border-collapse border border-black text-xs">
                                  <tbody>
-                                    <tr><td className="border border-black p-2 w-32">Sakit</td><td className="border border-black p-2">: .... Hari</td></tr>
-                                    <tr><td className="border border-black p-2">Izin</td><td className="border border-black p-2">: .... Hari</td></tr>
-                                    <tr><td className="border border-black p-2">Tanpa Keterangan</td><td className="border border-black p-2">: .... Hari</td></tr>
+                                    <tr><td className="border border-black p-2 w-32">Sakit</td><td className="border border-black p-2">: {absensiData[siswa.id]?.sakit || '0'} Hari</td></tr>
+                                    <tr><td className="border border-black p-2">Izin</td><td className="border border-black p-2">: {absensiData[siswa.id]?.izin || '0'} Hari</td></tr>
+                                    <tr><td className="border border-black p-2">Tanpa Keterangan</td><td className="border border-black p-2">: {absensiData[siswa.id]?.alpa || '0'} Hari</td></tr>
                                  </tbody>
                               </table>
                            </div>
@@ -794,6 +799,8 @@ export default function AdminCetakAkademik() {
                   {[
                      { id: 'raport', label: 'Cetak Raport Akhir', icon: Printer, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
                      { id: 'raport_pts', label: 'Cetak Raport PTS', icon: FileStack, color: 'text-fuchsia-600 bg-fuchsia-50 border-fuchsia-100' },
+                     { id: 'dkn', label: 'Cetak DKN', icon: LayoutGrid, color: 'text-cyan-600 bg-cyan-50 border-cyan-100' },
+                     { id: 'ledger', label: 'Cetak Leger', icon: FileText, color: 'text-indigo-600 bg-indigo-50 border-indigo-100' },
                      { id: 'halaman_1_2', label: 'Cetak Halaman 1-2', icon: FileText, color: 'text-amber-600 bg-amber-50 border-amber-100' },
                      { id: 'halaman_12_13', label: 'Cetak Halaman 12-13', icon: FileText, color: 'text-rose-600 bg-rose-50 border-rose-100' },
                      { id: 'cover', label: 'Cetak Cover Raport', icon: BookOpen, color: 'text-slate-600 bg-slate-50 border-slate-100' },
@@ -924,9 +931,9 @@ export default function AdminCetakAkademik() {
                                        </td>
                                        <td className="border border-black p-0 text-center">
                                           <div className="grid grid-rows-3 divide-y divide-black/20 h-full text-[7px] min-h-[48px]">
-                                             <div className="flex items-center justify-center">S: -</div>
-                                             <div className="flex items-center justify-center">I: -</div>
-                                             <div className="flex items-center justify-center">A: -</div>
+                                             <div className="flex items-center justify-center">S: {absensiData[s.id]?.sakit || '-'}</div>
+                                             <div className="flex items-center justify-center">I: {absensiData[s.id]?.izin || '-'}</div>
+                                             <div className="flex items-center justify-center">A: {absensiData[s.id]?.alpa || '-'}</div>
                                           </div>
                                        </td>
                                     </tr>
