@@ -719,7 +719,7 @@ export default function AdminMasterData() {
            }, { merge: true });
         } else if (data.error?.message === 'EMAIL_EXISTS') {
            // If auth exists, just create a fallback profile so the user can still login (since their Firebase Auth account is still alive).
-           currentUid = `recovered_guru_${cleanNip}`;
+           currentUid = `recovered_guru_${cleanUsername}`;
            const { setDoc } = await import('firebase/firestore');
            await setDoc(doc(db, 'users', currentUid), {
              uid: null, email, displayName: guruForm.nama, role: 'guru', username: guruForm.username.toString().toLowerCase().trim(), nip: guruForm.nip || '-', nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
@@ -747,9 +747,7 @@ export default function AdminMasterData() {
          }
       }
 
-      setEditingGuru(null);
-      setGuruForm({ nama: '', nip: '', password: '', nomorWa: '', waliKelas: '', mengampu: [{ mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }, { mapelId: '', kelas: [] }] });
-      setShowGuruModal(false);
+      resetGuruForm();
     } catch (err: any) {
       toast.error('Eror: ' + err.message);
     }
@@ -948,18 +946,26 @@ export default function AdminMasterData() {
 
           const name = findVal(['Nama', 'nama', 'name', 'DisplayName'])?.toString().trim();
           const nip = findVal(['NIP', 'nip', 'ID Pegawai', 'ID'])?.toString().trim() || '-';
-          const username = findVal(['Username', 'username'])?.toString().trim(); // Do not fallback to nip if nip is empty/ -
+          let username = findVal(['Username', 'username'])?.toString().trim();
           const nomorWa = findVal(['Nomor WA', 'whatsapp', 'No WA', 'Nomor HP'])?.toString().trim() || '';
           const password = findVal(['Password', 'password', 'pass', 'PIN'])?.toString().trim() || 'guru123';
           
-          if (!name || !username) {
-            console.warn("Skipping row due to missing data:", { name, username });
-            lastError = `Ada baris dengan data tidak lengkap. Cek kolom Nama dan Username.`;
+          if (!name) {
+            console.warn("Skipping row due to missing data:", { name });
+            lastError = `Ada baris dengan data tidak lengkap. Cek kolom Nama.`;
             failCount++;
             continue;
           }
 
-          const cleanUsername = username.toString().toLowerCase().trim();
+          if (!username) {
+            if (nip && nip !== '-') {
+              username = nip;
+            } else {
+              username = name.toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 1000);
+            }
+          }
+
+          const cleanUsername = username.toString().toLowerCase().trim().replace(/\s+/g, '');
           const email = `guru_${cleanUsername}@edutest.local`;
 
           try {
@@ -1645,7 +1651,7 @@ export default function AdminMasterData() {
                             let parsedMengampu = [...initMengampu];
                             while(parsedMengampu.length < 3) parsedMengampu.push({ mapelId:'', kelas:[] });
                             setEditingGuru(g); 
-                            setGuruForm({nama:g.displayName, nip:(g.nip && g.nip !== '-') ? g.nip : '', username: g.username || '', password:'', nomorWa: g.nomorWa || '', waliKelas: g.waliKelas || '', mengampu: parsedMengampu }); 
+                            setGuruForm({nama:g.displayName, nip:(g.nip && g.nip !== '-') ? g.nip : '', username: g.username || (g.email ? g.email.split('@')[0].replace('guru_', '') : ''), password:'', nomorWa: g.nomorWa || '', waliKelas: g.waliKelas || '', mengampu: parsedMengampu }); 
                             setShowGuruModal(true);
                          }} className="text-blue-500">
                            <Pencil className="w-4 h-4" />
