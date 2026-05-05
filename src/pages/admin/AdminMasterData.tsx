@@ -1890,7 +1890,7 @@ export default function AdminMasterData() {
                     ) : (
                       kelas.sort((a,b) => a.name.localeCompare(b.name)).map((k, i) => {
                         const studentCount = users.filter(u => u.role === 'siswa' && u.kelas === k.name).length;
-                        const wali = users.find(u => u.id === k.waliKelas);
+                        const wali = users.find(u => u.id === k.waliKelas || u.displayName === k.waliKelas);
                         return (
                         <tr key={k.id} className="hover:bg-slate-50/50 transition-colors group">
                            <td className="py-5 px-6 text-base text-slate-500 font-semibold">{i + 1}</td>
@@ -1914,6 +1914,7 @@ export default function AdminMasterData() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-xs text-green-600 bg-green-50 hover:bg-green-100 inline-flex items-center justify-center px-2 py-1 rounded transition-colors font-medium border border-green-200 whitespace-nowrap w-max"
+                                  title="Wali Kelas"
                                 >
                                   {wali.nomorWa}
                                 </a>
@@ -1936,7 +1937,8 @@ export default function AdminMasterData() {
                                   setNewKelasName(k.name);
                                   setJenjangKelas(k.jenjang || 'SMA');
                                   setTingkatKelas(k.tingkat || 10);
-                                  setWaliKelas(k.waliKelas || '');
+                                  const realWali = users.find(u => u.id === k.waliKelas || u.displayName === k.waliKelas);
+                                  setWaliKelas(realWali ? realWali.id : '');
                                   setShowFormKelas(true);
                                 }} className="text-blue-500 hover:text-blue-700 transition-colors">
                                   <Pencil className="w-4 h-4" />
