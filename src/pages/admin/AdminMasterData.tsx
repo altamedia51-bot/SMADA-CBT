@@ -1082,7 +1082,7 @@ export default function AdminMasterData() {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
+    <div className="p-6 md:p-10 max-w-[1600px] mx-auto space-y-8">
       
       <Dialog open={showPromoteDialog} onOpenChange={setShowPromoteDialog}>
          <DialogContent className="sm:max-w-[425px]">
@@ -1282,7 +1282,7 @@ export default function AdminMasterData() {
                       className="w-full h-11 bg-white text-slate-400 border-amber-200/50 cursor-not-allowed"
                       disabled
                     />
-                    <p className="text-[11px] text-amber-700 font-medium pt-1 flex gap-1.5 items-start">
+                    <p className="text-[13px] text-amber-700 font-medium pt-1 flex gap-1.5 items-start">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> 
                       <span>Demi keamanan, password langsung tidak bisa diubah di sini. Hapus data ini dan buat ulang jika siswa lupa password.</span>
                     </p>
@@ -1347,12 +1347,12 @@ export default function AdminMasterData() {
                 <Table className="min-w-[800px]">
                   <TableHeader>
                     <TableRow className="bg-slate-50 border-b border-slate-200">
-                      <TableHead className="w-12 text-center font-bold text-slate-600">No</TableHead>
-                      <TableHead className="font-bold text-slate-600">Nama Lengkap</TableHead>
-                      <TableHead className="font-bold text-slate-600">Kelas</TableHead>
-                      <TableHead className="font-bold text-slate-600">Jurusan</TableHead>
-                      <TableHead className="font-bold text-slate-600">Sesi</TableHead>
-                      <TableHead className="w-24 text-center font-bold text-slate-600">Aksi</TableHead>
+                      <TableHead className="text-base py-4 w-12 text-center font-bold text-slate-600">No</TableHead>
+                      <TableHead className="text-base py-4 font-bold text-slate-600">Nama Lengkap</TableHead>
+                      <TableHead className="text-base py-4 font-bold text-slate-600">Kelas</TableHead>
+                      <TableHead className="text-base py-4 font-bold text-slate-600">Jurusan</TableHead>
+                      <TableHead className="text-base py-4 font-bold text-slate-600">Sesi</TableHead>
+                      <TableHead className="text-base py-4 w-24 text-center font-bold text-slate-600">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1363,10 +1363,10 @@ export default function AdminMasterData() {
                       <TableRow key={student.id} className="hover:bg-slate-50 transition-colors">
                         <TableCell className="text-center font-medium text-slate-500">{idx + 1}</TableCell>
                         <TableCell>
-                          <div className="font-bold text-slate-700">{student.displayName}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">NIS: {student.nis || '-'}</div>
+                          <div className="font-bold text-base text-slate-800">{student.displayName}</div>
+                          <div className="text-xs text-slate-500 font-mono">NIS: {student.nis || '-'}</div>
                         </TableCell>
-                        <TableCell className="font-medium text-slate-600">{student.kelas}</TableCell>
+                        <TableCell className="font-medium text-sm text-slate-600">{student.kelas}</TableCell>
                         <TableCell>
                            {student.jurusan && student.jurusan !== 'Semua' ? (
                              <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] px-2 py-0.5 rounded-full font-bold">
@@ -1493,7 +1493,7 @@ export default function AdminMasterData() {
                         className="h-11 bg-white text-slate-400 border-amber-200/50 cursor-not-allowed"
                         disabled
                       />
-                      <p className="text-[11px] text-amber-700 font-medium pt-1 flex gap-1.5 items-start">
+                      <p className="text-[13px] text-amber-700 font-medium pt-1 flex gap-1.5 items-start">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> 
                         <span>Reset password harus dengan hapus data & buat ulang dengan NIP berbeda.</span>
                       </p>
@@ -1614,13 +1614,13 @@ export default function AdminMasterData() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50">
-                  <TableHead>Nama Guru</TableHead>
-                  <TableHead>NIP</TableHead><TableHead>Username</TableHead>
-                  <TableHead>No. WA</TableHead>
-                  <TableHead>Wali Kelas</TableHead>
-                  <TableHead>Mapel Diampu</TableHead>
-                  <TableHead>Kelas Diampu</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
+                  <TableHead className="text-base py-4">Nama Guru</TableHead>
+                  <TableHead className="text-base py-4">NIP</TableHead><TableHead className="text-base py-4">Username</TableHead>
+                  <TableHead className="text-base py-4">No. WA</TableHead>
+                  <TableHead className="text-base py-4">Wali Kelas</TableHead>
+                  <TableHead className="text-base py-4">Mapel Diampu</TableHead>
+                  <TableHead className="text-base py-4">Kelas Diampu</TableHead>
+                  <TableHead className="text-base py-4 text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1629,17 +1629,17 @@ export default function AdminMasterData() {
                 ) : (
                   users.filter(u => u.role === 'guru').sort((a,b) => (a.displayName || '').localeCompare(b.displayName || '')).map(g => (
                     <TableRow key={g.id}>
-                      <TableCell className="font-bold text-slate-700">{g.displayName}</TableCell>
-                      <TableCell className="font-mono text-xs">{g.nip || '-'}</TableCell>
-                      <TableCell className="font-mono text-xs text-blue-600">{g.username || (g.email ? g.email.split('@')[0].replace('guru_', '') : '-')}</TableCell>
-                      <TableCell className="text-slate-600">{g.nomorWa || '-'}</TableCell>
-                      <TableCell className="font-bold text-blue-600">{g.waliKelas || '-'}</TableCell>
-                      <TableCell className="text-xs text-slate-500">
+                      <TableCell className="font-bold text-base text-slate-800">{g.displayName}</TableCell>
+                      <TableCell className="font-mono text-sm">{g.nip || '-'}</TableCell>
+                      <TableCell className="font-mono text-sm text-blue-600">{g.username || (g.email ? g.email.split('@')[0].replace('guru_', '') : '-')}</TableCell>
+                      <TableCell className="text-sm text-slate-600">{g.nomorWa || '-'}</TableCell>
+                      <TableCell className="font-bold text-sm text-blue-600">{g.waliKelas || '-'}</TableCell>
+                      <TableCell className="text-sm text-slate-500">
                          {g.mengampu && g.mengampu.length > 0 
                             ? g.mengampu.map((m: any) => mapel.find((map:any) => map.id === m.mapelId)?.name || m.mapelId).join(', ')
                             : '-'}
                       </TableCell>
-                      <TableCell className="text-xs text-slate-500">
+                      <TableCell className="text-sm text-slate-500">
                          {g.mengampu && g.mengampu.length > 0
                             ? g.mengampu.map((m: any) => m.kelas.join(', ')).filter(Boolean).join(' | ')
                             : '-'}
@@ -1720,9 +1720,9 @@ export default function AdminMasterData() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead>Mata Pelajaran</TableHead>
-                  <TableHead>Jenjang</TableHead>
-                  <TableHead className="w-[120px] text-center">Aksi</TableHead>
+                  <TableHead className="text-base py-4">Mata Pelajaran</TableHead>
+                  <TableHead className="text-base py-4">Jenjang</TableHead>
+                  <TableHead className="text-base py-4 w-[120px] text-center">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1866,13 +1866,13 @@ export default function AdminMasterData() {
                <table className="w-full">
                  <thead>
                    <tr className="border-b-2 border-slate-100">
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE / JENJANG</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA KELAS</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">WALI KELAS</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-36 whitespace-nowrap">WHATSAPP</th>
-                     <th className="py-5 px-6 text-center text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">JUMLAH SISWA</th>
-                     <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE / JENJANG</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA KELAS</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em]">WALI KELAS</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-36 whitespace-nowrap">WHATSAPP</th>
+                     <th className="py-5 px-6 text-center text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">JUMLAH SISWA</th>
+                     <th className="py-5 px-6 text-right text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-50">
@@ -1886,21 +1886,21 @@ export default function AdminMasterData() {
                         const wali = users.find(u => u.id === k.waliKelas);
                         return (
                         <tr key={k.id} className="hover:bg-slate-50/50 transition-colors group">
-                           <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
-                           <td className="py-5 px-6 text-sm font-bold text-blue-600">
+                           <td className="py-5 px-6 text-base text-slate-500 font-semibold">{i + 1}</td>
+                           <td className="py-5 px-6 text-base font-bold text-blue-600">
                               {k.jenjang}-{k.tingkat}
                            </td>
-                           <td className="py-5 px-6 text-sm font-bold text-slate-800">
+                           <td className="py-5 px-6 text-base font-bold text-slate-800">
                               {k.name}
                            </td>
-                           <td className="py-5 px-6 text-sm text-slate-600">
+                           <td className="py-5 px-6 text-base text-slate-600">
                               {wali ? (
                                   <div className="font-bold text-slate-700">{wali.displayName}</div>
                               ) : (
                                 <span className="text-slate-400 italic text-xs">Belum diatur</span>
                               )}
                            </td>
-                           <td className="py-5 px-6 text-sm text-slate-600">
+                           <td className="py-5 px-6 text-base text-slate-600">
                               {wali && wali.nomorWa ? (
                                 <a 
                                   href={`https://wa.me/${wali.nomorWa.replace(/\D/g, '').replace(/^0/, '62')}`}
@@ -1914,7 +1914,7 @@ export default function AdminMasterData() {
                                 <span className="text-slate-300">-</span>
                               )}
                            </td>
-                           <td className="py-5 px-6 text-sm font-bold text-slate-600 text-center">
+                           <td className="py-5 px-6 text-base font-bold text-slate-600 text-center">
                               {studentCount}
                            </td>
                            <td className="py-5 px-6 text-right">
@@ -2003,10 +2003,10 @@ export default function AdminMasterData() {
                <table className="w-full">
                  <thead>
                    <tr className="border-b-2 border-slate-100">
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE RUANG</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA RUANG</th>
-                     <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE RUANG</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA RUANG</th>
+                     <th className="py-5 px-6 text-right text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-50">
@@ -2015,9 +2015,9 @@ export default function AdminMasterData() {
                     ) : (
                       ruang.sort((a,b) => a.kode.localeCompare(b.kode)).map((item, i) => (
                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                           <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
-                           <td className="py-5 px-6 text-sm font-bold text-blue-600">{item.kode}</td>
-                           <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
+                           <td className="py-5 px-6 text-base text-slate-500 font-semibold">{i + 1}</td>
+                           <td className="py-5 px-6 text-base font-bold text-blue-600">{item.kode}</td>
+                           <td className="py-5 px-6 text-base font-bold text-slate-800">{item.name}</td>
                            <td className="py-5 px-6 text-right">
                               <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button onClick={() => { setEditingRuang(item); setNewRuangKode(item.kode || ''); setNewRuangName(item.name || ''); setShowFormRuang(true); }} className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
@@ -2081,10 +2081,10 @@ export default function AdminMasterData() {
                <table className="w-full">
                  <thead>
                    <tr className="border-b-2 border-slate-100">
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE SESI</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA SESI</th>
-                     <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE SESI</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA SESI</th>
+                     <th className="py-5 px-6 text-right text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-50">
@@ -2093,9 +2093,9 @@ export default function AdminMasterData() {
                     ) : (
                       sesi.sort((a,b) => a.kode.localeCompare(b.kode)).map((item, i) => (
                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                           <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
-                           <td className="py-5 px-6 text-sm font-bold text-blue-600">{item.kode}</td>
-                           <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
+                           <td className="py-5 px-6 text-base text-slate-500 font-semibold">{i + 1}</td>
+                           <td className="py-5 px-6 text-base font-bold text-blue-600">{item.kode}</td>
+                           <td className="py-5 px-6 text-base font-bold text-slate-800">{item.name}</td>
                            <td className="py-5 px-6 text-right">
                               <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button onClick={() => { setEditingSesi(item); setNewSesiKode(item.kode || ''); setNewSesiName(item.name || ''); setShowFormSesi(true); }} className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
@@ -2159,10 +2159,10 @@ export default function AdminMasterData() {
                <table className="w-full">
                  <thead>
                    <tr className="border-b-2 border-slate-100">
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE UJIAN</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">JENIS UJIAN</th>
-                     <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-40">KODE UJIAN</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em]">JENIS UJIAN</th>
+                     <th className="py-5 px-6 text-right text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-50">
@@ -2171,9 +2171,9 @@ export default function AdminMasterData() {
                     ) : (
                        jenisUjian.sort((a,b) => a.kode.localeCompare(b.kode)).map((item, i) => (
                          <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                           <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
-                           <td className="py-5 px-6 text-sm font-bold text-blue-600">{item.kode}</td>
-                           <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
+                           <td className="py-5 px-6 text-base text-slate-500 font-semibold">{i + 1}</td>
+                           <td className="py-5 px-6 text-base font-bold text-blue-600">{item.kode}</td>
+                           <td className="py-5 px-6 text-base font-bold text-slate-800">{item.name}</td>
                            <td className="py-5 px-6 text-right">
                               <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button onClick={() => { setEditingJenisUjian(item); setNewJenisUjianKode(item.kode || ''); setNewJenisUjianName(item.name || ''); setShowFormJenis(true); }} className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
@@ -2229,9 +2229,9 @@ export default function AdminMasterData() {
                <table className="w-full">
                  <thead>
                    <tr className="border-b-2 border-slate-100">
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
-                     <th className="py-5 px-6 text-left text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA EKSTRAKURIKULER</th>
-                     <th className="py-5 px-6 text-right text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-20">NO</th>
+                     <th className="py-5 px-6 text-left text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em]">NAMA EKSTRAKURIKULER</th>
+                     <th className="py-5 px-6 text-right text-[13px] font-bold text-slate-400 uppercase tracking-[0.15em] w-32">AKSI</th>
                    </tr>
                  </thead>
                  <tbody className="divide-y divide-slate-50">
@@ -2240,8 +2240,8 @@ export default function AdminMasterData() {
                     ) : (
                        ekstra.sort((a,b) => a.name.localeCompare(b.name)).map((item, i) => (
                          <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                           <td className="py-5 px-6 text-sm text-slate-500 font-semibold">{i + 1}</td>
-                           <td className="py-5 px-6 text-sm font-bold text-slate-800">{item.name}</td>
+                           <td className="py-5 px-6 text-base text-slate-500 font-semibold">{i + 1}</td>
+                           <td className="py-5 px-6 text-base font-bold text-slate-800">{item.name}</td>
                            <td className="py-5 px-6 text-right">
                               <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button onClick={() => { setEditingEkstra(item); setNewEkstraName(item.name || ''); setShowFormEkstra(true); }} className="text-blue-500 hover:text-blue-700 transition-colors"><Pencil className="w-4 h-4" /></button>
