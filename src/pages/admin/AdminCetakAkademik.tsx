@@ -86,10 +86,10 @@ export default function AdminCetakAkademik() {
   }, []);
 
   useEffect(() => {
-    if (selectedKelas) {
+    if (selectedKelas && mapelList.length > 0) {
       loadData();
     }
-  }, [selectedKelas, tahunAjaran, semester]);
+  }, [selectedKelas, tahunAjaran, semester, mapelList.length]);
 
   const loadData = async () => {
     if (!selectedKelas) return;
@@ -138,7 +138,7 @@ export default function AdminCetakAkademik() {
           }
           allNilai[siswaId][m.id] = {
             nilai: Math.round(nilaiAkhir),
-            nilai_pts: typeof stData?.pts === 'number' ? Math.round(stData.pts) : null,
+            nilai_pts: typeof finalPts === 'number' && finalPts > 0 ? Math.round(finalPts) : (typeof stData?.pts === 'number' ? Math.round(stData.pts) : null),
             deskripsi: stData?.deskripsi || '',
             nf: Math.round(avgF),
             slm: Math.round(avgS),
@@ -253,17 +253,17 @@ export default function AdminCetakAkademik() {
                            <h1 className="text-2xl underline decoration-2 underline-offset-4">DAFTAR KUMPULAN NILAI RAPOR</h1>
                         </div>
                         
-                        <div className="grid grid-cols-4 text-[12px] font-bold mb-6 italic">
+                        <div className="grid grid-cols-4 text-[12px] font-bold mb-6 italic text-left">
                            <div className="col-span-2 space-y-1">
-                              <div>Sekolah : SMA DARUSSALAM</div>
-                              <div>Alamat : Jln. Pon-Pes Darussalam Blokagung Karangdoro Tegalsari</div>
+                              <div>Sekolah : {printConfig?.sekolah || 'SMA NEGERI'}</div>
+                              <div>Alamat : {printConfig?.alamat || '-'}</div>
                            </div>
                            <div className="space-y-1">
                               <div>Kelas : {selectedKelas}</div>
                               <div>Fase : E</div>
                            </div>
                            <div className="space-y-1">
-                              <div>Semester : {semester === 'Ganjil' ? '1' : '2'}</div>
+                              <div>Semester : {semester === 'Ganjil' ? '1 (Satu)' : '2 (Dua)'}</div>
                               <div>Tahun Pelj. : {tahunAjaran}</div>
                            </div>
                         </div>
@@ -477,17 +477,17 @@ export default function AdminCetakAkademik() {
                            </h1>
                         </div>
                         
-                        <div className="grid grid-cols-4 text-[12px] font-bold mb-6 italic">
+                        <div className="grid grid-cols-4 text-[12px] font-bold mb-6 italic text-left">
                            <div className="col-span-2 space-y-1">
-                              <div>Sekolah : SMA DARUSSALAM</div>
-                              <div>Alamat : Jln. Pon-Pes Darussalam Blokagung Karangdoro Tegalsari</div>
+                              <div>Sekolah : {printConfig?.sekolah || 'SMA NEGERI'}</div>
+                              <div>Alamat : {printConfig?.alamat || '-'}</div>
                            </div>
                            <div className="space-y-1">
                               <div>Kelas : {selectedKelas}</div>
                               <div>Fase : E</div>
                            </div>
                            <div className="space-y-1">
-                              <div>Semester : {semester === 'Ganjil' ? '1' : '2'}</div>
+                              <div>Semester : {semester === 'Ganjil' ? '1 (Satu)' : '2 (Dua)'}</div>
                               <div>Tahun Pelj. : {tahunAjaran}</div>
                            </div>
                         </div>
@@ -640,11 +640,23 @@ export default function AdminCetakAkademik() {
                     siswaList.map((siswa, idx) => (
                        <React.Fragment key={siswa.id}>
                           <div className={`pdf-page p-12 font-sans border-b-8 border-slate-100 print:border-none ${printMode === 'halaman_12_13' ? 'hidden print:hidden' : ''}`} style={{ minHeight: '297mm', width: '210mm' }}>
-                              <div className="text-center font-bold mb-6 border-b-2 border-black pb-4 uppercase tracking-widest leading-tight">
-                                  <h2 className="text-sm">LAPORAN HASIL BELAJAR {printMode.includes('pts') ? 'TENGAH SEMESTER' : ''}</h2>
-                                  <h1 className="text-xl">SMA DARUSSALAM</h1>
-                                  <p className="text-[10px] font-normal lowercase italic">Jl. Raya Darussalam No. 1, Banyuwangi</p>
-                              </div>
+                              {printConfig ? (
+                                <div className="text-center border-b-[3px] border-black pb-4 mb-6 mt-2 relative">
+                                    {printConfig.kopKiri && <img src={printConfig.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
+                                    {printConfig.kopKanan && <img src={printConfig.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
+                                    <h2 className="font-bold text-base">{printConfig.kop1}</h2>
+                                    <h2 className="font-bold text-base">{printConfig.kop2}</h2>
+                                    <h1 className="text-xl font-black uppercase tracking-wider">{printConfig.sekolah}</h1>
+                                    <p className="text-xs">{printConfig.alamat}</p>
+                                    <p className="text-[10px] mt-0.5">
+                                       {printConfig.notelp && <span className="mr-3">Telp. {printConfig.notelp}</span>}
+                                    </p>
+                                </div>
+                             ) : (
+                                <div className="text-center mb-8 border-b-[3px] border-black pb-4 mt-2">
+                                   <h1 className="text-2xl font-bold uppercase tracking-widest">RAPOR PELAJAR</h1>
+                                </div>
+                             )}
                               <div className="grid grid-cols-2 text-xs font-bold mb-6 space-y-1">
                                  <div className="grid grid-cols-[100px_10px_1fr]"><span>NAMA SISWA</span><span>:</span><span>{siswa.displayName || siswa.nama}</span></div>
                                  <div className="grid grid-cols-[100px_10px_1fr]"><span>KELAS</span><span>:</span><span>{selectedKelas}</span></div>
@@ -662,36 +674,50 @@ export default function AdminCetakAkademik() {
                                     </tr>
                                  </thead>
                                  <tbody className="divide-y divide-black">
-                                    {mapelList.filter(m => raportData[siswa.id]?.[m.id]).map((m, i) => (
-                                       <tr key={m.id}>
-                                          <td className="border border-black p-2 text-center align-top font-bold">{i+1}</td>
-                                          <td className="border border-black p-2 align-top font-bold">{m.name}</td>
-                                          <td className="border border-black p-2 text-center font-black text-sm align-top">{(printMode || '').includes('pts') ? raportData[siswa.id][m.id].nilai_pts : raportData[siswa.id][m.id].nilai}</td>
-                                          <td className="border border-black p-3 text-[11px] align-top italic leading-relaxed text-slate-800">{raportData[siswa.id][m.id].deskripsi || '-'}</td>
-                                       </tr>
-                                    ))}
+                                    {relevantMapels.map((m, index) => {
+                                       const nilaiData = raportData[siswa.id]?.[m.id];
+                                       return (
+                                          <tr key={m.id}>
+                                             <td className="border border-black p-2 text-center align-top">{index + 1}</td>
+                                             <td className="border border-black p-2 align-top">{m.name}</td>
+                                             <td className="border border-black p-2 text-center align-top font-bold text-lg">{(printMode || '').includes('pts') ? (nilaiData?.nilai_pts ?? '') : (nilaiData?.nilai ?? '')}</td>
+                                             <td className="border border-black p-2 align-top italic text-[11px] leading-relaxed whitespace-pre-wrap">{nilaiData?.deskripsi || '-'}</td>
+                                          </tr>
+                                       )
+                                    })}
                                  </tbody>
                               </table>
-                              {printMode.includes('pts') && (
-                                 <>
-                                    <div className="mt-8 border-[1.5px] border-black p-4 italic text-xs min-h-[60px]">
-                                       <b className="not-italic">CATATAN WALI KELAS:</b><br/> {pembinaanData[siswa.id] || '-'}
-                                    </div>
-                                    <div className="flex justify-between mt-12 text-xs font-bold text-center">
-                                       <div className="w-48 space-y-20">
-                                          <div>Mengetahui,<br/>Orang Tua/Wali,</div>
-                                          <div>( _________________ )</div>
+                              {(printMode.includes('pts') || printMode === 'raport') && (
+                                 <div className="mt-8">
+                                    <div className="flex justify-between px-10 mt-16 font-semibold relative z-0">
+                                       <div className="text-center">
+                                          <p>Mengetahui,</p>
+                                          <p>Orang Tua/Wali</p>
+                                          <br /><br /><br /><br />
+                                          <p className="border-b border-black inline-block min-w-[200px]"></p>
                                        </div>
-                                       <div className="w-64 space-y-20">
-                                          <div>Banyuwangi, {tanggalRaportInput}<br/>Wali Kelas,</div>
-                                          <div>( {profile?.displayName || '__________________'} )</div>
+                                       <div className="text-center">
+                                          <p>Banyuwangi, {tanggalRaportInput}</p>
+                                          <p>Wali Kelas</p>
+                                          <br /><br /><br /><br />
+                                          <p className="underline font-bold">{profile?.displayName || '__________________'}</p>
+                                          <p>NIP. {profile?.nip || '_________________________'}</p>
                                        </div>
                                     </div>
-                                 </>
+                                    <div className="flex justify-center -mt-10 font-semibold pb-10 relative z-10 w-full text-center">
+                                        <div className="text-center mx-auto">
+                                          <p>Mengetahui,</p>
+                                          <p>Kepala Sekolah</p>
+                                          <br /><br /><br /><br />
+                                          <p className="underline font-bold">{kepalaSekolah || '_________________________'}</p>
+                                          <p>NIP. {nipKepalaSekolah || '_________________________'}</p>
+                                        </div>
+                                    </div>
+                                 </div>
                               )}
                           </div>
                           
-                          {(printMode === 'halaman_12_13' || printMode === 'raport') && (
+                          {printMode === 'halaman_12_13' && (
                              <div className={`pdf-page p-12 font-sans border-b-8 border-slate-100 print:border-none space-y-10 ${(printMode === 'raport' || printMode === 'raport_pts') ? 'page-break print:break-before-page mt-10 print:mt-0' : ''}`} style={{ minHeight: '297mm', width: '210mm' }}>
                                  <div className="grid grid-cols-2 text-[10px] font-bold mb-6">
                                     <div className="grid grid-cols-[80px_10px_1fr]"><span>Nama Siswa</span><span>:</span><span>{siswa.displayName || siswa.nama}</span></div>
@@ -763,19 +789,45 @@ export default function AdminCetakAkademik() {
                                        </table>
                                     </div>
          
-                                    <div className="space-y-2">
-                                       <h3 className="text-xs font-bold uppercase">E. Ketidakhadiran</h3>
-                                       <table className="w-[300px] border-collapse border border-black text-xs">
+                                    <div className="space-y-4">
+                                       <h3 className="text-xs font-bold uppercase">E. Prestasi</h3>
+                                       <table className="w-full border-collapse border border-black text-xs">
+                                          <thead>
+                                             <tr className="bg-slate-50">
+                                                <th className="border border-black p-2 w-10 text-center">No</th>
+                                                <th className="border border-black p-2 text-left">Jenis Prestasi</th>
+                                                <th className="border border-black p-2 text-left">Keterangan</th>
+                                             </tr>
+                                          </thead>
                                           <tbody>
-                                             <tr><td className="border border-black p-2 w-32">Sakit</td><td className="border border-black p-2">: {absensiData[siswa.id]?.sakit || '0'} Hari</td></tr>
-                                             <tr><td className="border border-black p-2">Izin</td><td className="border border-black p-2">: {absensiData[siswa.id]?.izin || '0'} Hari</td></tr>
-                                             <tr><td className="border border-black p-2">Tanpa Keterangan</td><td className="border border-black p-2">: {absensiData[siswa.id]?.alpa || '0'} Hari</td></tr>
+                                             {[1, 2, 3].map(n => (
+                                                <tr key={n}>
+                                                   <td className="border border-black p-2 text-center h-10">{n}</td>
+                                                   <td className="border border-black p-2"></td>
+                                                   <td className="border border-black p-2"></td>
+                                                </tr>
+                                             ))}
                                           </tbody>
                                        </table>
                                     </div>
+
+                                    <div className="space-y-2">
+                                       <h3 className="text-xs font-bold uppercase">F. Ketidakhadiran</h3>
+                                       <div className="w-[300px] border border-black text-xs">
+                                          <div className="grid grid-cols-[1fr_80px_40px] px-4 py-2 border-b border-black">
+                                             <span>Sakit</span><span className="text-right">{absensiData[siswa.id]?.sakit || '0'}</span><span>hari</span>
+                                          </div>
+                                          <div className="grid grid-cols-[1fr_80px_40px] px-4 py-2 border-b border-black">
+                                             <span>Izin</span><span className="text-right">{absensiData[siswa.id]?.izin || '0'}</span><span>hari</span>
+                                          </div>
+                                          <div className="grid grid-cols-[1fr_80px_40px] px-4 py-2">
+                                             <span>Tanpa Keterangan</span><span className="text-right">{absensiData[siswa.id]?.alpa || '0'}</span><span>hari</span>
+                                          </div>
+                                       </div>
+                                    </div>
                                     
                                     <div className="space-y-2">
-                                       <h3 className="text-xs font-bold uppercase">F. Catatan Wali Kelas</h3>
+                                       <h3 className="text-xs font-bold uppercase">G. Catatan Wali Kelas</h3>
                                        <div className="border border-black p-4 min-h-[60px] text-xs italic">
                                           {pembinaanData[siswa.id] || '-'}
                                        </div>
@@ -1044,17 +1096,17 @@ export default function AdminCetakAkademik() {
                               </h1>
                            </div>
                            
-                           <div className="grid grid-cols-4 text-[12px] font-bold mb-6 italic">
+                           <div className="grid grid-cols-4 text-[12px] font-bold mb-6 italic text-left">
                               <div className="col-span-2 space-y-1">
-                                 <div>Sekolah : SMA DARUSSALAM</div>
-                                 <div>Alamat : Jln. Pon-Pes Darussalam Blokagung Karangdoro Tegalsari</div>
+                                 <div>Sekolah : {printConfig?.sekolah || 'SMA NEGERI'}</div>
+                                 <div>Alamat : {printConfig?.alamat || '-'}</div>
                               </div>
                               <div className="space-y-1">
                                  <div>Kelas : {selectedKelas}</div>
                                  <div>Fase : E</div>
                               </div>
                               <div className="space-y-1">
-                                 <div>Semester : {semester === 'Ganjil' ? '1' : '2'}</div>
+                                 <div>Semester : {semester === 'Ganjil' ? '1 (Satu)' : '2 (Dua)'}</div>
                                  <div>Tahun Pelj. : {tahunAjaran}</div>
                               </div>
                            </div>

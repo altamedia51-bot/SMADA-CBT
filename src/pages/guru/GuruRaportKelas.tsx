@@ -217,7 +217,7 @@ export default function GuruRaportKelas() {
 
           allNilai[siswaId][m.id] = {
             nilai: Math.round(nilaiAkhir),
-            nilai_pts: typeof stData?.pts === 'number' ? Math.round(stData.pts) : null,
+            nilai_pts: typeof finalPts === 'number' && finalPts > 0 ? Math.round(finalPts) : (typeof stData?.pts === 'number' ? Math.round(stData.pts) : null),
             deskripsi: stData?.deskripsi || '',
             avgF: Math.round(avgF),
             avgS: Math.round(avgS),
@@ -651,7 +651,7 @@ export default function GuruRaportKelas() {
                               <tr key={m.id}>
                                  <td className="border border-black p-2 text-center align-top">{index + 1}</td>
                                  <td className="border border-black p-2 align-top">{m.name}</td>
-                                 <td className="border border-black p-2 text-center align-top font-bold text-lg">{isPtsMode ? (nilaiData?.nilai_pts || '') : (nilaiData?.nilai || '')}</td>
+                                 <td className="border border-black p-2 text-center align-top font-bold text-lg">{isPtsMode ? (nilaiData?.nilai_pts ?? '') : (nilaiData?.nilai ?? '')}</td>
                                  <td className="border border-black p-2 align-top italic text-[11px] leading-relaxed whitespace-pre-wrap">{nilaiData?.deskripsi || '-'}</td>
                               </tr>
                            )
@@ -714,7 +714,7 @@ export default function GuruRaportKelas() {
                      </div>
                   )}
 
-                  {(printMode === 'raport_halaman_prestasi' || printMode === 'raport' || printMode === 'raport_pts') && (
+                  {printMode === 'raport_halaman_prestasi' && (
                      <div className={`py-10 px-8 space-y-6 ${(printMode === 'raport' || printMode === 'raport_pts') ? 'page-break print:break-before-page mt-10 print:mt-0' : ''}`}>
                         <div className="space-y-4">
                            <h3 className="font-bold text-lg uppercase">C. EKSTRAKURIKULER</h3>
