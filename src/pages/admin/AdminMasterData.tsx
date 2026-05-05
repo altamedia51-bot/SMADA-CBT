@@ -834,7 +834,8 @@ export default function AdminMasterData() {
             continue;
           }
 
-          const email = `${rawNis.toString().toLowerCase().trim()}@edutest.local`;
+          const cleanNis = rawNis.toString().toLowerCase().trim().replace(/[^a-z0-9]/g, '') || Math.floor(Math.random() * 1000000).toString();
+          const email = `${cleanNis}@edutest.local`;
 
           try {
             const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`, {
@@ -865,7 +866,7 @@ export default function AdminMasterData() {
                 }, { merge: true });
                 successCount++;
               } else {
-                const fallbackDocId = `recovered_${rawNis}`;
+                const fallbackDocId = `recovered_${cleanNis}`;
                 await setDoc(doc(db, 'users', fallbackDocId), {
                   uid: null,
                   email,
@@ -965,7 +966,7 @@ export default function AdminMasterData() {
             }
           }
 
-          const cleanUsername = username.toString().toLowerCase().trim().replace(/\s+/g, '');
+          const cleanUsername = username.toString().toLowerCase().trim().replace(/[^a-z0-9]/g, '') || Math.floor(Math.random() * 1000000).toString();
           const email = `guru_${cleanUsername}@edutest.local`;
 
           try {
@@ -987,21 +988,27 @@ export default function AdminMasterData() {
                   email,
                   displayName: name,
                   role: 'guru',
+                  username: cleanUsername,
                   nip: nip.toString(),
                   nomorWa: nomorWa,
+                  waliKelas: '',
+                  mengampu: [],
                   isActive: true,
                   createdAt: serverTimestamp()
                 }, { merge: true });
                 successCount++;
               } else {
-                const fallbackDocId = `recovered_guru_${nip}`;
+                const fallbackDocId = `recovered_guru_${cleanUsername}`;
                 await setDoc(doc(db, 'users', fallbackDocId), {
                   uid: null,
                   email,
                   displayName: name,
                   role: 'guru',
+                  username: cleanUsername,
                   nip: nip.toString(),
                   nomorWa: nomorWa,
+                  waliKelas: '',
+                  mengampu: [],
                   isActive: true,
                   createdAt: serverTimestamp()
                 }, { merge: true });
