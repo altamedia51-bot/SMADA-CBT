@@ -52,6 +52,8 @@ export default function AdminLayout() {
         { label: 'Kurikulum', path: '/admin/kurikulum', icon: FileText, id: 'kurikulum',
           nestedItems: [
             { label: 'Input Nilai', path: '/admin/kurikulum/akademik/nilai', icon: FileText },
+            { label: 'Nilai Ekstrakurikuler', path: '/admin/kurikulum/akademik/ekstrakurikuler', icon: FileText },
+            { label: 'Nilai Kokurikuler', path: '/admin/kurikulum/akademik/kokurikuler', icon: FileText },
             { label: 'DKN', path: '/admin/kurikulum/akademik/dkn', icon: FileText },
             { label: 'Raport', path: '/admin/kurikulum/akademik/raport', icon: FileText },
             { label: 'Ledger', path: '/admin/kurikulum/akademik/leger', icon: LineChart },

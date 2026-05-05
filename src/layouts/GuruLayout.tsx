@@ -2,7 +2,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, ClipboardCheck, BookOpen, Printer, UserRound, HelpCircle, Users, GraduationCap, FileText, CalendarClock } from 'lucide-react';
+import { LogOut, LayoutDashboard, ClipboardCheck, BookOpen, Printer, UserRound, HelpCircle, Users, GraduationCap, FileText, CalendarClock, Target, Activity } from 'lucide-react';
 import { useIdleLogout } from '../hooks/useIdleLogout';
 import { useAppSettings } from '../hooks/useAppSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,6 +26,8 @@ export default function GuruLayout() {
     { label: 'Hasil Ujian', path: '/guru/hasil', icon: ClipboardCheck },
     { label: 'Input Nilai Mapel', path: '/guru/nilai-raport', icon: GraduationCap },
     ...(profile?.waliKelas ? [{ label: 'Administrasi Raport', path: '/guru/raport-kelas', icon: FileText }] : []),
+    ...(profile?.waliKelas ? [{ label: 'Nilai Ekstrakurikuler', path: '/guru/ekstrakurikuler', icon: Activity }] : []),
+    ...(profile?.waliKelas ? [{ label: 'Nilai Kokurikuler (P5)', path: '/guru/kokurikuler', icon: Target }] : []),
     ...(profile?.waliKelas ? [{ label: 'Data Siswa', path: '/guru/data-siswa', icon: Users }] : []),
     { label: 'Panduan', path: '/guru/panduan', icon: HelpCircle },
     { label: 'Profil', path: '/guru/profil', icon: UserRound },

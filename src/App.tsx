@@ -34,6 +34,8 @@ import AdminInputNilai from './pages/admin/AdminInputNilai';
 import AdminCetakAkademik from './pages/admin/AdminCetakAkademik';
 
 import Panduan from './pages/shared/Panduan';
+import InputNilaiEkstrakurikuler from './pages/shared/InputNilaiEkstrakurikuler';
+import InputNilaiKokurikuler from './pages/shared/InputNilaiKokurikuler';
 
 export default function App() {
   return (
@@ -52,6 +54,8 @@ export default function App() {
             {/* Administrasi Routes */}
             <Route path="kurikulum" element={<AdminAdministrasi />} />
             <Route path="kurikulum/akademik/nilai" element={<AdminInputNilai />} />
+            <Route path="kurikulum/akademik/ekstrakurikuler" element={<InputNilaiEkstrakurikuler isAdmin={true} />} />
+            <Route path="kurikulum/akademik/kokurikuler" element={<InputNilaiKokurikuler isAdmin={true} />} />
             <Route path="kurikulum/akademik/dkn" element={<AdminCetakAkademik />} />
             <Route path="kurikulum/akademik/raport" element={<AdminCetakAkademik />} />
             <Route path="kurikulum/akademik/leger" element={<AdminCetakAkademik />} />
@@ -85,6 +89,8 @@ export default function App() {
             <Route path="data-siswa" element={<GuruDataSiswa />} />
             <Route path="nilai-raport" element={<GuruNilaiRaport />} />
             <Route path="raport-kelas" element={<GuruRaportKelas />} />
+            <Route path="ekstrakurikuler" element={<InputNilaiEkstrakurikuler isAdmin={false} />} />
+            <Route path="kokurikuler" element={<InputNilaiKokurikuler isAdmin={false} />} />
             <Route path="hasil" element={<AdminHasil />} />
             <Route path="profil" element={<GuruProfil />} />
             <Route path="panduan" element={<Panduan />} />
