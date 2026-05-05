@@ -678,8 +678,8 @@ export default function AdminMasterData() {
   // Manage Guru logic
   const saveGuru = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guruForm.nama || !guruForm.username || !guruForm.nip) {
-      toast.error('Mohon isi Nama, NIP, dan Username');
+    if (!guruForm.nama || !guruForm.username) {
+      toast.error('Mohon isi Nama dan Username');
       return;
     }
     try {
@@ -688,7 +688,7 @@ export default function AdminMasterData() {
         currentUid = editingGuru.id;
         await updateDoc(doc(db, 'users', currentUid), {
           displayName: guruForm.nama,
-          nip: guruForm.nip,
+          nip: guruForm.nip || '-',
           username: guruForm.username.toString().toLowerCase().trim(),
           nomorWa: guruForm.nomorWa,
           waliKelas: guruForm.waliKelas,
@@ -715,14 +715,14 @@ export default function AdminMasterData() {
            currentUid = data.localId;
            const { setDoc } = await import('firebase/firestore');
            await setDoc(doc(db, 'users', currentUid), {
-             uid: currentUid, email, displayName: guruForm.nama, role: 'guru', username: guruForm.username.toString().toLowerCase().trim(), nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
+             uid: currentUid, email, displayName: guruForm.nama, role: 'guru', username: guruForm.username.toString().toLowerCase().trim(), nip: guruForm.nip || '-', nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
            }, { merge: true });
         } else if (data.error?.message === 'EMAIL_EXISTS') {
            // If auth exists, just create a fallback profile so the user can still login (since their Firebase Auth account is still alive).
            currentUid = `recovered_guru_${cleanNip}`;
            const { setDoc } = await import('firebase/firestore');
            await setDoc(doc(db, 'users', currentUid), {
-             uid: null, email, displayName: guruForm.nama, role: 'guru', username: guruForm.username.toString().toLowerCase().trim(), nip: guruForm.nip, nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
+             uid: null, email, displayName: guruForm.nama, role: 'guru', username: guruForm.username.toString().toLowerCase().trim(), nip: guruForm.nip || '-', nomorWa: guruForm.nomorWa, waliKelas: guruForm.waliKelas, mengampu: guruForm.mengampu.filter(m => m.mapelId), isActive: true, createdAt: serverTimestamp()
            }, { merge: true });
            toast.success('Guru terhubung dengan akun yang sudah ada sebelumnya.');
         }
@@ -947,19 +947,19 @@ export default function AdminMasterData() {
           };
 
           const name = findVal(['Nama', 'nama', 'name', 'DisplayName'])?.toString().trim();
-          const nip = findVal(['NIP', 'nip', 'ID Pegawai', 'ID'])?.toString().trim();
-          const username = findVal(['Username', 'username'])?.toString().trim() || nip; // fallback to nip
+          const nip = findVal(['NIP', 'nip', 'ID Pegawai', 'ID'])?.toString().trim() || '-';
+          const username = findVal(['Username', 'username'])?.toString().trim(); // Do not fallback to nip if nip is empty/ -
           const nomorWa = findVal(['Nomor WA', 'whatsapp', 'No WA', 'Nomor HP'])?.toString().trim() || '';
           const password = findVal(['Password', 'password', 'pass', 'PIN'])?.toString().trim() || 'guru123';
           
-          if (!name || !nip) {
-            console.warn("Skipping row due to missing data:", { name, nip });
-            lastError = `Ada baris dengan data tidak lengkap. Cek kolom Nama dan NIP.`;
+          if (!name || !username) {
+            console.warn("Skipping row due to missing data:", { name, username });
+            lastError = `Ada baris dengan data tidak lengkap. Cek kolom Nama dan Username.`;
             failCount++;
             continue;
           }
 
-          const cleanUsername = (username || nip).toString().toLowerCase().trim();
+          const cleanUsername = username.toString().toLowerCase().trim();
           const email = `guru_${cleanUsername}@edutest.local`;
 
           try {
@@ -1443,7 +1443,7 @@ export default function AdminMasterData() {
                   <div>
                      <label className="block text-xs font-bold text-slate-500 mb-1">NIP CETAK RAPOR</label>
                      <Input 
-                       placeholder="Masukkan NIP" 
+                       placeholder="Masukkan NIP (Isi - jika kosong)" 
                        className="h-11 bg-slate-50 focus:bg-white transition-colors"
                        value={guruForm.nip}
                        onChange={e => setGuruForm({...guruForm, nip: e.target.value})}
@@ -1619,12 +1619,13 @@ export default function AdminMasterData() {
               </TableHeader>
               <TableBody>
                 {users.filter(u => u.role === 'guru').length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-10 text-slate-400">Belum ada data guru.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center py-10 text-slate-400">Belum ada data guru.</TableCell></TableRow>
                 ) : (
                   users.filter(u => u.role === 'guru').sort((a,b) => (a.displayName || '').localeCompare(b.displayName || '')).map(g => (
                     <TableRow key={g.id}>
                       <TableCell className="font-bold text-slate-700">{g.displayName}</TableCell>
-                      <TableCell className="font-mono text-xs">{g.nip || g.email.split('@')[0]}</TableCell>
+                      <TableCell className="font-mono text-xs">{g.nip || '-'}</TableCell>
+                      <TableCell className="font-mono text-xs text-blue-600">{g.username || (g.email ? g.email.split('@')[0].replace('guru_', '') : '-')}</TableCell>
                       <TableCell className="text-slate-600">{g.nomorWa || '-'}</TableCell>
                       <TableCell className="font-bold text-blue-600">{g.waliKelas || '-'}</TableCell>
                       <TableCell className="text-xs text-slate-500">
@@ -1644,7 +1645,7 @@ export default function AdminMasterData() {
                             let parsedMengampu = [...initMengampu];
                             while(parsedMengampu.length < 3) parsedMengampu.push({ mapelId:'', kelas:[] });
                             setEditingGuru(g); 
-                            setGuruForm({nama:g.displayName, nip:g.nip||'', username: g.username || '', password:'', nomorWa: g.nomorWa || '', waliKelas: g.waliKelas || '', mengampu: parsedMengampu }); 
+                            setGuruForm({nama:g.displayName, nip:(g.nip && g.nip !== '-') ? g.nip : '', username: g.username || '', password:'', nomorWa: g.nomorWa || '', waliKelas: g.waliKelas || '', mengampu: parsedMengampu }); 
                             setShowGuruModal(true);
                          }} className="text-blue-500">
                            <Pencil className="w-4 h-4" />
