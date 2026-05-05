@@ -143,5 +143,20 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (isAdmin() || isGuru());
     }
+
+    match /ekstra/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+    match /nilai_ekstra/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || isGuru());
+    }
+
+    match /nilai_kokurikuler/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || isGuru());
+    }
   }
 }

@@ -27,6 +27,8 @@ export default function GuruRaportKelas() {
   const [raportData, setRaportData] = useState<Record<string, Record<string, any>>>({}); // siswaId -> mapelId -> nilaiInfo
   const [pembinaanData, setPembinaanData] = useState<Record<string, string>>({}); // siswaId -> catatan
   const [absensiData, setAbsensiData] = useState<Record<string, { sakit: string; izin: string; alpa: string }>>({}); // siswaId -> data
+  const [ekstraData, setEkstraData] = useState<Record<string, any[]>>({}); 
+  const [kokurikulerData, setKokurikulerData] = useState<Record<string, any[]>>({}); 
 
   useEffect(() => {
      if (authTahunAjaran) {
@@ -244,6 +246,14 @@ export default function GuruRaportKelas() {
       } else {
          setAbsensiData({});
       }
+
+      const ekstraRef = doc(db, 'nilai_ekstra', `${profile.waliKelas}_${tahunAjaran.replace(/\//g, '-')}_${semester}`);
+      const ekstraSnap = await getDoc(ekstraRef);
+      setEkstraData(ekstraSnap.exists() && ekstraSnap.data()?.nilai ? ekstraSnap.data()?.nilai : {});
+
+      const kokuRef = doc(db, 'nilai_kokurikuler', `${profile.waliKelas}_${tahunAjaran.replace(/\//g, '-')}_${semester}`);
+      const kokuSnap = await getDoc(kokuRef);
+      setKokurikulerData(kokuSnap.exists() && kokuSnap.data()?.nilai ? kokuSnap.data()?.nilai : {});
 
     } catch (err: any) {
       toast.error('Gagal memuat data raport: ' + err.message);
@@ -704,43 +714,107 @@ export default function GuruRaportKelas() {
                      </div>
                   )}
 
-                  {printMode === 'raport_halaman_prestasi' && (
-                     <div className="py-10 px-8">
-                        <h3 className="font-bold text-lg mb-6 uppercase">C. PRESTASI</h3>
-                        <table className="w-full border-collapse border border-black mb-10">
-                           <thead>
-                              <tr className="bg-gray-100">
-                                 <th className="border border-black p-2 w-12 text-center">No</th>
-                                 <th className="border border-black p-2">Jenis Prestasi</th>
-                                 <th className="border border-black p-2">Keterangan</th>
-                              </tr>
-                           </thead>
-                           <tbody>
-                              {[1, 2, 3].map(n => (
-                                 <tr key={n}>
-                                    <td className="border border-black p-2 text-center h-10">{n}</td>
-                                    <td className="border border-black p-2"></td>
-                                    <td className="border border-black p-2"></td>
+                  {(printMode === 'raport_halaman_prestasi' || printMode === 'raport' || printMode === 'raport_pts') && (
+                     <div className={`py-10 px-8 space-y-6 ${(printMode === 'raport' || printMode === 'raport_pts') ? 'page-break print:break-before-page mt-10 print:mt-0' : ''}`}>
+                        <div className="space-y-4">
+                           <h3 className="font-bold text-lg uppercase">C. EKSTRAKURIKULER</h3>
+                           <table className="w-full border-collapse border border-black text-sm mb-6">
+                              <thead>
+                                 <tr className="bg-gray-100">
+                                    <th className="border border-black p-2 w-12 text-center">No</th>
+                                    <th className="border border-black p-2 text-left">Kegiatan Ekstrakurikuler</th>
+                                    <th className="border border-black p-2 text-center w-32">Predikat</th>
+                                    <th className="border border-black p-2 text-left">Keterangan</th>
                                  </tr>
-                              ))}
-                           </tbody>
-                        </table>
+                              </thead>
+                              <tbody>
+                                 {(ekstraData[siswa.id] || []).filter(e => e?.nama).length > 0 ? (
+                                    (ekstraData[siswa.id] || []).filter(e => e?.nama).map((e, idx) => (
+                                       <tr key={idx}>
+                                          <td className="border border-black p-2 text-center h-10">{idx + 1}</td>
+                                          <td className="border border-black p-2">{e.nama}</td>
+                                          <td className="border border-black p-2 text-center font-bold">{e.predikat}</td>
+                                          <td className="border border-black p-2 text-xs italic">{e.deskripsi || '-'}</td>
+                                       </tr>
+                                    ))
+                                 ) : (
+                                    <>
+                                       <tr className="h-10"><td className="border border-black p-2 text-center">1</td><td className="border border-black p-2">-</td><td className="border border-black p-2">-</td><td className="border border-black p-2">-</td></tr>
+                                       <tr className="h-10"><td className="border border-black p-2 text-center">2</td><td className="border border-black p-2">-</td><td className="border border-black p-2">-</td><td className="border border-black p-2">-</td></tr>
+                                    </>
+                                 )}
+                              </tbody>
+                           </table>
+                        </div>
 
-                        <h3 className="font-bold text-lg mb-6 uppercase">D. KETIDAKHADIRAN</h3>
-                        <div className="w-[300px] border border-black mb-16">
+                        <div className="space-y-4">
+                           <h3 className="font-bold text-lg uppercase">D. KOKURIKULER (Proyek P5 / Deep Learning)</h3>
+                           <table className="w-full border-collapse border border-black text-sm mb-6">
+                              <thead>
+                                 <tr className="bg-gray-100">
+                                    <th className="border border-black p-2 w-12 text-center">No</th>
+                                    <th className="border border-black p-2 text-left">Nama Proyek / Kegiatan</th>
+                                    <th className="border border-black p-2 text-center w-32">Predikat</th>
+                                    <th className="border border-black p-2 text-left">Keterangan</th>
+                                 </tr>
+                              </thead>
+                              <tbody>
+                                 {(kokurikulerData[siswa.id] || []).filter(e => e?.nama).length > 0 ? (
+                                    (kokurikulerData[siswa.id] || []).filter(e => e?.nama).map((e, idx) => (
+                                       <tr key={idx}>
+                                          <td className="border border-black p-2 text-center h-10">{idx + 1}</td>
+                                          <td className="border border-black p-2">{e.nama}</td>
+                                          <td className="border border-black p-2 text-center font-bold text-xs">{e.predikat}</td>
+                                          <td className="border border-black p-2 text-xs italic">{e.deskripsi || '-'}</td>
+                                       </tr>
+                                    ))
+                                 ) : (
+                                    <>
+                                       <tr className="h-10"><td className="border border-black p-2 text-center">1</td><td className="border border-black p-2">-</td><td className="border border-black p-2">-</td><td className="border border-black p-2">-</td></tr>
+                                       <tr className="h-10"><td className="border border-black p-2 text-center">2</td><td className="border border-black p-2">-</td><td className="border border-black p-2">-</td><td className="border border-black p-2">-</td></tr>
+                                    </>
+                                 )}
+                              </tbody>
+                           </table>
+                        </div>
+
+                        <div className="space-y-4">
+                           <h3 className="font-bold text-lg uppercase">E. PRESTASI</h3>
+                           <table className="w-full border-collapse border border-black text-sm mb-6">
+                              <thead>
+                                 <tr className="bg-gray-100">
+                                    <th className="border border-black p-2 w-12 text-center">No</th>
+                                    <th className="border border-black p-2">Jenis Prestasi</th>
+                                    <th className="border border-black p-2">Keterangan</th>
+                                 </tr>
+                              </thead>
+                              <tbody>
+                                 {[1, 2, 3].map(n => (
+                                    <tr key={n}>
+                                       <td className="border border-black p-2 text-center h-10">{n}</td>
+                                       <td className="border border-black p-2"></td>
+                                       <td className="border border-black p-2"></td>
+                                    </tr>
+                                 ))}
+                              </tbody>
+                           </table>
+                        </div>
+
+                        <h3 className="font-bold text-lg mb-6 uppercase">F. KETIDAKHADIRAN</h3>
+                        <div className="w-[300px] border border-black mb-16 text-sm">
                            <div className="grid grid-cols-[1fr_80px_40px] px-4 py-2 border-b border-black">
-                              <span>Sakit</span><span className="text-right">.....</span><span>hari</span>
+                              <span>Sakit</span><span className="text-right">{absensiData[siswa.id]?.sakit || '0'}</span><span>hari</span>
                            </div>
                            <div className="grid grid-cols-[1fr_80px_40px] px-4 py-2 border-b border-black">
-                              <span>Izin</span><span className="text-right">.....</span><span>hari</span>
+                              <span>Izin</span><span className="text-right">{absensiData[siswa.id]?.izin || '0'}</span><span>hari</span>
                            </div>
                            <div className="grid grid-cols-[1fr_80px_40px] px-4 py-2">
-                              <span>Tanpa Keterangan</span><span className="text-right">.....</span><span>hari</span>
+                              <span>Tanpa Keterangan</span><span className="text-right">{absensiData[siswa.id]?.alpa || '0'}</span><span>hari</span>
                            </div>
                         </div>
 
-                        <h3 className="font-bold text-lg mb-6 uppercase">E. CATATAN WALIKELAS</h3>
-                        <div className="border border-black p-4 min-h-[100px] mb-16">
+                        <h3 className="font-bold text-lg mb-6 uppercase">G. CATATAN WALIKELAS</h3>
+                        <div className="border border-black p-4 min-h-[100px] mb-16 text-sm">
                            <p className="italic">{pembinaanData[siswa.id] || ''}</p>
                         </div>
                      </div>

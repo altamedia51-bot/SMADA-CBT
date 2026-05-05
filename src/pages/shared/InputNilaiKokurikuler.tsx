@@ -64,7 +64,7 @@ export default function InputNilaiKokurikuler({ isAdmin = false }: { isAdmin?: b
 
           const filteredSiswa = allUsers
              .filter((u: any) => u.role === 'siswa' && u.kelas === selectedKelas)
-             .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName));
+             .sort((a: any, b: any) => (a.displayName || a.nama || a.name || '').localeCompare(b.displayName || b.nama || b.name || ''));
           setSiswaConfig(filteredSiswa);
        });
      } catch (error) {
@@ -169,7 +169,7 @@ export default function InputNilaiKokurikuler({ isAdmin = false }: { isAdmin?: b
                                <TableRow key={siswa.id} className="hover:bg-slate-50">
                                   <TableCell className="text-center font-bold text-slate-400">{idx + 1}</TableCell>
                                   <TableCell className="font-bold text-slate-700">
-                                     <div className="flex flex-col"><span className="text-sm">{siswa.displayName}</span></div>
+                                     <div className="flex flex-col"><span className="text-sm">{siswa.displayName || siswa.nama || siswa.name || '-'}</span></div>
                                   </TableCell>
                                   {[0,1,2].map(i => (
                                      <React.Fragment key={`input-${siswa.id}-${i}`}>
