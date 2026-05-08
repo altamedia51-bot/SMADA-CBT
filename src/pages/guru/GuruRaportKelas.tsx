@@ -415,161 +415,74 @@ export default function GuruRaportKelas() {
               className="mx-auto bg-white shadow-2xl my-8 print:my-0 print:shadow-none font-sans text-slate-900"
               style={{ width: (printMode.startsWith('ledger') || printMode === 'dkn') ? '100%' : '210mm', minHeight: '297mm', padding: '0mm' }}>
             
-            {(printMode.startsWith('ledger') || printMode === 'dkn') && (
+            {printMode === 'dkn' && (
               <div className="bg-white p-4">
-                 {printMode === 'dkn' ? (
-                     <>
-                        <div className="text-center font-bold mb-8 uppercase tracking-widest leading-tight">
-                           <h1 className="text-2xl underline decoration-2 underline-offset-4 mt-4">
-                              DAFTAR KUMPULAN NILAI RAPOR
-                           </h1>
-                        </div>
-                        <div className="grid grid-cols-4 text-[12px] font-bold mb-6 mt-4 italic text-left">
-                           <div className="col-span-2 space-y-1">
-                              <div>Sekolah : {printConfig?.sekolah || 'SMA NEGERI'}</div>
-                              <div>Alamat : {printConfig?.alamat || '-'}</div>
-                           </div>
-                           <div className="space-y-1">
-                              <div>Kelas : {profile.waliKelas}</div>
-                              <div>Fase : E</div>
-                           </div>
-                           <div className="space-y-1">
-                              <div>Semester : {semester === 'Ganjil' ? '1 (Satu)' : '2 (Dua)'}</div>
-                              <div>Tahun Pelj. : {tahunAjaran}</div>
-                           </div>
-                        </div>
-                     </>
-                 ) : (
-                    <>
-                     {printConfig ? (
-                        <div className="text-center border-b-[3px] border-black pb-4 mb-6 mt-4 mx-4 relative">
-                            {printConfig.kopKiri && <img src={printConfig.kopKiri} className="absolute left-0 top-0 h-[80px] object-contain" alt="Logo Kiri" />}
-                            {printConfig.kopKanan && <img src={printConfig.kopKanan} className="absolute right-0 top-0 h-[80px] object-contain" alt="Logo Kanan" />}
-                            <h2 className="font-bold text-base">{printConfig.kop1}</h2>
-                            <h2 className="font-bold text-base">{printConfig.kop2}</h2>
-                            <h1 className="text-xl font-black uppercase tracking-wider">{printConfig.sekolah}</h1>
-                            <p className="text-xs">{printConfig.alamat}</p>
-                            <p className="text-[10px] mt-0.5">
-                               {printConfig.notelp && <span className="mr-3">Telp. {printConfig.notelp}</span>}
-                            </p>
-                        </div>
-                     ) : (
-                        <div className="text-center mb-8 border-b-[3px] border-black pb-4 mt-4 mx-4 relative">
-                           <h2 className="font-bold">PEMERINTAH PROVINSI</h2>
-                           <h2 className="font-bold">DINAS PENDIDIKAN</h2>
-                           <h1 className="text-2xl font-black uppercase">SEKOLAH MENENGAH ATAS</h1>
-                        </div>
-                     )}
-                     <div className="text-center mb-6">
-                        <h3 className="text-xl font-bold uppercase tracking-widest underline">
-                           {`LEDGER NILAI ${printMode.includes('pts') ? 'PTS ' : ''}KELAS ${profile.waliKelas}`}
-                        </h3>
-                     </div>
-                    </>
-                 )}
+                         <div className="text-center font-bold mb-8 uppercase tracking-widest leading-tight">
+                            <h1 className="text-2xl underline decoration-2 underline-offset-4 mt-4">
+                               DAFTAR KUMPULAN NILAI RAPOR
+                            </h1>
+                         </div>
+                         <div className="grid grid-cols-4 text-[12px] font-bold mb-6 mt-4 italic text-left">
+                            <div className="col-span-2 space-y-1">
+                               <div>Sekolah : {printConfig?.sekolah || 'SMA NEGERI'}</div>
+                               <div>Alamat : {printConfig?.alamat || '-'}</div>
+                            </div>
+                            <div className="space-y-1">
+                               <div>Kelas : {profile.waliKelas}</div>
+                               <div>Fase : E</div>
+                            </div>
+                            <div className="space-y-1">
+                               <div>Semester : {semester === 'Ganjil' ? '1 (Satu)' : '2 (Dua)'}</div>
+                               <div>Tahun Pelj. : {tahunAjaran}</div>
+                            </div>
+                         </div>
                  <div className="overflow-x-auto">
                     <div className="min-w-max">
-                       <table className="w-full text-[10px] border-collapse border border-slate-400">
-                           <thead>
-                              <tr>
-                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">NO</th>
-                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-20">NIS/NISN</th>
-                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center min-w-[200px]">NAMA</th>
-                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">L/P</th>
-                                 <th colSpan={printMode === 'dkn' ? usedMapel.length : usedMapel.length * 5} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">MATA PELAJARAN</th>
-                                 {printMode !== 'dkn' && (
-                                    <th colSpan={3} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">ABSENSI</th>
-                                 )}
-                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Jumlah</div></th>
-                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Rerata</div></th>
-                                 <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Ranking</div></th>
-                                 {printMode !== 'dkn' && (
-                                     <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-4 py-1 text-center">Catatan / Pembinaan</th>
-                                 )}
-                              </tr>
-                              <tr>
-                                 {usedMapel.map(m => (
-                                    <th key={m.id} colSpan={printMode === 'dkn' ? 1 : 5} className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
-                                       <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">{m.name}</div>
-                                    </th>
-                                 ))}
-                                 {printMode !== 'dkn' && ( <> <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
-                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Sakit</div>
-                                 </th>
-                                 <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
-                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Izin</div>
-                                 </th>
-                                 <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[90px] w-8">
-                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Alpa</div>
-                                 </th> </> )}
-                              </tr>
-                           </thead>
-                           <tbody>
-                              {siswaList.map((siswa, index) => (
-                                 <tr key={siswa.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                                    <td className="border border-slate-400 px-2 py-1 text-center font-medium">{index + 1}</td>
-                                    <td className="border border-slate-400 px-2 py-1 text-center">{siswa.nisn || '-'}</td>
-                                    <td className="border border-slate-400 px-2 py-1 font-semibold">{siswa.displayName}</td>
-                                    <td className="border border-slate-400 px-2 py-1 text-center">{siswa.jenisKelamin === 'Perempuan' ? 'P' : (siswa.jenisKelamin === 'Laki-laki' ? 'L' : '-')}</td>
-                                    {usedMapel.map(m => {
-                                       const dataMapel = raportData[siswa.id]?.[m.id];
-                                       if (printMode === 'dkn') {
-                                          const nilaiMapel = isPtsMode ? dataMapel?.nilai_pts : dataMapel?.nilai;
-                                          return (
-                                             <td key={m.id} className="border border-slate-400 px-1 py-1 text-center font-semibold">
-                                                {nilaiMapel !== undefined && nilaiMapel !== null ? nilaiMapel : ''}
-                                             </td>
-                                          );
-                                       } else {
-                                          return (
-                                             <React.Fragment key={m.id}>
-                                                <td className="border border-slate-400 px-1 py-1 text-center text-[7px]">{dataMapel?.avgF || ''}</td>
-                                                <td className="border border-slate-400 px-1 py-1 text-center text-[7px]">{dataMapel?.avgS || ''}</td>
-                                                <td className="border border-slate-400 px-1 py-1 text-center text-[7px]">{dataMapel?.ptsVal || ''}</td>
-                                                <td className="border border-slate-400 px-1 py-1 text-center text-[7px]">{dataMapel?.psasVal || ''}</td>
-                                                <td className="border border-slate-400 px-1 py-1 text-center text-[7px] bg-slate-50 font-bold">{dataMapel?.nilai || ''}</td>
-                                             </React.Fragment>
-                                          );
-                                       }
-                                    })}
-                                    {printMode !== 'dkn' && ( <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.sakit || '0'}</td> )}
-                                    {printMode !== 'dkn' && ( <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.izin || '0'}</td> )}
-                                    {printMode !== 'dkn' && ( <td className="border border-slate-400 px-1 py-1 text-center">{absensiData[siswa.id]?.alpa || '0'}</td> )}
-                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-slate-700">{jumlahNilaiSiswa[siswa.id] || ''}</td>
-                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-blue-700">{rataRataSiswa[siswa.id]?.toFixed(1) || ''}</td>
-                                    <td className="border border-slate-400 px-2 py-1 text-center font-bold text-amber-700">{rankSiswa[siswa.id] || ''}</td>
-                                    {printMode !== 'dkn' && (
-                                       <td className="border border-slate-400 px-2 py-1 text-[10px]">{pembinaanData[siswa.id] || '-'}</td>
-                                    )}
-                                 </tr>
-                              ))}
-                              
-                              <tr className="bg-slate-100 font-bold">
-                                 <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Nilai Terendah</td>
-                                 {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id]?.min || ''}</td>)}
-                                 <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.min || ''}</td>
-                                 <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.min ? avgStats.min.toFixed(1) : ''}</td>
-                                 <td className="border border-slate-400 bg-slate-200"></td>
-                                 {printMode !== 'dkn' && <td className="border border-slate-400 bg-slate-200"></td>}
-                              </tr>
-                              <tr className="bg-slate-100 font-bold">
-                                 <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Nilai Tertinggi</td>
-                                 {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id]?.max || ''}</td>)}
-                                 <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.max || ''}</td>
-                                 <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.max ? avgStats.max.toFixed(1) : ''}</td>
-                                 <td className="border border-slate-400 bg-slate-200"></td>
-                                 {printMode !== 'dkn' && <td className="border border-slate-400 bg-slate-200"></td>}
-                              </tr>
-                              <tr className="bg-slate-100 font-bold">
-                                 <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Rata-rata Nilai</td>
-                                 {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id]?.avg ? Math.round(mapelStats[m.id].avg) : ''}</td>)}
-                                 <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.avg ? Math.round(totalStats.avg) : ''}</td>
-                                 <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.avg ? avgStats.avg.toFixed(1) : ''}</td>
-                                 <td className="border border-slate-400 bg-slate-200"></td>
-                                 {printMode !== 'dkn' && <td className="border border-slate-400 bg-slate-200"></td>}
-                              </tr>
-                           </tbody>
-                       </table>
+                       <table className="w-full border-collapse border-[1.5px] border-black text-[10px]">
+  <thead>
+     <tr className="bg-slate-50">
+        <th className="border border-black p-1 w-8" rowSpan={2}>NO</th>
+        <th className="border border-black p-1 w-32" rowSpan={2}>NIS/ NISN</th>
+        <th className="border border-black p-1" rowSpan={2}>NAMA</th>
+        <th className="border border-black p-1 w-8" rowSpan={2}>LP</th>
+        <th className="border border-black p-1" colSpan={usedMapel.length}>MATA PELAJARAN</th>
+        <th className="border border-black p-1 h-24 w-8" rowSpan={2}><div className="rotate-[-90deg] flex items-center justify-center">Jumlah</div></th>
+        <th className="border border-black p-1 h-24 w-8" rowSpan={2}><div className="rotate-[-90deg] flex items-center justify-center">Rerata</div></th>
+        <th className="border border-black p-1 h-24 w-8" rowSpan={2}><div className="rotate-[-90deg] flex items-center justify-center">Ranking</div></th>
+     </tr>
+     <tr>
+        {usedMapel.map(m => (
+           <th key={m.id} className="border border-black p-1 h-24 w-8 font-bold">
+              <div className="rotate-[-90deg] flex items-center justify-center whitespace-nowrap overflow-visible uppercase">
+                {m.name.length > 20 ? m.name.substring(0, 20) + '...' : m.name}
+              </div>
+           </th>
+        ))}
+     </tr>
+  </thead>
+  <tbody className="font-medium">
+     {siswaList.map((siswa, idx) => (
+        <tr key={siswa.id} className="hover:bg-slate-50">
+           <td className="border border-black p-1 text-center font-bold">{idx + 1}</td>
+           <td className="border border-black p-1 text-center font-mono">{siswa.nis || '-'}</td>
+           <td className="border border-black p-1 px-2 uppercase text-[9px] truncate max-w-[200px] font-bold">{siswa.displayName}</td>
+           <td className="border border-black p-1 text-center">{siswa.jenisKelamin?.substring(0,1).toUpperCase() || 'L'}</td>
+           {usedMapel.map(m => {
+              const data = raportData[siswa.id]?.[m.id] || {};
+              const val = isPtsMode ? data.nilai_pts : data.nilai;
+              return (
+                 <td key={m.id} className="border border-black p-1 text-center font-mono font-bold text-blue-800">
+                    {val !== undefined && val !== null ? val : ''}
+                 </td>
+              );
+           })}
+           <td className="border border-black p-1 text-center font-bold text-slate-800">{jumlahNilaiSiswa[siswa.id] || ''}</td>
+           <td className="border border-black p-1 text-center font-bold text-blue-700">{rataRataSiswa[siswa.id]?.toFixed(1) || ''}</td>
+           <td className="border border-black p-1 text-center font-bold text-amber-700">{rankSiswa[siswa.id] || ''}</td>
+        </tr>
+     ))}
+  </tbody>
+</table>
 
                        <div className="flex justify-between px-10 mt-12 font-semibold pb-10 text-sm relative z-0">
                            <div className="text-center invisible">
@@ -596,6 +509,132 @@ export default function GuruRaportKelas() {
                  </div>
               </div>
             )}
+
+            {printMode.startsWith('ledger') && (
+                    <div className="pdf-page p-6 font-sans bg-white" style={{ width: '420mm', minHeight: '297mm' }}>
+                        <div className="text-center font-bold mb-6 uppercase tracking-widest leading-tight">
+                           <h1 className="text-xl">KUMPULAN NILAI KELAS {profile.waliKelas} SMT. {semester === 'Ganjil' ? '1' : '2'} TH. PEL. {tahunAjaran}</h1>
+                        </div>
+                        
+                        <table className="w-full border-collapse border-[1px] border-black text-[9px]">
+                           <thead>
+                              <tr className="bg-slate-50">
+                                 <th className="border border-black p-1 w-8" rowSpan={2}>No.</th>
+                                 <th className="border border-black p-1 w-[250px]" rowSpan={2}>
+                                    NAMA PESERTA DIDIK<br/>
+                                    Nomor Induk/NISN<br/>
+                                    Tempat dan Tanggal Lahir<br/>
+                                    Nama Orang Tua<br/>
+                                    Alamat
+                                 </th>
+                                 <th className="border border-black p-1" colSpan={usedMapel.length}>MATA PELAJARAN</th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center">Pend. Kepramukaan</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center">Keg. Ekstrakurikuler 2</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Keg. Ekstrakurikuler 3</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Keg. Ekstrakurikuler 4</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Sakit</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Ijin</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Tanpa Keterangan</div></th>
+                                 <th className="border border-black p-1 w-20" rowSpan={2}>Catatan / Pembinaan</th>
+                              </tr>
+                              <tr>
+                                 {usedMapel.map(m => (
+                                    <th key={m.id} className="border border-black p-1 h-36 w-8 font-bold">
+                                       <div className="rotate-[-90deg] flex items-center justify-center whitespace-nowrap overflow-visible uppercase text-[8px]">
+                                          {m.name}
+                                       </div>
+                                    </th>
+                                 ))}
+                              </tr>
+                           </thead>
+                           <tbody>
+                              {siswaList.map((s, idx) => (
+                                 <tr key={s.id}>
+                                    <td className="border border-black p-1 text-center font-bold align-top">{idx + 1}</td>
+                                    <td className="border border-black p-1 leading-[1.3] align-top">
+                                       <div className="flex h-full">
+                                          <div className="flex-1 space-y-0.5">
+                                             <div className="font-black uppercase text-[10px]">{s.displayName}</div>
+                                             <div className="text-slate-600">{s.nis || '-'}{s.nisn ? ` / ${s.nisn}` : ''}</div>
+                                             <div className="text-slate-500 italic">{s.tempatLahir || '-'}, {s.tanggalLahir || '-'}</div>
+                                             <div className="text-slate-600">{s.namaAyah || s.namaIbu || '-'}</div>
+                                             <div className="text-slate-500 truncate">{s.alamat || '-'}</div>
+                                          </div>
+                                          <div className="w-8 border-l border-black flex flex-col justify-between text-[7px] font-bold text-center bg-slate-50">
+                                             <div className="flex-1 flex items-center justify-center border-b border-black/10">NF</div>
+                                             <div className="flex-1 flex items-center justify-center border-b border-black/10">SLM</div>
+                                             <div className="flex-1 flex items-center justify-center border-b border-black/10">SAS</div>
+                                             <div className="flex-1 flex items-center justify-center font-black">NA</div>
+                                          </div>
+                                       </div>
+                                    </td>
+                                    {usedMapel.map(m => {
+                                       const data = raportData[s.id]?.[m.id] || {};
+                                       return (
+                                          <td key={m.id} className="border border-black p-0 text-center align-top">
+                                             <div className="flex flex-col h-full text-[8px] min-h-[56px]">
+                                                <div className="flex-1 flex items-center justify-center border-b border-black/10 bg-blue-50/10">{data.nf || '-'}</div>
+                                                <div className="flex-1 flex items-center justify-center border-b border-black/10 bg-fuchsia-50/10">{data.slm || '-'}</div>
+                                                <div className="flex-1 flex items-center justify-center border-b border-black/10 bg-amber-50/10">{data.sas || '-'}</div>
+                                                <div className="flex-1 flex items-center justify-center font-black bg-slate-100">{data.nilai || '-'}</div>
+                                             </div>
+                                          </td>
+                                       );
+                                    })}
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[0]?.predikat || ''}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[1]?.predikat || ''}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[2]?.predikat || ''}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[3]?.predikat || ''}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{absensiData[s.id]?.sakit || ''}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{absensiData[s.id]?.izin || ''}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{absensiData[s.id]?.alpa || ''}</div>
+                                    </td>
+                                    <td className="border border-black p-1 text-[9px] min-w-[120px] align-top">
+                                       {pembinaanData[s.id] || '-'}
+                                    </td>
+                                 </tr>
+                              ))}
+                           </tbody>
+                        </table>
+
+                        <div className="mt-4 flex justify-between items-start">
+                           <div className="text-[10px] font-bold border p-2 border-black/10 rounded">
+                              <span className="block italic opacity-70">Keterangan:</span>
+                              <div className="flex gap-4">
+                                 <span>NF : Nilai Formatif</span>
+                                 <span>SLM : Sumatif Lingkup Materi</span>
+                                 <span>SAS : Sumatif Akhir Semester</span>
+                                 <span>NA : Nilai Akhir</span>
+                              </div>
+                           </div>
+                           <div className="grid grid-cols-2 gap-20 text-center text-[10px] font-bold">
+                              <div className="space-y-16">
+                                 <div>Mengetahui,<br/>Wali Kelas</div>
+                                 <div className="uppercase">( {profile.displayName} )<br/><span className="font-normal">NIP. {profile.nip || '_________________'}</span></div>
+                              </div>
+                              <div className="space-y-16">
+                                 <div>Banyuwangi, {tanggalRaportInput}<br/>Kepala Sekolah,</div>
+                                 <div className="uppercase">( {kepalaSekolah || '__________________'} )<br/><span className="font-normal">NIP. {nipKepalaSekolah || '__________________'}</span></div>
+                              </div>
+                           </div>
+                        </div>
+                    </div>
+                 )}
+
+                 
 
             {printMode.startsWith('raport') && siswaList.map((siswa, i) => (
                <div key={siswa.id} className={`pdf-page w-full print:relative bg-white font-sans text-sm pb-10 ${i > 0 ? "mt-8 print:mt-0 print:break-before-page page-break" : ""}`} style={{ minHeight: '297mm', padding: '10mm' }}>
@@ -969,141 +1008,143 @@ export default function GuruRaportKelas() {
                  </CardHeader>
                  <CardContent className="p-0 overflow-x-auto print:overflow-visible">
                     <div className="min-w-max p-4 print:p-0">
-                       <table className="w-full text-xs border-collapse border border-slate-400">
-                          <thead>
-                             <tr>
-                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">NO</th>
-                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-20">NIS/NISN</th>
-                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center min-w-[200px]">NAMA</th>
-                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-8">L/P</th>
-                                <th colSpan={usedMapel.length} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">MATA PELAJARAN</th>
-                                 {viewMode === 'leger' && <th colSpan={3} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center font-bold">ABSENSI</th>}
-                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Jumlah</div></th>
-                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Rerata</div></th>
-                                <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center w-12"><div className="[writing-mode:vertical-rl] rotate-180 m-auto">Ranking</div></th>
-                                 {viewMode === 'leger' && <th rowSpan={2} className="border border-slate-400 bg-slate-100 px-4 py-1 text-center">Catatan / Pembinaan</th>}
-                             </tr>
-                             <tr>
-                                {usedMapel.map(m => (
-                                   <th key={m.id} className="border border-slate-400 bg-slate-100 px-2 py-1 text-center h-[120px] w-8">
-                                      <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap">{m.name}</div>
-                                   </th>
-                                ))}
-                                {viewMode === 'leger' && ( <> <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
-                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Sakit</div>
-                                 </th>
-                                 <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
-                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Izin</div>
-                                 </th>
-                                 <th className="border border-slate-400 bg-slate-100 px-1 py-1 text-center h-[120px] w-8">
-                                    <div className="[writing-mode:vertical-rl] rotate-180 m-auto whitespace-nowrap text-[9px]">Alpa</div>
-                                 </th> </> )}
-                             </tr>
-                          </thead>
-                          <tbody>
-                             {siswaList.map((siswa, index) => (
-                                <tr key={siswa.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                                   <td className="border border-slate-400 px-2 py-1 text-center font-medium">{index + 1}</td>
-                                   <td className="border border-slate-400 px-2 py-1 text-center">{siswa.nisn || '-'}</td>
-                                   <td className="border border-slate-400 px-2 py-1 font-semibold">{siswa.displayName}</td>
-                                   <td className="border border-slate-400 px-2 py-1 text-center">{siswa.jenisKelamin === 'Perempuan' ? 'P' : (siswa.jenisKelamin === 'Laki-laki' ? 'L' : '-')}</td>
-                                   {usedMapel.map(m => {
-                                      const nilaiMapel = isPtsMode ? raportData[siswa.id]?.[m.id]?.nilai_pts : raportData[siswa.id]?.[m.id]?.nilai;
-                                      return (
-                                         <td key={m.id} className="border border-slate-400 px-1 py-1 text-center font-semibold text-blue-800">
-                                            {nilaiMapel !== undefined && nilaiMapel !== null ? nilaiMapel : ''}
-                                         </td>
-                                      );
-                                   })}
-                                   {viewMode === 'leger' && ( <> <td className="border border-slate-400 p-0 overflow-hidden w-8">
-                                       <input 
-                                          type="text" 
-                                          className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
-                                          value={absensiData[siswa.id]?.sakit || ''}
-                                          placeholder="0"
-                                          onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), sakit: e.target.value } })}
-                                       />
-                                    </td>
-                                    <td className="border border-slate-400 p-0 overflow-hidden w-8">
-                                       <input 
-                                          type="text" 
-                                          className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
-                                          value={absensiData[siswa.id]?.izin || ''}
-                                          placeholder="0"
-                                          onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), izin: e.target.value } })}
-                                       />
-                                    </td>
-                                    <td className="border border-slate-400 p-0 overflow-hidden w-8">
-                                       <input 
-                                          type="text" 
-                                          className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px]" 
-                                          value={absensiData[siswa.id]?.alpa || ''}
-                                          placeholder="0"
-                                          onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), alpa: e.target.value } })}
-                                       />
-                                    </td> </> )}
-                                   <td className="border border-slate-400 px-2 py-1 text-center font-bold text-slate-700">{jumlahNilaiSiswa[siswa.id] || ''}</td>
-                                   <td className="border border-slate-400 px-2 py-1 text-center font-bold text-blue-700">{rataRataSiswa[siswa.id]?.toFixed(1) || ''}</td>
-                                   <td className="border border-slate-400 px-2 py-1 text-center font-bold text-amber-700">{rankSiswa[siswa.id] || ''}</td>
-                                   {viewMode === 'leger' && ( <td className="border border-slate-400 p-0">
-                                       <input 
-                                          type="text" 
-                                          className="w-full h-full px-2 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-xs" 
-                                          placeholder="-"
-                                          value={pembinaanData[siswa.id] || ''}
-                                          onChange={(e) => setPembinaanData({ ...pembinaanData, [siswa.id]: e.target.value })}
-                                       />
-                                    </td> )}
-                                </tr>
-                             ))}
-                             
-                             {/* Bottom Stats Rows */}
-                             <tr className="bg-slate-100 font-bold">
-                                <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Nilai Terendah</td>
-                                {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].min || ''}</td>)}
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.min || ''}</td>
-                                <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.min ? avgStats.min.toFixed(1) : ''}</td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                             </tr>
-                             <tr className="bg-slate-100 font-bold">
-                                <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Nilai Tertinggi</td>
-                                {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].max || ''}</td>)}
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.max || ''}</td>
-                                <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.max ? avgStats.max.toFixed(1) : ''}</td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                             </tr>
-                             <tr className="bg-slate-100 font-bold">
-                                <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Rata-rata Nilai</td>
-                                {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].avg ? Math.round(mapelStats[m.id].avg) : ''}</td>)}
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.avg ? Math.round(totalStats.avg) : ''}</td>
-                                <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.avg ? avgStats.avg.toFixed(1) : ''}</td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                             </tr>
-                             <tr className="bg-slate-100 font-bold text-xs text-slate-600">
-                                <td colSpan={4} className="border border-slate-400 px-2 py-1 text-right">Standar Deviasi</td>
-                                {usedMapel.map(m => <td key={m.id} className="border border-slate-400 px-1 py-1 text-center">{mapelStats[m.id].stdDev ? mapelStats[m.id].stdDev.toFixed(1) : ''}</td>)}
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 px-2 py-1 text-center">{totalStats.stdDev ? totalStats.stdDev.toFixed(1) : ''}</td>
-                                <td className="border border-slate-400 px-2 py-1 text-center">{avgStats.stdDev ? avgStats.stdDev.toFixed(1) : ''}</td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                                <td className="border border-slate-400 bg-slate-200"></td>
-                             </tr>
-                          </tbody>
-                       </table>
+                       <table className="w-full text-[10px] border-collapse border border-slate-400">
+  <thead className="bg-slate-50">
+      <tr className="bg-slate-50">
+         <th className="border border-slate-400 p-1 w-8" rowSpan={2}>No.</th>
+         <th className="border border-slate-400 p-1 w-[250px]" rowSpan={2}>
+            NAMA PESERTA DIDIK<br/>
+            Nomor Induk/NISN<br/>
+            Tempat dan Tanggal Lahir<br/>
+            Nama Orang Tua<br/>
+            Alamat
+         </th>
+         <th className="border border-slate-400 p-1" colSpan={usedMapel.length}>MATA PELAJARAN</th>
+         {viewMode === 'leger' && (
+           <>
+             <th className="border border-slate-400 p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Pend. Kepramukaan</div></th>
+             <th className="border border-slate-400 p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Keg. Ekstrakurikuler 2</div></th>
+             <th className="border border-slate-400 p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Keg. Ekstrakurikuler 3</div></th>
+             <th className="border border-slate-400 p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Keg. Ekstrakurikuler 4</div></th>
+             <th className="border border-slate-400 p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Sakit</div></th>
+             <th className="border border-slate-400 p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Ijin</div></th>
+             <th className="border border-slate-400 p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Tanpa Keterangan</div></th>
+             <th className="border border-slate-400 p-1 w-20" rowSpan={2}>Catatan / Pembinaan</th>
+           </>
+         )}
+         {viewMode === 'dkn' && (
+             <>
+                <th rowSpan={2} className="border border-slate-400 bg-slate-100 p-1 text-center w-12"><div className="rotate-[-90deg] flex items-center justify-center h-24">Jumlah</div></th>
+                <th rowSpan={2} className="border border-slate-400 bg-slate-100 p-1 text-center w-12"><div className="rotate-[-90deg] flex items-center justify-center h-24">Rerata</div></th>
+                <th rowSpan={2} className="border border-slate-400 bg-slate-100 p-1 text-center w-12"><div className="rotate-[-90deg] flex items-center justify-center h-24">Ranking</div></th>
+             </>
+         )}
+      </tr>
+      <tr>
+         {usedMapel.map(m => (
+            <th key={m.id} className="border border-slate-400 p-1 h-36 w-8 font-bold">
+               <div className="rotate-[-90deg] flex items-center justify-center whitespace-nowrap overflow-visible uppercase text-[8px] mx-auto">
+                  {m.name}
+               </div>
+            </th>
+         ))}
+      </tr>
+  </thead>
+  <tbody>
+     {siswaList.map((siswa, index) => (
+        <tr key={siswa.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50 hover:bg-slate-100'}>
+           <td className="border border-slate-400 p-1 text-center font-bold align-top">{index + 1}</td>
+           <td className="border border-slate-400 p-1 leading-[1.3] align-top">
+              <div className="flex h-full">
+                 <div className="flex-1 space-y-0.5 min-w-[200px]">
+                    <div className="font-bold uppercase">{siswa.displayName}</div>
+                    {viewMode === 'leger' && (
+                      <>
+                        <div className="text-slate-600 text-[10px]">{siswa.nis || '-'}{siswa.nisn ? ' / ' + siswa.nisn : ''}</div>
+                        <div className="text-slate-500 text-[9px] italic">{siswa.tempatLahir || '-'}, {siswa.tanggalLahir || '-'}</div>
+                      </>
+                    )}
+                    {viewMode === 'dkn' && (
+                       <div className="text-slate-600 text-[10px]">{siswa.nisn || '-'}</div>
+                    )}
+                 </div>
+              </div>
+           </td>
+           {usedMapel.map(m => {
+              const data = raportData[siswa.id]?.[m.id] || {};
+              const nilaiMapel = isPtsMode ? data.nilai_pts : data.nilai;
+              return (
+                 <td key={m.id} className="border border-slate-400 p-0 text-center align-top">
+                    <div className="h-full flex items-center justify-center font-semibold text-blue-800 min-h-[48px] px-1 py-1">
+                       {nilaiMapel !== undefined && nilaiMapel !== null ? nilaiMapel : ''}
+                    </div>
+                 </td>
+              );
+           })}
+           
+           {viewMode === 'leger' && (
+              <>
+                 <td className="border border-slate-400 p-0 text-center text-xs">
+                    <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[siswa.id]?.[0]?.predikat || ''}</div>
+                 </td>
+                 <td className="border border-slate-400 p-0 text-center text-xs">
+                    <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[siswa.id]?.[1]?.predikat || ''}</div>
+                 </td>
+                 <td className="border border-slate-400 p-0 text-center text-xs">
+                    <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[siswa.id]?.[2]?.predikat || ''}</div>
+                 </td>
+                 <td className="border border-slate-400 p-0 text-center text-xs">
+                    <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[siswa.id]?.[3]?.predikat || ''}</div>
+                 </td>
+                 <td className="border border-slate-400 p-0 overflow-hidden w-8">
+                    <input 
+                       type="text" 
+                       className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px] min-h-[56px]" 
+                       value={absensiData[siswa.id]?.sakit || ''}
+                       placeholder="-"
+                       onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), sakit: e.target.value } })}
+                    />
+                 </td>
+                 <td className="border border-slate-400 p-0 overflow-hidden w-8">
+                    <input 
+                       type="text" 
+                       className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px] min-h-[56px]" 
+                       value={absensiData[siswa.id]?.izin || ''}
+                       placeholder="-"
+                       onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), izin: e.target.value } })}
+                    />
+                 </td>
+                 <td className="border border-slate-400 p-0 overflow-hidden w-8">
+                    <input 
+                       type="text" 
+                       className="w-full h-full px-1 py-1 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-center text-[10px] min-h-[56px]" 
+                       value={absensiData[siswa.id]?.alpa || ''}
+                       placeholder="-"
+                       onChange={(e) => setAbsensiData({ ...absensiData, [siswa.id]: { ...(absensiData[siswa.id] || {sakit:'', izin:'', alpa:''}), alpa: e.target.value } })}
+                    />
+                 </td>
+                 <td className="border border-slate-400 p-0">
+                    <textarea 
+                       className="w-[120px] h-full p-2 bg-transparent border-none focus:ring-1 focus:ring-blue-500 outline-none text-xs resize-none min-h-[56px]" 
+                       placeholder="Catatan..."
+                       value={pembinaanData[siswa.id] || ''}
+                       onChange={(e) => setPembinaanData({ ...pembinaanData, [siswa.id]: e.target.value })}
+                    />
+                 </td>
+              </>
+           )}
+
+           {viewMode === 'dkn' && (
+              <>
+                 <td className="border border-slate-400 px-2 py-1 text-center font-bold text-slate-700">{jumlahNilaiSiswa[siswa.id] || ''}</td>
+                 <td className="border border-slate-400 px-2 py-1 text-center font-bold text-blue-700">{rataRataSiswa[siswa.id]?.toFixed(1) || ''}</td>
+                 <td className="border border-slate-400 px-2 py-1 text-center font-bold text-amber-700">{rankSiswa[siswa.id] || ''}</td>
+              </>
+           )}
+        </tr>
+     ))}
+  </tbody>
+</table>
 
                        <div className="hidden print:flex justify-between px-10 mt-16 font-semibold pb-10 text-sm">
                            <div className="text-center">

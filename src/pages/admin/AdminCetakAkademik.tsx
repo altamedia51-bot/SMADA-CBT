@@ -374,10 +374,13 @@ export default function AdminCetakAkademik() {
                                     Alamat
                                  </th>
                                  <th className="border border-black p-1" colSpan={relevantMapels.length}>MATA PELAJARAN</th>
-                                 <th className="border border-black p-1 w-12" rowSpan={2}>Jml</th>
-                                 <th className="border border-black p-1 w-12" rowSpan={2}>Rrt</th>
-                                 <th className="border border-black p-1 w-12" rowSpan={2}>Rnk</th>
-                                 <th className="border border-black p-1 w-12" rowSpan={2}>Abs</th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center">Pend. Kepramukaan</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center">Keg. Ekstrakurikuler 2</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center">Keg. Ekstrakurikuler 3</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center">Keg. Ekstrakurikuler 4</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center">Sakit</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center">Ijin</div></th>
+                                 <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center">Tanpa Keterangan</div></th>
                               </tr>
                               <tr>
                                  {relevantMapels.map(m => (
@@ -423,21 +426,26 @@ export default function AdminCetakAkademik() {
                                           </td>
                                        );
                                     })}
-                                    <td className="border border-black p-0 text-center font-bold bg-slate-50">
-                                       <div className="h-full flex items-center justify-center min-h-[48px]">{s.total}</div>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[0]?.predikat || ''}</div>
                                     </td>
-                                    <td className="border border-black p-0 text-center font-bold">
-                                       <div className="h-full flex items-center justify-center min-h-[48px]">{s.rerata.toFixed(1).replace('.', ',')}</div>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[1]?.predikat || ''}</div>
                                     </td>
-                                    <td className="border border-black p-0 text-center font-bold bg-slate-50">
-                                       <div className="h-full flex items-center justify-center min-h-[48px]">{s.rank}</div>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[2]?.predikat || ''}</div>
                                     </td>
-                                    <td className="border border-black p-0 text-center">
-                                       <div className="grid grid-rows-3 divide-y divide-black/20 h-full text-[7px] min-h-[48px]">
-                                          <div className="flex items-center justify-center">S: {absensiData[s.id]?.sakit || '-'}</div>
-                                          <div className="flex items-center justify-center">I: {absensiData[s.id]?.izin || '-'}</div>
-                                          <div className="flex items-center justify-center">A: {absensiData[s.id]?.alpa || '-'}</div>
-                                       </div>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[3]?.predikat || ''}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{absensiData[s.id]?.sakit || ''}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{absensiData[s.id]?.izin || ''}</div>
+                                    </td>
+                                    <td className="border border-black p-0 text-center text-xs">
+                                       <div className="h-full flex items-center justify-center min-h-[56px]">{absensiData[s.id]?.alpa || ''}</div>
                                     </td>
                                  </tr>
                               ))}
@@ -994,10 +1002,14 @@ export default function AdminCetakAkademik() {
                                        Alamat
                                     </th>
                                     <th className="border border-black p-1" colSpan={relevantMapels.length}>MATA PELAJARAN</th>
-                                    <th className="border border-black p-1 w-12" rowSpan={2}>Jml</th>
-                                    <th className="border border-black p-1 w-12" rowSpan={2}>Rrt</th>
-                                    <th className="border border-black p-1 w-12" rowSpan={2}>Rnk</th>
-                                    <th className="border border-black p-1 w-12" rowSpan={2}>Abs</th>
+                                    <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center">Pend. Kepramukaan</div></th>
+                                    <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center">Keg. Ekstrakurikuler 2</div></th>
+                                    <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Keg. Ekstrakurikuler 3</div></th>
+                                    <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Keg. Ekstrakurikuler 4</div></th>
+                                    <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Sakit</div></th>
+                                    <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Ijin</div></th>
+                                    <th className="border border-black p-1 w-6 whitespace-nowrap" rowSpan={2}><div className="rotate-[-90deg] h-28 flex items-center justify-center font-bold">Tanpa Keterangan</div></th>
+                                    <th className="border border-black p-1 w-20" rowSpan={2}>Catatan / Pembinaan</th>
                                  </tr>
                                  <tr>
                                     {relevantMapels.map(m => (
@@ -1043,21 +1055,29 @@ export default function AdminCetakAkademik() {
                                              </td>
                                           );
                                        })}
-                                       <td className="border border-black p-0 text-center font-bold bg-slate-50">
-                                          <div className="h-full flex items-center justify-center min-h-[48px]">{s.total}</div>
+                                       <td className="border border-black p-0 text-center text-xs">
+                                          <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[0]?.predikat || ''}</div>
                                        </td>
-                                       <td className="border border-black p-0 text-center font-bold">
-                                          <div className="h-full flex items-center justify-center min-h-[48px]">{s.rerata.toFixed(1).replace('.', ',')}</div>
+                                       <td className="border border-black p-0 text-center text-xs">
+                                          <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[1]?.predikat || ''}</div>
                                        </td>
-                                       <td className="border border-black p-0 text-center font-bold bg-slate-50">
-                                          <div className="h-full flex items-center justify-center min-h-[48px]">{s.rank}</div>
+                                       <td className="border border-black p-0 text-center text-xs">
+                                          <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[2]?.predikat || ''}</div>
                                        </td>
-                                       <td className="border border-black p-0 text-center">
-                                          <div className="grid grid-rows-3 divide-y divide-black/20 h-full text-[7px] min-h-[48px]">
-                                             <div className="flex items-center justify-center">S: {absensiData[s.id]?.sakit || '-'}</div>
-                                             <div className="flex items-center justify-center">I: {absensiData[s.id]?.izin || '-'}</div>
-                                             <div className="flex items-center justify-center">A: {absensiData[s.id]?.alpa || '-'}</div>
-                                          </div>
+                                       <td className="border border-black p-0 text-center text-xs">
+                                          <div className="h-full flex items-center justify-center min-h-[56px]">{ekstraData[s.id]?.[3]?.predikat || ''}</div>
+                                       </td>
+                                       <td className="border border-black p-0 text-center text-xs">
+                                          <div className="h-full flex items-center justify-center min-h-[56px]">{absensiData[s.id]?.sakit || ''}</div>
+                                       </td>
+                                       <td className="border border-black p-0 text-center text-xs">
+                                          <div className="h-full flex items-center justify-center min-h-[56px]">{absensiData[s.id]?.izin || ''}</div>
+                                       </td>
+                                       <td className="border border-black p-0 text-center text-xs">
+                                          <div className="h-full flex items-center justify-center min-h-[56px]">{absensiData[s.id]?.alpa || ''}</div>
+                                       </td>
+                                       <td className="border border-black p-1 text-[9px] min-w-[120px] align-top">
+                                          {pembinaanData[s.id] || '-'}
                                        </td>
                                     </tr>
                                  ))}
